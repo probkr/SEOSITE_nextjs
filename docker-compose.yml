@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: ./probroker-api
+    container_name: probroker-api
+    restart: unless-stopped
+    env_file:
+      - ./probroker-api/.env
+    expose:
+      - "8000"
+    networks:
+      - probroker
+
+  web:
+    build:
+      context: ./probroker-web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+    container_name: probroker-web
+    restart: unless-stopped
+    expose:
+      - "3000"
+    depends_on:
+      - api
+    networks:
+      - probroker
+
+  nginx:
+    image: nginx:stable
+    container_name: probroker-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/probroker.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/certbot/conf:/etc/letsencrypt
+      - ./nginx/certbot/www:/var/www/certbot
+    depends_on:
+      - web
+      - api
+    networks:
+      - probroker
+
+  certbot:
+    image: certbot/certbot
+    container_name: probroker-certbot
+    volumes:
+      - ./nginx/certbot/conf:/etc/letsencrypt
+      - ./nginx/certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+networks:
+  probroker:
+    driver: bridge

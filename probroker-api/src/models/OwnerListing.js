@@ -1,0 +1,40 @@
+const mongoose = require('mongoose');
+
+// Same shape as Property, plus submittedAt. Pending admin approval before becoming a real Property.
+const OwnerListingSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  propertyId: { type: String, required: true, unique: true },
+  category: { type: String, default: 'residential' },
+  transactionType: { type: String, default: 'buy' },
+  propertyType: { type: String, default: 'flat' },
+  bhk: { type: Number, default: null },
+  sqft: { type: Number, default: 0 },
+  price: { type: Number, default: 0 },
+  premiseName: { type: String, default: '' },
+  societyId: { type: String, default: null },
+  areaId: { type: String, default: '' },
+  cityId: { type: String, default: '' },
+  nearby: { type: String, default: '' },
+  description: { type: String, default: '' },
+  ageOfProperty: { type: Number, default: null },
+  furnishing: { type: String, default: 'unfurnished' },
+  familyOrBachelors: { type: String, default: null },
+  floorNumber: { type: Number, default: null },
+  totalFloors: { type: Number, default: null },
+  parking: { type: Boolean, default: false },
+  additionalDetails: { type: String, default: '' },
+  photos: { type: [String], default: [] },
+  contactName: { type: String, default: '' },
+  contactPhone: { type: String, default: '' },
+  listingType: { type: String, default: 'owner' },
+  status: { type: String, default: 'pending' },
+  source: { type: String, default: 'owner' },
+  isApproved: { type: Boolean, default: false, index: true },
+  slug: { type: String, default: '' },
+  aiDescription: { type: String, default: '' },
+  submittedAt: { type: String, index: true },
+  createdAt: { type: String },
+  updatedAt: { type: String },
+}, { collection: 'owner_listings', strict: false, versionKey: false, timestamps: false });
+
+module.exports = mongoose.model('OwnerListing', OwnerListingSchema);
