@@ -67,7 +67,7 @@ export default async function PropertyPage({ params }) {
     similar = (similarResult?.data || []).filter((p) => p.propertyId !== prop.propertyId);
   } catch {}
 
-  const photos = prop.photos?.length ? prop.photos : ['/placeholder-property.jpg'];
+  const photos = prop.photos?.length ? prop.photos : ['/placeholder-property.svg'];
   const facts = [
     prop.sqft ? { label: 'Area', value: `${prop.sqft} sqft` } : null,
     prop.bhk ? { label: 'BHK', value: prop.bhk } : null,
@@ -108,4 +108,39 @@ export default async function PropertyPage({ params }) {
 
           <div className="badge bg-primary-50 text-primary mb-3">{prop.transactionType === 'rent' ? 'For Rent' : 'For Sale'}</div>
           <h1 className="text-2xl md:text-3xl font-bold font-heading mb-2 text-gray-900">{title}</h1>
-          <div className="text-3xl font-bold text-primary font-hea
+          <div className="text-3xl font-bold text-primary font-heading mb-6">{fmtPrice(prop.price)}</div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8 p-5 card">
+            {facts.map((f) => (
+              <div key={f.label}>
+                <div className="text-gray-500 text-xs uppercase tracking-wide">{f.label}</div>
+                <div className="font-semibold text-gray-900 capitalize mt-0.5">{f.value}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="max-w-none mb-8">
+            <h2 className="text-lg font-bold font-heading mb-2 text-gray-900">Description</h2>
+            <p className="text-gray-700 whitespace-pre-line leading-relaxed">{prop.description || desc}</p>
+          </div>
+        </div>
+        <div>
+          <div className="lg:sticky lg:top-24">
+            <InquiryForm propertyId={prop.propertyId} propertyTitle={title} />
+          </div>
+        </div>
+      </div>
+
+      {similar.length > 0 && (
+        <div className="mt-14">
+          <h2 className="text-xl md:text-2xl font-bold font-heading mb-5 text-gray-900">Similar Properties</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+            {similar.map((p) => (
+              <PropertyCard key={p.propertyId || p.slug} p={p} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

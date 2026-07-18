@@ -42,7 +42,12 @@ export const getProperties = (params, opts) => apiFetch('/properties', { params,
 });
 export const getProperty = (slug, opts) => apiFetch(`/properties/${slug}`, opts).then((r) => r?.data || r || null);
 export const searchApi = (q, opts) => apiFetch('/search', { params: { q }, ...opts }).then((r) => r?.data || r || []);
-export const getBlogPosts = (opts) => apiFetch('/blog', opts).then((r) => r?.data || r || []);
+export const getBlogPosts = (opts) => apiFetch('/blog', opts).then((r) => {
+  // API returns { posts: [...] } — normalize like getProperties above.
+  if (!r) return [];
+  if (Array.isArray(r)) return r;
+  return r.data || r.posts || [];
+});
 export const getBlogPost = (slug, opts) => apiFetch(`/blog/${slug}`, opts).then((r) => r?.data || r || null);
 export const getPage = (slug, opts) => apiFetch(`/pages/${slug}`, opts).then((r) => r?.data || r || null);
 
@@ -54,4 +59,46 @@ export async function postJson(path, body, method = 'POST') {
       body: JSON.stringify(body),
       cache: 'no-store',
     });
-    const data = await res.json().c
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, status: res.status, data };
+  } catch (err) {
+    return { ok: false, status: 0, data: { message: err.message } };
+  }
+}
+
+export const patchJson = (path, body) => postJson(path, body, 'PATCH');
+
+// ---- Browser-side fetch for admin client components ----
+// Sends the JWT httpOnly cookie automatically (credentials: 'include'), used by every
+// admin form/table component under components/admin/*.js.
+export async function clientFetch(path, options = {}) {
+  const url = path.startsWith('http') ? path : `${API_URL}${path}`;
+  const opts = { credentials: 'include', ...options };
+  if (opts.body && !(opts.body instanceof FormData) && typeof opts.body !== 'string') {
+    opts.body = JSON.stringify(opts.body);
+  }
+  if (opts.body && !(opts.body instanceof FormData) && !opts.headers) {
+    opts.headers = { 'Content-Type': 'application/json' };
+  }
+  const res = await fetch(url, opts);
+  return res;
+}
+
+export async function clientFetchJson(path, options = {}) {
+  const res = await clientFetch(path, options);
+  let data = null;
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
+  }
+  if (!res.ok) {
+    const err = new Error(data?.message || data?.error || `Request failed (${res.status})`);
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
+}
+
+export { apiFetch };

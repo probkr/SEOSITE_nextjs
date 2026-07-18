@@ -1,4 +1,5 @@
 import PostPropertyForm from '@/components/PostPropertyForm';
+import { getProperties, getSocieties } from '@/lib/api';
 import { SITE_URL } from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
@@ -11,11 +12,14 @@ export async function generateMetadata() {
   };
 }
 
-export default function PostPropertyPage() {
-  return (
-    <div className="container-px py-8">
-      <h1 className="text-2xl md:text-3xl font-bold font-heading mb-6 text-gray-900">Post Your Property FREE</h1>
-      <PostPropertyForm />
-    </div>
-  );
+export default async function PostPropertyPage() {
+  const [propResult, societies] = await Promise.all([
+    getProperties({ status: 'active', isApproved: true, limit: 1 }, { revalidate: 3600 }),
+    getSocieties({}, { revalidate: 3600 }),
+  ]);
+  const stats = {
+    listings: propResult?.total || 0,
+    societies: (societies || []).length,
+  };
+  return <PostPropertyForm stats={stats} />;
 }
