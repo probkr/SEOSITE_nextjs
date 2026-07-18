@@ -14,4 +14,8 @@ async function connectDB() {
     dbName,
     ...(useTls ? { tls: true, tlsAllowInvalidCertificates: true } : {}),
   });
-  console.log(`[db] connected to MongoDB database "$
+  console.log(`[db] connected to MongoDB database "${dbName}"`);
+  return mongoose.connection;
+}
+
+module.exports = { connectDB };

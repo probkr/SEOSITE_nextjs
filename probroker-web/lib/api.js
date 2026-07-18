@@ -34,7 +34,12 @@ export const getAreas = (params, opts) => apiFetch('/areas', { params, ...opts }
 export const getArea = (slug, opts) => apiFetch(`/areas/${slug}`, opts).then((r) => r?.data || r || null);
 export const getSocieties = (params, opts) => apiFetch('/societies', { params, ...opts }).then((r) => r?.data || r || []);
 export const getSociety = (slug, opts) => apiFetch(`/societies/${slug}`, opts).then((r) => r?.data || r || null);
-export const getProperties = (params, opts) => apiFetch('/properties', { params, ...opts }).then((r) => r || { data: [], total: 0 });
+export const getProperties = (params, opts) => apiFetch('/properties', { params, ...opts }).then((r) => {
+  // API returns { properties, total, page, pages, ... } — normalize to { data, total, ... }
+  // so every caller can use latest.data consistently regardless of the API's own key name.
+  if (!r) return { data: [], total: 0 };
+  return { ...r, data: r.data || r.properties || [] };
+});
 export const getProperty = (slug, opts) => apiFetch(`/properties/${slug}`, opts).then((r) => r?.data || r || null);
 export const searchApi = (q, opts) => apiFetch('/search', { params: { q }, ...opts }).then((r) => r?.data || r || []);
 export const getBlogPosts = (opts) => apiFetch('/blog', opts).then((r) => r?.data || r || []);
@@ -49,13 +54,4 @@ export async function postJson(path, body, method = 'POST') {
       body: JSON.stringify(body),
       cache: 'no-store',
     });
-    const data = await res.json().catch(() => ({}));
-    return { ok: res.ok, status: res.status, data };
-  } catch (err) {
-    return { ok: false, status: 0, data: { message: err.message } };
-  }
-}
-
-export const patchJson = (path, body) => postJson(path, body, 'PATCH');
-
-// ---- Browser-side 
+    const data = await res.json().c
