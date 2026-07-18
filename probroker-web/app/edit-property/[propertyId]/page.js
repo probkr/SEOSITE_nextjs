@@ -15,7 +15,7 @@ export async function generateMetadata({ params }) {
 export default function EditPropertyPage({ params }) {
   return (
     <div className="container-px py-8">
-      <h1 className="text-2xl font-bold mb-6">Edit Property</h1>
+      <h1 className="text-2xl font-bold font-heading mb-6 text-gray-900">Edit Property</h1>
       <EditPropertyClient propertyId={params.propertyId} />
     </div>
   );

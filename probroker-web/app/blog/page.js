@@ -16,7 +16,7 @@ export default async function BlogListPage() {
   const posts = (await getBlogPosts({ revalidate: 900 })) || [];
   return (
     <div className="container-px py-8">
-      <h1 className="text-2xl md:text-3xl font-bold mb-6">PRObroker Blog</h1>
+      <h1 className="text-2xl md:text-3xl font-bold font-heading mb-6 text-gray-900">PRObroker Blog</h1>
       {posts.length === 0 ? (
         <p className="text-gray-500">No blog posts published yet.</p>
       ) : (

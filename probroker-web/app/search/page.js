@@ -19,14 +19,14 @@ export default async function SearchPage({ searchParams }) {
 
   return (
     <div className="container-px py-8">
-      <h1 className="text-2xl font-bold mb-6">Search Properties</h1>
+      <h1 className="text-2xl font-bold font-heading mb-6 text-gray-900">Search Properties</h1>
       <form className="mb-8 flex gap-2 max-w-xl" action="/search/" method="get">
         <input
           type="text"
           name="q"
           defaultValue={q}
           placeholder="Search by area, society, or city..."
-          className="flex-1 border rounded px-3 py-2"
+          className="flex-1 border-2 border-gray-200 rounded-lg px-3.5 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
         />
         <button className="btn-primary" type="submit">Search</button>
       </form>

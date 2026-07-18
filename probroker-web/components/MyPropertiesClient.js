@@ -37,7 +37,7 @@ export default function MyPropertiesClient() {
       <form onSubmit={sendOtp} className="card p-6 max-w-md">
         <h2 className="font-bold text-lg mb-4">Log in to view your properties</h2>
         <input required type="tel" pattern="[0-9]{10}" placeholder="10-digit mobile number"
-          className="w-full border rounded px-3 py-2 mb-4" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          className="w-full border-2 border-gray-200 rounded-lg px-3.5 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all mb-4" value={phone} onChange={(e) => setPhone(e.target.value)} />
         <button className="btn-primary w-full">Send OTP</button>
         {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
       </form>
@@ -48,7 +48,7 @@ export default function MyPropertiesClient() {
     return (
       <form onSubmit={verifyOtp} className="card p-6 max-w-md">
         <h2 className="font-bold text-lg mb-4">Enter OTP</h2>
-        <input required placeholder="6-digit OTP" className="w-full border rounded px-3 py-2 mb-4"
+        <input required placeholder="6-digit OTP" className="w-full border-2 border-gray-200 rounded-lg px-3.5 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all mb-4"
           value={otp} onChange={(e) => setOtp(e.target.value)} />
         <button className="btn-primary w-full">Verify</button>
         {error && <p className="text-red-600 text-sm mt-2">{error}</p>}

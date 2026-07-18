@@ -28,27 +28,31 @@ export default function SocietyDetailView({ citySlug, areaSlug, society, area, c
       <JsonLd data={jsonLd} />
       <JsonLd data={faqLd} />
       <JsonLd data={breadcrumbLd} />
-      <div className="text-sm text-gray-500 mb-2">
-        <Link href={`/${city?.slug}/`}>{city?.name}</Link> / <Link href={`/${city?.slug}/${area?.slug}/`}>{area?.name}</Link> / {society.name}
-      </div>
-      <h1 className="text-2xl md:text-3xl font-bold mb-2">{society.name}, {area?.name}</h1>
-      {priceRange && <p className="text-primary font-semibold mb-2">{priceRange}</p>}
-      <p className="text-gray-600 mb-6 max-w-3xl">{overview}</p>
+      <nav className="text-xs text-gray-500 mb-3 flex flex-wrap gap-1">
+        <Link href={`/${city?.slug}/`} className="hover:text-primary">{city?.name}</Link>
+        <span>/</span>
+        <Link href={`/${city?.slug}/${area?.slug}/`} className="hover:text-primary">{area?.name}</Link>
+        <span>/</span>
+        <span className="text-gray-700 font-medium">{society.name}</span>
+      </nav>
+      <h1 className="text-2xl md:text-3xl font-bold font-heading mb-2 text-gray-900">{society.name}, {area?.name}</h1>
+      {priceRange && <p className="text-primary font-bold text-lg mb-2 font-heading">{priceRange}</p>}
+      <p className="text-gray-600 mb-6 max-w-3xl leading-relaxed">{overview}</p>
 
-      <div className="mb-8">
-        <h2 className="text-lg font-bold mb-2">Amenities</h2>
+      <div className="mb-10 card p-5">
+        <h2 className="text-lg font-bold font-heading mb-3 text-gray-900">Amenities</h2>
         <div className="flex flex-wrap gap-2">
           {amenities.map((a) => (
-            <span key={a} className="px-3 py-1 bg-gray-100 rounded-full text-sm">{a}</span>
+            <span key={a} className="px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-sm font-medium">{a}</span>
           ))}
         </div>
       </div>
 
-      <h2 className="text-xl font-bold mb-3">{propCount} Properties in {society.name}</h2>
+      <h2 className="text-xl font-bold font-heading mb-4 text-gray-900">{propCount} Properties in {society.name}</h2>
       {properties.length === 0 ? (
         <p className="text-gray-500 mb-8">No active listings in this society right now.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 mb-10">
           {properties.map((p) => (
             <PropertyCard key={p.propertyId || p.slug} p={p} />
           ))}
@@ -57,10 +61,10 @@ export default function SocietyDetailView({ citySlug, areaSlug, society, area, c
 
       {similarSocieties?.filter((s) => s.slug !== society.slug).length > 0 && (
         <div className="mb-10">
-          <h2 className="text-xl font-bold mb-3">Similar Societies in {area?.name}</h2>
+          <h2 className="text-xl font-bold font-heading mb-3 text-gray-900">Similar Societies in {area?.name}</h2>
           <div className="flex flex-wrap gap-2">
             {similarSocieties.filter((s) => s.slug !== society.slug).slice(0, 6).map((s) => (
-              <Link key={s.slug} href={`/${city?.slug}/${area?.slug}/${s.slug}/`} className="px-3 py-1.5 bg-gray-100 rounded-full text-sm hover:bg-gray-200">
+              <Link key={s.slug} href={`/${city?.slug}/${area?.slug}/${s.slug}/`} className="px-3 py-1.5 bg-gray-100 rounded-full text-sm hover:bg-primary-100 hover:text-primary transition-colors">
                 {s.name}
               </Link>
             ))}
@@ -69,18 +73,4 @@ export default function SocietyDetailView({ citySlug, areaSlug, society, area, c
       )}
 
       {faqs.length > 0 && (
-        <div>
-          <h2 className="text-xl font-bold mb-3">Frequently Asked Questions</h2>
-          <div className="space-y-4">
-            {faqs.map((f, i) => (
-              <div key={i}>
-                <div className="font-semibold">{f.question}</div>
-                <div className="text-gray-600">{f.answer}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+     

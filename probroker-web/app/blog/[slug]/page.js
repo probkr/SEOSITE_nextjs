@@ -41,23 +41,16 @@ export default async function BlogPostPage({ params }) {
     <div className="container-px py-8 max-w-3xl">
       <JsonLd data={articleLd} />
       <JsonLd data={breadcrumbLd} />
-      <h1 className="text-2xl md:text-3xl font-bold mb-4">{post.title}</h1>
+      <h1 className="text-2xl md:text-3xl font-bold font-heading mb-4 text-gray-900">{post.title}</h1>
       {post.featuredImage && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={post.featuredImage} alt={post.title} className="w-full h-64 object-cover rounded-md mb-6" />
+        <img src={post.featuredImage} alt={post.title} className="w-full h-64 object-cover rounded-xl mb-6 shadow-card" />
       )}
-      <div className="prose max-w-none text-gray-700 whitespace-pre-line mb-10">{post.content}</div>
+      <div className="prose max-w-none text-gray-700 whitespace-pre-line mb-10 leading-relaxed">{post.content}</div>
 
       {related.length > 0 && (
-        <div>
-          <h2 className="text-xl font-bold mb-3">Related Posts</h2>
+        <div className="card p-5">
+          <h2 className="text-xl font-bold font-heading mb-3 text-gray-900">Related Posts</h2>
           <div className="flex flex-col gap-2">
             {related.map((r) => (
-              <Link key={r.slug} href={`/blog/${r.slug}/`} className="text-primary hover:underline">{r.title}</Link>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+              <Link key={r.slug} href={`/blog/${r.slug}/`} className="text-primary hover:

@@ -26,8 +26,8 @@ export default async function StaticPage() {
   return (
     <div className="container-px py-10 max-w-3xl">
       <JsonLd data={page.customSchema} />
-      <h1 className="text-3xl font-bold mb-6">{title}</h1>
-      <div className="prose max-w-none text-gray-700 whitespace-pre-line">{content}</div>
+      <h1 className="text-3xl font-bold font-heading mb-6 text-gray-900">{title}</h1>
+      <div className="prose max-w-none text-gray-700 whitespace-pre-line leading-relaxed">{content}</div>
     </div>
   );
 }

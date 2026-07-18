@@ -48,7 +48,7 @@ export default function PostPropertyForm() {
       <form onSubmit={sendOtp} className="card p-6 max-w-md">
         <h2 className="font-bold text-lg mb-4">Verify your phone number</h2>
         <input required type="tel" pattern="[0-9]{10}" placeholder="10-digit mobile number"
-          className="w-full border rounded px-3 py-2 mb-4" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          className="w-full border-2 border-gray-200 rounded-lg px-3.5 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all mb-4" value={phone} onChange={(e) => setPhone(e.target.value)} />
         <button className="btn-primary w-full" disabled={otpStatus === 'sending'}>Send OTP</button>
       </form>
     );
@@ -58,7 +58,7 @@ export default function PostPropertyForm() {
     return (
       <form onSubmit={verifyOtp} className="card p-6 max-w-md">
         <h2 className="font-bold text-lg mb-4">Enter OTP</h2>
-        <input required placeholder="6-digit OTP" className="w-full border rounded px-3 py-2 mb-4"
+        <input required placeholder="6-digit OTP" className="w-full border-2 border-gray-200 rounded-lg px-3.5 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all mb-4"
           value={otp} onChange={(e) => setOtp(e.target.value)} />
         <button className="btn-primary w-full" disabled={otpStatus === 'verifying'}>Verify</button>
         {otpStatus === 'invalid' && <p className="text-red-600 text-sm mt-2">Invalid OTP, try again.</p>}
@@ -79,26 +79,26 @@ export default function PostPropertyForm() {
       <form onSubmit={submitProperty} className="card p-6 max-w-2xl space-y-3">
         <h2 className="font-bold text-lg mb-2">Property Details</h2>
         <div className="grid grid-cols-2 gap-3">
-          <select className="border rounded px-3 py-2" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+          <select className="border-2 border-gray-200 rounded-lg px-3.5 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
             <option value="residential">Residential</option>
             <option value="commercial">Commercial</option>
           </select>
-          <select className="border rounded px-3 py-2" value={form.transactionType} onChange={(e) => setForm({ ...form, transactionType: e.target.value })}>
+          <select className="border-2 border-gray-200 rounded-lg px-3.5 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" value={form.transactionType} onChange={(e) => setForm({ ...form, transactionType: e.target.value })}>
             <option value="buy">Sale</option>
             <option value="rent">Rent</option>
           </select>
         </div>
-        <select className="border rounded px-3 py-2 w-full" value={form.propertyType} onChange={(e) => setForm({ ...form, propertyType: e.target.value })}>
+        <select className="border-2 border-gray-200 rounded-lg px-3.5 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all w-full" value={form.propertyType} onChange={(e) => setForm({ ...form, propertyType: e.target.value })}>
           {PROPERTY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
         <div className="grid grid-cols-2 gap-3">
-          <input placeholder="BHK" type="number" className="border rounded px-3 py-2" value={form.bhk} onChange={(e) => setForm({ ...form, bhk: e.target.value })} />
-          <input placeholder="Sqft" type="number" className="border rounded px-3 py-2" value={form.sqft} onChange={(e) => setForm({ ...form, sqft: e.target.value })} />
+          <input placeholder="BHK" type="number" className="border-2 border-gray-200 rounded-lg px-3.5 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" value={form.bhk} onChange={(e) => setForm({ ...form, bhk: e.target.value })} />
+          <input placeholder="Sqft" type="number" className="border-2 border-gray-200 rounded-lg px-3.5 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" value={form.sqft} onChange={(e) => setForm({ ...form, sqft: e.target.value })} />
         </div>
-        <input required placeholder="Price" type="number" className="w-full border rounded px-3 py-2" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
-        <input placeholder="Society / Premise Name" className="w-full border rounded px-3 py-2" value={form.premiseName} onChange={(e) => setForm({ ...form, premiseName: e.target.value })} />
-        <textarea placeholder="Description" rows={4} className="w-full border rounded px-3 py-2" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-        <input required placeholder="Contact Name" className="w-full border rounded px-3 py-2" value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} />
+        <input required placeholder="Price" type="number" className="w-full border-2 border-gray-200 rounded-lg px-3.5 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+        <input placeholder="Society / Premise Name" className="w-full border-2 border-gray-200 rounded-lg px-3.5 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" value={form.premiseName} onChange={(e) => setForm({ ...form, premiseName: e.target.value })} />
+        <textarea placeholder="Description" rows={4} className="w-full border-2 border-gray-200 rounded-lg px-3.5 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+        <input required placeholder="Contact Name" className="w-full border-2 border-gray-200 rounded-lg px-3.5 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} />
         <button className="btn-primary w-full" disabled={submitStatus === 'saving'}>Submit Property</button>
         {submitStatus === 'error' && <p className="text-red-600 text-sm">Something went wrong. Please try again.</p>}
       </form>

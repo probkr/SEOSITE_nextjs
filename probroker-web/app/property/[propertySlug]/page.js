@@ -67,46 +67,45 @@ export default async function PropertyPage({ params }) {
     similar = (similarResult?.data || []).filter((p) => p.propertyId !== prop.propertyId);
   } catch {}
 
+  const photos = prop.photos?.length ? prop.photos : ['/placeholder-property.jpg'];
+  const facts = [
+    prop.sqft ? { label: 'Area', value: `${prop.sqft} sqft` } : null,
+    prop.bhk ? { label: 'BHK', value: prop.bhk } : null,
+    prop.furnishing ? { label: 'Furnishing', value: prop.furnishing.replace('-', ' ') } : null,
+    prop.floorNumber !== undefined ? { label: 'Floor', value: `${prop.floorNumber}${prop.totalFloors ? `/${prop.totalFloors}` : ''}` } : null,
+    prop.propertyType ? { label: 'Type', value: prop.propertyType } : null,
+    prop.transactionType ? { label: 'Transaction', value: prop.transactionType === 'rent' ? 'For Rent' : 'For Sale' } : null,
+  ].filter(Boolean);
+
   return (
     <div className="container-px py-8">
       <JsonLd data={jsonLd} />
       <JsonLd data={breadcrumbLd} />
+
+      <nav className="text-xs text-gray-500 mb-4 flex flex-wrap gap-1">
+        {breadcrumbItems.map((b, i) => (
+          <span key={b.url} className="flex items-center gap-1">
+            {i > 0 && <span>/</span>}
+            <span className={i === breadcrumbItems.length - 1 ? 'text-gray-700 font-medium line-clamp-1' : ''}>{b.name}</span>
+          </span>
+        ))}
+      </nav>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-6">
-            {(prop.photos?.length ? prop.photos : ['/placeholder-property.jpg']).slice(0, 6).map((photo, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={i} src={photo} alt={`${title} photo ${i + 1}`} className="w-full h-40 object-cover rounded-md" />
-            ))}
+          <div className="rounded-xl overflow-hidden mb-2 bg-gray-100 aspect-[16/10]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photos[0]} alt={`${title} photo 1`} className="w-full h-full object-cover" />
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">{title}</h1>
-          <div className="text-2xl font-bold text-primary mb-4">{fmtPrice(prop.price)}</div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6 text-sm">
-            {prop.sqft && <div><div className="text-gray-500">Area</div><div className="font-semibold">{prop.sqft} sqft</div></div>}
-            {prop.bhk ? <div><div className="text-gray-500">BHK</div><div className="font-semibold">{prop.bhk}</div></div> : null}
-            {prop.furnishing && <div><div className="text-gray-500">Furnishing</div><div className="font-semibold capitalize">{prop.furnishing.replace('-', ' ')}</div></div>}
-            {prop.floorNumber !== undefined && <div><div className="text-gray-500">Floor</div><div className="font-semibold">{prop.floorNumber}{prop.totalFloors ? `/${prop.totalFloors}` : ''}</div></div>}
-          </div>
-          <div className="prose max-w-none mb-8">
-            <h2 className="text-lg font-bold mb-2">Description</h2>
-            <p className="text-gray-700 whitespace-pre-line">{prop.description || desc}</p>
-          </div>
-        </div>
-        <div>
-          <InquiryForm propertyId={prop.propertyId} propertyTitle={title} />
-        </div>
-      </div>
+          {photos.length > 1 && (
+            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mb-6">
+              {photos.slice(1, 6).map((photo, i) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={i} src={photo} alt={`${title} photo ${i + 2}`} className="w-full aspect-square object-cover rounded-lg" />
+              ))}
+            </div>
+          )}
 
-      {similar.length > 0 && (
-        <div className="mt-12">
-          <h2 className="text-xl font-bold mb-4">Similar Properties</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {similar.map((p) => (
-              <PropertyCard key={p.propertyId || p.slug} p={p} />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+          <div className="badge bg-primary-50 text-primary mb-3">{prop.transactionType === 'rent' ? 'For Rent' : 'For Sale'}</div>
+          <h1 className="text-2xl md:text-3xl font-bold font-heading mb-2 text-gray-900">{title}</h1>
+          <div className="text-3xl font-bold text-primary font-hea

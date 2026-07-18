@@ -15,7 +15,7 @@ export async function generateMetadata() {
 export default function MyPropertiesPage() {
   return (
     <div className="container-px py-8">
-      <h1 className="text-2xl font-bold mb-6">My Properties</h1>
+      <h1 className="text-2xl font-bold font-heading mb-6 text-gray-900">My Properties</h1>
       <MyPropertiesClient />
     </div>
   );

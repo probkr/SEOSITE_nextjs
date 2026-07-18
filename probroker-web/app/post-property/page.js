@@ -14,7 +14,7 @@ export async function generateMetadata() {
 export default function PostPropertyPage() {
   return (
     <div className="container-px py-8">
-      <h1 className="text-2xl md:text-3xl font-bold mb-6">Post Your Property FREE</h1>
+      <h1 className="text-2xl md:text-3xl font-bold font-heading mb-6 text-gray-900">Post Your Property FREE</h1>
       <PostPropertyForm />
     </div>
   );

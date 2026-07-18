@@ -23,7 +23,7 @@ export default async function SocietiesPage() {
 
   return (
     <div className="container-px py-8">
-      <h1 className="text-2xl md:text-3xl font-bold mb-6">Societies &amp; Projects</h1>
+      <h1 className="text-2xl md:text-3xl font-bold font-heading mb-6 text-gray-900">Societies &amp; Projects</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {withCounts.map((c) => (
           <Link key={c.slug} href={`/societies/${c.slug}/`} className="card p-5 flex items-center justify-between">

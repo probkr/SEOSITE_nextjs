@@ -7,10 +7,5 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#0f6e5f',
-        accent: '#e08e26',
-      },
-    },
-  },
-  plugins: [],
-};
+        // Matches the live prbroker.in brand (sampled from production): deep indigo/violet.
+ 

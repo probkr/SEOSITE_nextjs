@@ -29,7 +29,7 @@ export default async function SocietiesCityPage({ params }) {
 
   return (
     <div className="container-px py-8">
-      <h1 className="text-2xl md:text-3xl font-bold mb-6">Societies &amp; Projects in {city.name}</h1>
+      <h1 className="text-2xl md:text-3xl font-bold font-heading mb-6 text-gray-900">Societies &amp; Projects in {city.name}</h1>
       {(!societies || societies.length === 0) ? (
         <p className="text-gray-500">No societies listed yet.</p>
       ) : (

@@ -22,22 +22,21 @@ export default function InquiryForm({ propertyId, propertyTitle }) {
     );
   }
 
+  const inputCls = 'w-full border-2 border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all';
+
   return (
     <form onSubmit={handleSubmit} className="card p-5 space-y-3">
-      <h3 className="font-bold text-lg">Contact Owner</h3>
+      <h3 className="font-bold font-heading text-lg text-gray-900">Contact Owner</h3>
       <p className="text-sm text-gray-500">Interested in {propertyTitle}?</p>
-      <input required placeholder="Your Name" className="w-full border rounded px-3 py-2 text-sm"
+      <input required placeholder="Your Name" className={inputCls}
         value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-      <input required placeholder="Phone Number" className="w-full border rounded px-3 py-2 text-sm"
+      <input required placeholder="Phone Number" className={inputCls}
         value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-      <input type="email" placeholder="Email (optional)" className="w-full border rounded px-3 py-2 text-sm"
+      <input type="email" placeholder="Email (optional)" className={inputCls}
         value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-      <textarea placeholder="Message" rows={3} className="w-full border rounded px-3 py-2 text-sm"
+      <textarea placeholder="Message" rows={3} className={inputCls}
         value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
       <button type="submit" disabled={status === 'loading'} className="btn-primary w-full text-center">
         {status === 'loading' ? 'Sending...' : 'Send Inquiry'}
       </button>
-      {status === 'error' && <p className="text-red-600 text-sm">Something went wrong. Please try again.</p>}
-    </form>
-  );
-}
+      {status === 'error' && <p className="text-red-60

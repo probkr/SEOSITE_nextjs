@@ -29,13 +29,21 @@ export default async function AreaLandingView({ area, city }) {
     <div className="container-px py-8">
       <JsonLd data={faqLd} />
       <JsonLd data={breadcrumbLd} />
-      <h1 className="text-2xl md:text-3xl font-bold mb-2">Properties in {area.name}, {city?.name}</h1>
-      <p className="text-gray-600 mb-6 max-w-3xl">{overview}</p>
+      <div className="badge bg-primary-50 text-primary mb-3">{city?.name}</div>
+      <h1 className="text-2xl md:text-3xl font-bold font-heading mb-2 text-gray-900">Properties in {area.name}, {city?.name}</h1>
+      <p className="text-gray-600 mb-6 max-w-3xl leading-relaxed">{overview}</p>
+
+      <div className="flex flex-wrap gap-3 mb-10">
+        <Link href={`/${city?.slug}/${area.slug}/residential-property-for-sale/`} className="btn-primary">Buy Residential</Link>
+        <Link href={`/${city?.slug}/${area.slug}/residential-property-for-rent/`} className="btn-accent">Rent Residential</Link>
+        <Link href={`/${city?.slug}/${area.slug}/commercial-property-for-sale/`} className="btn-outline">Buy Commercial</Link>
+        <Link href={`/${city?.slug}/${area.slug}/commercial-property-for-rent/`} className="btn-outline">Rent Commercial</Link>
+      </div>
 
       {properties.length === 0 ? (
         <p className="text-gray-500 mb-8">No properties available in this area yet.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 mb-10">
           {properties.map((p) => (
             <PropertyCard key={p.propertyId || p.slug} p={p} />
           ))}
@@ -44,10 +52,10 @@ export default async function AreaLandingView({ area, city }) {
 
       {societies?.length > 0 && (
         <div className="mb-10">
-          <h2 className="text-xl font-bold mb-3">Societies in {area.name}</h2>
+          <h2 className="text-xl font-bold font-heading mb-3 text-gray-900">Societies in {area.name}</h2>
           <div className="flex flex-wrap gap-2">
             {societies.map((s) => (
-              <Link key={s.slug} href={`/${city?.slug}/${area.slug}/${s.slug}/`} className="px-3 py-1.5 bg-gray-100 rounded-full text-sm hover:bg-gray-200">
+              <Link key={s.slug} href={`/${city?.slug}/${area.slug}/${s.slug}/`} className="px-3 py-1.5 bg-gray-100 rounded-full text-sm hover:bg-primary-100 hover:text-primary transition-colors">
                 {s.name}
               </Link>
             ))}
@@ -55,26 +63,10 @@ export default async function AreaLandingView({ area, city }) {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-3 mb-10">
-        <Link href={`/${city?.slug}/${area.slug}/residential-property-for-sale/`} className="btn-primary">Buy Residential</Link>
-        <Link href={`/${city?.slug}/${area.slug}/residential-property-for-rent/`} className="btn-primary bg-accent hover:bg-accent/90">Rent Residential</Link>
-        <Link href={`/${city?.slug}/${area.slug}/commercial-property-for-sale/`} className="btn-primary bg-gray-700 hover:bg-gray-800">Buy Commercial</Link>
-        <Link href={`/${city?.slug}/${area.slug}/commercial-property-for-rent/`} className="btn-primary bg-gray-700 hover:bg-gray-800">Rent Commercial</Link>
-      </div>
-
       {faqs.length > 0 && (
         <div>
-          <h2 className="text-xl font-bold mb-3">Frequently Asked Questions</h2>
-          <div className="space-y-4">
+          <h2 className="text-xl font-bold font-heading mb-4 text-gray-900">Frequently Asked Questions</h2>
+          <div className="space-y-4 max-w-3xl">
             {faqs.map((f, i) => (
-              <div key={i}>
-                <div className="font-semibold">{f.question}</div>
-                <div className="text-gray-600">{f.answer}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+              <div key={i} className="card p-4">
+                <div className="font-semibold text-gray-900">{f.ques
