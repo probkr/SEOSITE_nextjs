@@ -3,6 +3,7 @@ import { fmtPrice, buildPropertyTitle, buildPropertySlug, fmtPropDesc } from '@/
 import { SITE_URL } from '@/lib/config';
 import PropertyCard from '@/components/PropertyCard';
 import JsonLd from '@/components/JsonLd';
+import { realEstateListingSchema, breadcrumbSchema } from '@/lib/schema';
 import InquiryForm from '@/components/InquiryForm';
 import { redirect, notFound } from 'next/navigation';
 
@@ -45,16 +46,17 @@ export default async function PropertyPage({ params }) {
   const canonical = `${SITE_URL}/property/${correctSlug}/`;
   const desc = prop.aiDescription || fmtPropDesc(prop);
 
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'RealEstateListing',
-    name: title,
-    description: desc,
-    url: canonical,
-    image: prop.photos?.[0] || '',
-    offers: { '@type': 'Offer', price: String(prop.price || ''), priceCurrency: 'INR' },
-    address: { '@type': 'PostalAddress', addressLocality: prop.areaName, addressRegion: prop.cityName, addressCountry: 'IN' },
-  };
+  const jsonLd = realEstateListingSchema(prop, desc, canonical);
+
+  const breadcrumbItems = [{ name: 'Home', url: `${SITE_URL}/` }];
+  if (prop.cityName && prop.citySlug) {
+    breadcrumbItems.push({ name: prop.cityName, url: `${SITE_URL}/${prop.citySlug}/` });
+  }
+  if (prop.areaName && prop.citySlug && prop.areaSlug) {
+    breadcrumbItems.push({ name: prop.areaName, url: `${SITE_URL}/${prop.citySlug}/${prop.areaSlug}/` });
+  }
+  breadcrumbItems.push({ name: title, url: canonical });
+  const breadcrumbLd = breadcrumbSchema(breadcrumbItems);
 
   let similar = [];
   try {
@@ -68,6 +70,7 @@ export default async function PropertyPage({ params }) {
   return (
     <div className="container-px py-8">
       <JsonLd data={jsonLd} />
+      <JsonLd data={breadcrumbLd} />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-6">

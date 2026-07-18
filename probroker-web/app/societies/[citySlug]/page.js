@@ -8,7 +8,8 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
   const city = await getCity(params.citySlug, { revalidate: 3600 });
-  const name = city?.name || params.citySlug;
+  if (!city) return { title: 'City Not Found | PRObroker', robots: { index: false, follow: false } };
+  const name = city.name;
   const canonical = `${SITE_URL}/societies/${params.citySlug}/`;
   return {
     title: `Societies & Projects in ${name} | PRObroker`,

@@ -3,6 +3,7 @@ import { fmtPrice } from '@/lib/format';
 import { SITE_URL } from '@/lib/config';
 import PropertyCard from './PropertyCard';
 import JsonLd from './JsonLd';
+import { residenceSchema, faqPageSchema, breadcrumbSchema } from '@/lib/schema';
 
 export default function SocietyDetailView({ citySlug, areaSlug, society, area, city, properties, similarSocieties }) {
   const propCount = properties.length;
@@ -13,27 +14,20 @@ export default function SocietyDetailView({ citySlug, areaSlug, society, area, c
   const amenities = society.amenities?.length ? society.amenities : ['24/7 Security', 'Power Backup', 'Water Supply', 'Parking', 'Garden', "Children's Play Area"];
   const faqs = society.faqs || [];
   const canonical = `${SITE_URL}/${citySlug}/${areaSlug}/${society.slug}/`;
-  const schemaType = society.projectType === 'commercial' ? 'Place' : 'Residence';
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': schemaType,
-    name: society.name,
-    description: overview,
-    url: canonical,
-    address: { '@type': 'PostalAddress', addressLocality: area?.name, addressRegion: city?.name, addressCountry: 'IN' },
-  };
-  const faqLd = faqs.length
-    ? {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.question, acceptedAnswer: { '@type': 'Answer', text: f.answer } })),
-      }
-    : null;
+  const jsonLd = residenceSchema(society, area, city, overview, canonical);
+  const faqLd = faqPageSchema(faqs);
+  const breadcrumbLd = breadcrumbSchema([
+    { name: 'Home', url: `${SITE_URL}/` },
+    { name: city?.name || citySlug, url: `${SITE_URL}/${citySlug}/` },
+    { name: area?.name || areaSlug, url: `${SITE_URL}/${citySlug}/${areaSlug}/` },
+    { name: society.name, url: canonical },
+  ]);
 
   return (
     <div className="container-px py-8">
       <JsonLd data={jsonLd} />
       <JsonLd data={faqLd} />
+      <JsonLd data={breadcrumbLd} />
       <div className="text-sm text-gray-500 mb-2">
         <Link href={`/${city?.slug}/`}>{city?.name}</Link> / <Link href={`/${city?.slug}/${area?.slug}/`}>{area?.name}</Link> / {society.name}
       </div>

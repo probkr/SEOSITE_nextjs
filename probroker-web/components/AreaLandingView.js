@@ -3,6 +3,8 @@ import { getProperties, getSocieties } from '@/lib/api';
 import { fmtPrice } from '@/lib/format';
 import PropertyCard from './PropertyCard';
 import JsonLd from './JsonLd';
+import { faqPageSchema, breadcrumbSchema } from '@/lib/schema';
+import { SITE_URL } from '@/lib/config';
 
 export default async function AreaLandingView({ area, city }) {
   const areaId = area.id || area._id;
@@ -16,21 +18,17 @@ export default async function AreaLandingView({ area, city }) {
   const overview = area.overview || `${area.name} is a well-connected locality in ${city?.name}, offering a range of residential and commercial properties for sale and rent. Explore ${total}+ listings and ${(societies || []).length} societies in the area on PRObroker.`;
   const faqs = area.faqs || [];
 
-  const faqLd = faqs.length
-    ? {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: faqs.map((f) => ({
-          '@type': 'Question',
-          name: f.question,
-          acceptedAnswer: { '@type': 'Answer', text: f.answer },
-        })),
-      }
-    : null;
+  const faqLd = faqPageSchema(faqs);
+  const breadcrumbLd = breadcrumbSchema([
+    { name: 'Home', url: `${SITE_URL}/` },
+    { name: city?.name || '', url: `${SITE_URL}/${city?.slug}/` },
+    { name: area.name, url: `${SITE_URL}/${city?.slug}/${area.slug}/` },
+  ]);
 
   return (
     <div className="container-px py-8">
       <JsonLd data={faqLd} />
+      <JsonLd data={breadcrumbLd} />
       <h1 className="text-2xl md:text-3xl font-bold mb-2">Properties in {area.name}, {city?.name}</h1>
       <p className="text-gray-600 mb-6 max-w-3xl">{overview}</p>
 

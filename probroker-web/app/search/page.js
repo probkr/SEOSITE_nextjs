@@ -8,7 +8,7 @@ export async function generateMetadata() {
   return {
     title: 'Search Properties | PRObroker',
     description: 'Search for properties across Ahmedabad and Gandhinagar.',
-    robots: { index: false, follow: false },
+    robots: { index: false, follow: true },
     alternates: { canonical: `${SITE_URL}/search/` },
   };
 }

@@ -1,10 +1,23 @@
 import Link from 'next/link';
 import PropertyCard from './PropertyCard';
+import JsonLd from './JsonLd';
+import { itemListSchema, breadcrumbSchema } from '@/lib/schema';
+import { SITE_URL } from '@/lib/config';
 
 export default function ListingView({ data, basePath }) {
   const { h1, properties, total, page, totalPages, popularAreas, societies, area, city } = data;
+
+  const itemListLd = itemListSchema(properties, SITE_URL);
+  const breadcrumbItems = [{ name: 'Home', url: `${SITE_URL}/` }];
+  if (city?.slug) breadcrumbItems.push({ name: city.name, url: `${SITE_URL}/${city.slug}/` });
+  if (area?.slug && city?.slug) breadcrumbItems.push({ name: area.name, url: `${SITE_URL}/${city.slug}/${area.slug}/` });
+  breadcrumbItems.push({ name: h1, url: `${SITE_URL}${basePath}` });
+  const breadcrumbLd = breadcrumbSchema(breadcrumbItems);
+
   return (
     <div className="container-px py-8">
+      <JsonLd data={itemListLd} />
+      <JsonLd data={breadcrumbLd} />
       <h1 className="text-2xl md:text-3xl font-bold mb-2">{h1}</h1>
       <p className="text-gray-500 mb-6">{total} properties found</p>
 

@@ -1,6 +1,7 @@
 import { getBlogPost, getBlogPosts } from '@/lib/api';
 import { SITE_URL } from '@/lib/config';
 import JsonLd from '@/components/JsonLd';
+import { articleSchema, breadcrumbSchema } from '@/lib/schema';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -26,18 +27,12 @@ export default async function BlogPostPage({ params }) {
 
   const canonical = `${SITE_URL}/blog/${params.slug}/`;
   const desc = post.metaDescription || (post.excerpt || '').slice(0, 160);
-  const articleLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: post.title,
-    description: desc,
-    url: canonical,
-    author: { '@type': 'Person', name: post.author || 'Admin' },
-    publisher: { '@type': 'Organization', name: 'PRObroker' },
-    datePublished: post.publishedAt || '',
-    dateModified: post.updatedAt || '',
-  };
-  if (post.featuredImage) articleLd.image = post.featuredImage;
+  const articleLd = articleSchema(post, canonical);
+  const breadcrumbLd = breadcrumbSchema([
+    { name: 'Home', url: `${SITE_URL}/` },
+    { name: 'Blog', url: `${SITE_URL}/blog/` },
+    { name: post.title, url: canonical },
+  ]);
 
   const allPosts = (await getBlogPosts({ revalidate: 900 })) || [];
   const related = allPosts.filter((p) => p.slug !== params.slug).slice(0, 3);
@@ -45,6 +40,7 @@ export default async function BlogPostPage({ params }) {
   return (
     <div className="container-px py-8 max-w-3xl">
       <JsonLd data={articleLd} />
+      <JsonLd data={breadcrumbLd} />
       <h1 className="text-2xl md:text-3xl font-bold mb-4">{post.title}</h1>
       {post.featuredImage && (
         // eslint-disable-next-line @next/next/no-img-element

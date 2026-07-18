@@ -3,6 +3,7 @@ import { getCities, getProperties } from '@/lib/api';
 import { SITE_URL } from '@/lib/config';
 import PropertyCard from '@/components/PropertyCard';
 import JsonLd from '@/components/JsonLd';
+import { organizationSchema, websiteSchema } from '@/lib/schema';
 
 export const revalidate = 300;
 
@@ -27,17 +28,13 @@ export default async function HomePage() {
 
   const properties = latest?.data || [];
 
-  const orgLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    name: 'PRObroker',
-    url: `${SITE_URL}/`,
-    logo: `${SITE_URL}/logo.png`,
-  };
+  const orgLd = organizationSchema();
+  const websiteLd = websiteSchema();
 
   return (
     <div>
       <JsonLd data={orgLd} />
+      <JsonLd data={websiteLd} />
       <section className="bg-primary/5 py-14">
         <div className="container-px text-center">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Find Your Next Property in Ahmedabad &amp; Gandhinagar</h1>

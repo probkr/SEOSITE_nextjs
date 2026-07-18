@@ -23,4 +23,4 @@ const nextConfig = {
   },
 };
 
-modul
+module.exports = nextConfig;
