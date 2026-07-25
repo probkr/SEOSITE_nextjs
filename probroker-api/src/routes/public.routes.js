@@ -3,6 +3,7 @@ const router = express.Router();
 const pub = require('../controllers/publicController');
 
 router.get('/cities', pub.listCities);
+router.get('/site-settings', pub.getSiteSettings);
 router.get('/cities/:slug', pub.getCityBySlug);
 
 router.get('/areas', pub.listAreas);

@@ -21,7 +21,7 @@ export default function AreasClient({ areas, cities }) {
     setSaving(true);
     setError('');
     try {
-      await clientFetchJson('/admin/areas', { method: 'POST', body: JSON.stringify(form) });
+      await clientFetchJson('/admin/areas/add', { method: 'POST', body: JSON.stringify(form) });
       setOpen(false);
       router.refresh();
     } catch (err) {
@@ -34,7 +34,7 @@ export default function AreasClient({ areas, cities }) {
   async function toggleFeatured(id) {
     setBusyId(id);
     try {
-      await clientFetchJson(`/admin/areas/${id}/toggle-featured`, { method: 'POST' });
+      await clientFetchJson(`/admin/areas/toggle-featured/${id}`, { method: 'POST' });
       router.refresh();
     } catch (e) {
       alert('Error: ' + e.message);
@@ -47,7 +47,7 @@ export default function AreasClient({ areas, cities }) {
     if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
     setBusyId(id);
     try {
-      await clientFetchJson(`/admin/areas/${id}`, { method: 'DELETE' });
+      await clientFetchJson(`/admin/areas/delete/${id}`, { method: 'POST' });
       router.refresh();
     } catch (e) {
       alert('Error: ' + e.message);

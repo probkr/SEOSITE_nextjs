@@ -2,6 +2,8 @@ import { getCity, getArea, getAreas, getProperties, getSociety, getSocieties } f
 import { fetchListingData, toTitle } from './listing';
 import { SITE_URL } from './config';
 
+const SORT_MAP = { newest: '-createdAt', price_asc: 'price_asc', price_desc: 'price_desc' };
+
 const CATEGORY_TRANS_RE = /^(residential|commercial)-property-for-(sale|rent)$/;
 
 const PT_MAP = {
@@ -25,20 +27,20 @@ const PT_MAP = {
 // because Next.js App Router requires a single dynamic param name per route
 // tree position — sibling folders like `[category]-property-for-[trans]`
 // and `[areaSlug]` cannot coexist, unlike FastAPI's independent regex routes.
-export async function resolveCitySegments(citySlug, segs, page = 1) {
+export async function resolveCitySegments(citySlug, segs, page = 1, filters = {}) {
   if (segs.length === 1) {
-    return resolveOneSegment(citySlug, segs[0], page);
+    return resolveOneSegment(citySlug, segs[0], page, filters);
   }
   if (segs.length === 2) {
-    return resolveTwoSegments(citySlug, segs[0], segs[1], page);
+    return resolveTwoSegments(citySlug, segs[0], segs[1], page, filters);
   }
   return { type: 'notfound' };
 }
 
-async function resolveOneSegment(citySlug, seg, page) {
+async function resolveOneSegment(citySlug, seg, page, filters) {
   const mCat = seg.match(CATEGORY_TRANS_RE);
   if (mCat) {
-    const data = await fetchListingData({ citySlug, category: mCat[1], trans: mCat[2], page });
+    const data = await fetchListingData({ citySlug, category: mCat[1], trans: mCat[2], page, filters });
     return { type: 'category-listing', data };
   }
 
@@ -51,12 +53,28 @@ async function resolveOneSegment(citySlug, seg, page) {
     }
   }
 
-  return resolveCatchAll(citySlug, city, seg, page);
+  return resolveCatchAll(citySlug, city, seg, page, filters);
 }
 
-async function resolveCatchAll(citySlug, city, catchAll, page) {
+async function resolveCatchAll(citySlug, city, catchAll, page, extraFilters = {}, areaSlug = null, area = null) {
   const cityName = city?.name || toTitle(citySlug);
-  const filters = { status: 'active', isApproved: true, cityId: city?.id || city?._id };
+  const placeName = area?.name ? `${area.name}, ${cityName}` : cityName;
+  const filters = {
+    status: 'active',
+    isApproved: true,
+    cityId: city?.id || city?._id,
+    areaId: area?.id || area?._id || undefined,
+    bhk: extraFilters.bhk || undefined,
+    minPrice: extraFilters.minPrice || undefined,
+    maxPrice: extraFilters.maxPrice || undefined,
+    furnishing: extraFilters.furnishing || undefined,
+    search: extraFilters.q || undefined,
+    minSqft: extraFilters.minSqft || undefined,
+    maxSqft: extraFilters.maxSqft || undefined,
+    postedBy: extraFilters.postedBy || undefined,
+    postedSince: extraFilters.postedSince || undefined,
+    familyOrBachelors: extraFilters.familyOrBachelors || undefined,
+  };
 
   let propTypeLabel = '';
   let category = 'residential';
@@ -113,16 +131,16 @@ async function resolveCatchAll(citySlug, city, catchAll, page) {
   const perPage = 12;
   filters.page = page;
   filters.limit = perPage;
-  filters.sort = '-createdAt';
+  filters.sort = SORT_MAP[extraFilters.sort] || '-createdAt';
   const result = await getProperties(filters, { revalidate: 900 });
   const properties = result?.data || [];
   const total = result?.total ?? properties.length;
   const totalPages = result?.totalPages || Math.max(1, Math.ceil(total / perPage));
 
-  const title = `${propTypeLabel} for ${tn} in ${cityName} | PRObroker`;
-  const desc = `Browse ${total} verified ${propTypeLabel.toLowerCase()} for ${tw} in ${cityName}. Updated daily with prices, photos, and details on PRObroker.`;
-  const canonical = `${SITE_URL}/${citySlug}/${catchAll}/`;
-  const h1 = `${total}+ ${propTypeLabel} for ${tn} in ${cityName}`;
+  const title = `${propTypeLabel} for ${tn} in ${placeName} | PRObroker`;
+  const desc = `Browse ${total} verified ${propTypeLabel.toLowerCase()} for ${tw} in ${placeName}. Updated daily with prices, photos, and details on PRObroker.`;
+  const canonical = `${SITE_URL}/${citySlug}/${areaSlug ? `${areaSlug}/` : ''}${catchAll}/`;
+  const h1 = `${propTypeLabel} for ${tn} in ${placeName} – ${total}+ Listings`;
 
   let popularAreas = [];
   if (city) {
@@ -136,14 +154,15 @@ async function resolveCatchAll(citySlug, city, catchAll, page) {
       city: city || { name: cityName, slug: citySlug },
       category, transactionType, properties, total, page, totalPages,
       popularAreas, societies: [],
+      activeFilters: extraFilters,
     },
   };
 }
 
-async function resolveTwoSegments(citySlug, areaSlug, seg3, page) {
+async function resolveTwoSegments(citySlug, areaSlug, seg3, page, filters = {}) {
   const mCat = seg3.match(CATEGORY_TRANS_RE);
   if (mCat) {
-    const data = await fetchListingData({ citySlug, category: mCat[1], trans: mCat[2], areaSlug, page });
+    const data = await fetchListingData({ citySlug, category: mCat[1], trans: mCat[2], areaSlug, page, filters });
     return { type: 'area-listing', data };
   }
 
@@ -152,6 +171,21 @@ async function resolveTwoSegments(citySlug, areaSlug, seg3, page) {
     getArea(areaSlug, { revalidate: 900 }),
     getSociety(seg3, { revalidate: 900 }),
   ]);
+
+  // Area-scoped SEO landing pages: /{city}/{area}/{type}s-for-{trans}/,
+  // /{city}/{area}/{n}-bhk-flats-for-{trans}/, /{city}/{area}/flats-under-{n}-{unit}/.
+  // Only if the segment isn't a real society, so society URLs keep priority.
+  if (!society && area) {
+    const looksLikeListing =
+      /^(\d+)-bhk-flats-for-(sale|rent)$/.test(seg3) ||
+      /^flats-under-(\d+)-(lakhs|crore)$/.test(seg3) ||
+      /^([a-z]+)-for-(sale|rent)$/.test(seg3);
+    if (looksLikeListing) {
+      const res = await resolveCatchAll(citySlug, city, seg3, page, filters, areaSlug, area);
+      if (res.type !== 'notfound') return res;
+    }
+  }
+
   if (!society) return { type: 'notfound' };
 
   const societyId = society.id || society._id;

@@ -16,7 +16,7 @@ export default async function ListingsPage({ searchParams }) {
 
   let data = { listings: [], total: 0, total_pages: 1, cities: [] };
   try {
-    data = await adminFetchJson(`/admin/properties?${qs}`);
+    data = await adminFetchJson(`/admin/listings?${qs}`);
   } catch (e) {
     data = { listings: [], total: 0, total_pages: 1, cities: [], error: e.message };
   }

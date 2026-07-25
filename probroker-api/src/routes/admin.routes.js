@@ -66,6 +66,7 @@ router.get('/export-backup', admin.exportBackup);
 router.get('/settings', admin.getSettings);
 router.post('/settings/password', admin.changeAdminPassword);
 router.post('/settings/site', admin.saveSiteSettings);
+router.post('/settings/logo-upload', upload.single('image'), admin.uploadSiteLogo);
 router.post('/settings/homepage-schema', admin.saveHomepageSchema);
 router.get('/settings/clear-homepage-schema', admin.clearHomepageSchema);
 

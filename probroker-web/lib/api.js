@@ -29,6 +29,10 @@ async function apiFetch(path, { revalidate = 900, params, method = 'GET', body, 
 }
 
 export const getCities = (opts) => apiFetch('/cities', opts).then((r) => r?.data || r || []);
+
+// Looks up a configured redirect for a URL that otherwise 404'd (source_url must match exactly,
+// including leading/trailing slashes, as stored by the admin Redirects screen).
+export const getRedirect = (pathname, opts) => apiFetch('/sitemap/redirect-lookup', { params: { path: pathname }, ...opts }).then((r) => (r?.found ? r : null));
 export const getCity = (slug, opts) => apiFetch(`/cities/${slug}`, opts).then((r) => r?.data || r || null);
 export const getAreas = (params, opts) => apiFetch('/areas', { params, ...opts }).then((r) => r?.data || r || []);
 export const getArea = (slug, opts) => apiFetch(`/areas/${slug}`, opts).then((r) => r?.data || r || null);
@@ -74,6 +78,22 @@ export const patchJson = (path, body) => postJson(path, body, 'PATCH');
 export async function clientFetch(path, options = {}) {
   const url = path.startsWith('http') ? path : `${API_URL}${path}`;
   const opts = { credentials: 'include', ...options };
+  // Server Components / route handlers (e.g. /app/admin/**/page.js) run this fetch
+  // on the Node server, which has no browser cookie jar -- credentials:'include' is a
+  // no-op there. Forward the incoming request's cookies manually so admin_token reaches
+  // the API in that context. Dynamic import keeps next/headers out of the client bundle.
+  if (typeof window === 'undefined') {
+    try {
+      const { cookies } = await import('next/headers');
+      const cookieHeader = cookies()
+        .getAll()
+        .map((c) => `${c.name}=${c.value}`)
+        .join('; ');
+      if (cookieHeader) {
+        opts.headers = { ...(opts.headers || {}), Cookie: cookieHeader };
+      }
+    } catch {}
+  }
   if (opts.body && !(opts.body instanceof FormData) && typeof opts.body !== 'string') {
     opts.body = JSON.stringify(opts.body);
   }
@@ -100,5 +120,12 @@ export async function clientFetchJson(path, options = {}) {
   }
   return data;
 }
+
+export const getSiteSettings = (opts) => apiFetch('/site-settings', opts).then((r) => r?.data || r || {});
+
+// Alias: every /app/admin/**/page.js calls adminFetchJson, but only clientFetchJson
+// was ever exported here. Re-export it under the expected name so the whole admin
+// section (dashboard, listings, societies, cities, areas, settings, etc.) can fetch data.
+export const adminFetchJson = clientFetchJson;
 
 export { apiFetch };

@@ -31,8 +31,8 @@ export default function AreaEditForm({ area }) {
     setSaving(true);
     setMessage(null);
     try {
-      await clientFetchJson(`/admin/areas/${area.id}`, {
-        method: 'PATCH',
+      await clientFetchJson(`/admin/areas/edit/${area.id}`, {
+        method: 'POST',
         body: JSON.stringify({ ...form, faqs })
       });
       setMessage({ type: 'success', text: 'Saved successfully' });

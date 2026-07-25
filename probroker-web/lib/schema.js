@@ -1,6 +1,18 @@
 import { SITE_URL } from './config';
 import { buildPropertyTitle, buildPropertySlug } from './format';
 
+// schema.org addressRegion expects the administrative region (state), not the city.
+// Extend this as new cities are added.
+const STATE_BY_CITY = {
+  Ahmedabad: 'Gujarat',
+  Gandhinagar: 'Gujarat',
+  Surat: 'Gujarat',
+  Vadodara: 'Gujarat',
+  Rajkot: 'Gujarat',
+  Pune: 'Maharashtra',
+  Mumbai: 'Maharashtra',
+};
+
 // Organization schema — homepage only.
 export function organizationSchema() {
   return {
@@ -51,18 +63,26 @@ export function realEstateListingSchema(property, desc, canonicalUrl) {
     name: title,
     description: desc,
     url: canonicalUrl,
-    image: property.photos?.[0] || '',
+    image: property.photos?.[0] || `${SITE_URL}/og-default.jpg`,
     offers: {
       '@type': 'Offer',
       price: String(property.price || ''),
       priceCurrency: 'INR',
+      availability: 'https://schema.org/InStock',
+      url: canonicalUrl,
     },
     address: {
       '@type': 'PostalAddress',
       addressLocality: property.areaName,
-      addressRegion: property.cityName,
+      // addressRegion must be the STATE, not the city (city is addressLocality's parent).
+      addressRegion: STATE_BY_CITY[property.cityName] || 'Gujarat',
       addressCountry: 'IN',
     },
+    ...(property.bhk ? { numberOfRooms: property.bhk } : {}),
+    ...(property.sqft
+      ? { floorSize: { '@type': 'QuantitativeValue', value: property.sqft, unitCode: 'FTK' } }
+      : {}),
+    ...(property.createdAt ? { datePosted: property.createdAt } : {}),
   };
 }
 
@@ -77,7 +97,7 @@ export function residenceSchema(society, area, city, desc, canonicalUrl) {
     address: {
       '@type': 'PostalAddress',
       addressLocality: area?.name,
-      addressRegion: city?.name,
+      addressRegion: STATE_BY_CITY[city?.name] || 'Gujarat',
       addressCountry: 'IN',
     },
   };
@@ -120,6 +140,7 @@ export function itemListSchema(properties, baseUrl) {
   return {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
+    numberOfItems: properties.length,
     itemListElement: properties.map((p, i) => {
       const slug = p.slug || buildPropertySlug(p);
       return {

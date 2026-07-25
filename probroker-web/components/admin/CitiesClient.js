@@ -19,7 +19,7 @@ export default function CitiesClient({ cities }) {
     setSaving(true);
     setError('');
     try {
-      await clientFetchJson('/admin/cities', { method: 'POST', body: JSON.stringify(form) });
+      await clientFetchJson('/admin/cities/add', { method: 'POST', body: JSON.stringify(form) });
       setOpen(false);
       router.refresh();
     } catch (err) {

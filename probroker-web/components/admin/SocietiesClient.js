@@ -24,7 +24,7 @@ export default function SocietiesClient({ societies, areas }) {
     setSaving(true);
     setError('');
     try {
-      await clientFetchJson('/admin/societies', {
+      await clientFetchJson('/admin/societies/add', {
         method: 'POST',
         body: JSON.stringify({ ...form, amenities: form.amenities.split(',').map((s) => s.trim()).filter(Boolean) })
       });
@@ -40,7 +40,7 @@ export default function SocietiesClient({ societies, areas }) {
   async function toggleFeatured(id) {
     setBusyId(id);
     try {
-      await clientFetchJson(`/admin/societies/${id}/toggle-featured`, { method: 'POST' });
+      await clientFetchJson(`/admin/societies/toggle-featured/${id}`, { method: 'POST' });
       router.refresh();
     } catch (e) {
       alert('Error: ' + e.message);
@@ -53,7 +53,7 @@ export default function SocietiesClient({ societies, areas }) {
     if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
     setBusyId(id);
     try {
-      await clientFetchJson(`/admin/societies/${id}`, { method: 'DELETE' });
+      await clientFetchJson(`/admin/societies/delete/${id}`, { method: 'POST' });
       router.refresh();
     } catch (e) {
       alert('Error: ' + e.message);

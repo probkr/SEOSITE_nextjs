@@ -11,10 +11,14 @@ export default function SettingsClient({ settings, homepageSchema }) {
   const [siteForm, setSiteForm] = useState({
     site_name: settings.site_name || 'PRObroker',
     contact_phone: settings.contact_phone || '',
-    whatsapp: settings.whatsapp || ''
+    whatsapp: settings.whatsapp || '',
+    logo_url: settings.logo_url || '',
+    logo_width: settings.logo_width || 0
   });
   const [siteMsg, setSiteMsg] = useState(null);
   const [siteSaving, setSiteSaving] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoMsg, setLogoMsg] = useState(null);
 
   const [r2Status, setR2Status] = useState(null);
   const [r2Testing, setR2Testing] = useState(false);
@@ -55,6 +59,27 @@ export default function SettingsClient({ settings, homepageSchema }) {
     }
   }
 
+  async function uploadLogo(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    setLogoMsg(null);
+    setLogoUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('image', file);
+      const res = await clientFetchJson('/admin/settings/logo-upload', { method: 'POST', body: fd });
+      const nextForm = { ...siteForm, logo_url: res.url };
+      setSiteForm(nextForm);
+      await clientFetchJson('/admin/settings/site', { method: 'POST', body: JSON.stringify(nextForm) });
+      setLogoMsg({ type: 'success', text: 'Logo uploaded and saved' });
+    } catch (err) {
+      setLogoMsg({ type: 'error', text: err.message });
+    } finally {
+      setLogoUploading(false);
+      e.target.value = '';
+    }
+  }
+
   async function testR2() {
     setR2Testing(true);
     setR2Status(null);
@@ -90,7 +115,7 @@ export default function SettingsClient({ settings, homepageSchema }) {
   async function clearSchema() {
     if (!confirm('Clear custom schema?')) return;
     try {
-      await clientFetchJson('/admin/settings/homepage-schema', { method: 'DELETE' });
+      await clientFetchJson('/admin/settings/clear-homepage-schema');
       setSchema('');
       setSchemaMsg({ type: 'success', text: 'Homepage schema cleared' });
     } catch (err) {
@@ -136,6 +161,21 @@ export default function SettingsClient({ settings, homepageSchema }) {
             <div className="mb-3">
               <label className="block text-xs font-semibold mb-1">WhatsApp Number</label>
               <input type="tel" placeholder="For property inquiries" className="w-full border border-gray-200 rounded-md px-2.5 py-2 text-sm" value={siteForm.whatsapp} onChange={(e) => setSiteForm({ ...siteForm, whatsapp: e.target.value })} />
+            </div>
+            <div className="mb-3">
+              <label className="block text-xs font-semibold mb-1">Site Logo</label>
+              {siteForm.logo_url && (
+                <img src={siteForm.logo_url} alt="Logo preview" style={{ width: (siteForm.logo_width || 160) + 'px' }} className="mb-2 border border-gray-200 rounded-md p-2 bg-gray-50" />
+              )}
+              <input type="file" accept="image/*" onChange={uploadLogo} disabled={logoUploading} className="text-sm" />
+              {logoUploading && <p className="text-xs text-gray-400 mt-1">Uploading...</p>}
+              {logoMsg && <p className={`text-xs mt-1 ${logoMsg.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>{logoMsg.text}</p>}
+              {siteForm.logo_url && (
+                <div className="mt-2">
+                  <label className="block text-xs font-semibold mb-1">Logo Width (px)</label>
+                  <input type="number" min="40" max="400" className="w-32 border border-gray-200 rounded-md px-2.5 py-2 text-sm" value={siteForm.logo_width || 160} onChange={(e) => setSiteForm({ ...siteForm, logo_width: parseInt(e.target.value) || 0 })} />
+                </div>
+              )}
             </div>
             <button type="submit" disabled={siteSaving} className="bg-primary text-white rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-60">{siteSaving ? 'Saving…' : 'Save Settings'}</button>
           </form>

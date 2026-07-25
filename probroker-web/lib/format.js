@@ -90,3 +90,13 @@ export function fmtPropDesc(p) {
 }
 
 // Alias used by adm
+export function formatDate(dateInput) {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+export function formatPrice(value) {
+  return fmtPrice(value);
+}

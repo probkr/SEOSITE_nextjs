@@ -43,7 +43,7 @@ app.use('/api/v1', uploadRoutes);
 app.use('/api/v1/sitemap', sitemapRoutes);
 
 // ---- Admin JSON API (behind JWT auth, consumed by the Next.js admin panel under /admin/...) ----
-app.use('/api/admin', adminRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });

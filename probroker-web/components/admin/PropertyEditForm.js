@@ -55,7 +55,7 @@ export default function PropertyEditForm({ property, cities, areas, societies })
       const fd = new FormData();
       fd.append('file', file);
       try {
-        const res = await clientFetch(`/admin/properties/${property.propertyId}/upload-image`, { method: 'POST', body: fd });
+        const res = await clientFetch(`/admin/listings/${property.propertyId}/upload-image`, { method: 'POST', body: fd });
         const data = await res.json();
         if (data.success) {
           setImages((imgs) => [
@@ -110,8 +110,8 @@ export default function PropertyEditForm({ property, cities, areas, societies })
       // Property field data is saved independently of photo uploads (which already
       // happened per-file above) — mirrors the old admin's "save-first-then-photos"
       // resilience: losing the image metadata PATCH never loses the core listing.
-      await clientFetchJson(`/admin/properties/${property.propertyId}`, {
-        method: 'PATCH',
+      await clientFetchJson(`/admin/listings/${property.propertyId}/edit`, {
+        method: 'POST',
         body: JSON.stringify({
           ...form,
           bhk: form.category === 'commercial' ? null : Number(form.bhk) || null,

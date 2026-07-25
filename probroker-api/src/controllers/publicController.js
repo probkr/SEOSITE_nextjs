@@ -6,10 +6,21 @@ const Property = require('../models/Property');
 const Inquiry = require('../models/Inquiry');
 const OwnerListing = require('../models/OwnerListing');
 const BlogPost = require('../models/BlogPost');
+const Setting = require('../models/Setting');
 const { generatePropertySlug, generatePropertyId } = require('../services/slugify');
 const { getCurrentUser } = require('../middleware/userAuth');
 
 const esc = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// ---------- Site settings (public, safe subset) ----------
+exports.getSiteSettings = async (req, res) => {
+  const s = (await Setting.findOne({ key: 'site' }, { _id: 0 }).lean()) || {};
+  res.json({
+    site_name: s.site_name || 'PRObroker',
+    logo_url: s.logo_url || '',
+    logo_width: s.logo_width || 0,
+  });
+};
 
 // ---------- Cities ----------
 exports.listCities = async (req, res) => {
@@ -67,6 +78,10 @@ exports.listProperties = async (req, res) => {
     bhk, min_price, minPrice, max_price, maxPrice,
     property_type, propertyType,
     furnishing, parking, familyOrBachelors,
+    minSqft, maxSqft, min_sqft, max_sqft,
+    totalFloors, minFloors, maxFloors,
+    maxAge, minAge, ageOfProperty,
+    postedBy, postedSince,
     search, q,
     sort, sortBy,
     societyId, areaId, cityId,
@@ -109,6 +124,53 @@ exports.listProperties = async (req, res) => {
   if (furnishing) query.furnishing = { $regex: esc(furnishing), $options: 'i' };
   if (parking && String(parking).toLowerCase() === 'true') query.parking = true;
   if (familyOrBachelors) query.familyOrBachelors = { $regex: `^${esc(familyOrBachelors)}$`, $options: 'i' };
+
+  // --- Area (sqft) range ---
+  const _minSqft = min_sqft ?? minSqft;
+  const _maxSqft = max_sqft ?? maxSqft;
+  if (_minSqft !== undefined || _maxSqft !== undefined) {
+    query.sqft = {};
+    if (_minSqft !== undefined && _minSqft !== '') query.sqft.$gte = Number(_minSqft);
+    if (_maxSqft !== undefined && _maxSqft !== '') query.sqft.$lte = Number(_maxSqft);
+    if (!Object.keys(query.sqft).length) delete query.sqft;
+  }
+
+  // --- Total floors (multi-select CSV, or min/max range) ---
+  if (totalFloors) {
+    const fl = String(totalFloors).split(',').map((f) => parseInt(f, 10)).filter((f) => !Number.isNaN(f));
+    if (fl.length) query.totalFloors = { $in: fl };
+  } else if (minFloors !== undefined || maxFloors !== undefined) {
+    query.totalFloors = {};
+    if (minFloors !== undefined && minFloors !== '') query.totalFloors.$gte = Number(minFloors);
+    if (maxFloors !== undefined && maxFloors !== '') query.totalFloors.$lte = Number(maxFloors);
+    if (!Object.keys(query.totalFloors).length) delete query.totalFloors;
+  }
+
+  // --- Age of property (years) ---
+  if (ageOfProperty !== undefined && ageOfProperty !== '') {
+    query.ageOfProperty = Number(ageOfProperty);
+  } else if (minAge !== undefined || maxAge !== undefined) {
+    query.ageOfProperty = {};
+    if (minAge !== undefined && minAge !== '') query.ageOfProperty.$gte = Number(minAge);
+    if (maxAge !== undefined && maxAge !== '') query.ageOfProperty.$lte = Number(maxAge);
+    if (!Object.keys(query.ageOfProperty).length) delete query.ageOfProperty;
+  }
+
+  // --- Posted by (owner vs broker/probroker) ---
+  if (postedBy) {
+    const pb = String(postedBy).toLowerCase();
+    if (pb === 'owner') query.source = 'owner';
+    else if (pb === 'broker' || pb === 'probroker' || pb === 'agent') query.source = 'probroker';
+  }
+
+  // --- Posted since (days ago) ---
+  if (postedSince) {
+    const days = parseInt(postedSince, 10);
+    if (!Number.isNaN(days) && days > 0) {
+      const cutoff = new Date(Date.now() - days * 86400000).toISOString();
+      query.createdAt = { $gte: cutoff };
+    }
+  }
 
   if (area) {
     const areaDoc = await Area.findOne({ slug: { $regex: `^${esc(area)}$`, $options: 'i' } }, { _id: 0 }).lean();

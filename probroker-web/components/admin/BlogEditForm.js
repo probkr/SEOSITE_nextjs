@@ -34,8 +34,8 @@ export default function BlogEditForm({ post, isNew }) {
       Object.entries(form).forEach(([k, v]) => fd.append(k, v ?? ''));
       if (featuredImageFile) fd.append('featured_image_file', featuredImageFile);
 
-      const path = isNew ? '/admin/blog' : `/admin/blog/${post.id}`;
-      const res = await clientFetch(path, { method: isNew ? 'POST' : 'PATCH', body: fd });
+      const path = '/admin/blog/save';
+      const res = await clientFetch(path, { method: 'POST', body: fd });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || `Save failed (${res.status})`);
@@ -58,7 +58,7 @@ export default function BlogEditForm({ post, isNew }) {
     if (!confirm('Delete this post permanently?')) return;
     setDeleting(true);
     try {
-      await clientFetchJson(`/admin/blog/${post.id}`, { method: 'DELETE' });
+      await clientFetchJson(`/admin/blog/delete/${post.id}`, { method: 'POST' });
       router.push('/admin/blog');
     } catch (err) {
       alert('Delete failed: ' + err.message);

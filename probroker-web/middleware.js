@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const ADMIN_COOKIE_NAME = 'probroker_admin_token';
+const ADMIN_COOKIE_NAME = 'admin_token';
 
 // Protects every /admin/* route except /admin/login. Redirects to /admin/login
 // when the httpOnly JWT admin cookie is absent. Actual token validation happens

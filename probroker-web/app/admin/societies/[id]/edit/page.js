@@ -7,7 +7,7 @@ export default async function SocietyEditPage({ params }) {
   let society, areas;
   try {
     [society, areas] = await Promise.all([
-      adminFetchJson(`/admin/societies/${params.id}`),
+      adminFetchJson(`/admin/societies/edit/${params.id}`),
       adminFetchJson('/admin/areas?all=1')
     ]);
   } catch (e) {
@@ -19,7 +19,7 @@ export default async function SocietyEditPage({ params }) {
         <a href="/admin/societies" className="text-gray-500 text-sm">&larr; Back to Societies</a>
         <h2 className="text-lg font-bold text-gray-900">Edit: {society.name}</h2>
       </div>
-      <SocietyEditForm society={society} areas={areas.areas || areas || []} />
+      <SocietyEditForm society={society.society || society} areas={areas.areas || areas || []} />
     </div>
   );
 }

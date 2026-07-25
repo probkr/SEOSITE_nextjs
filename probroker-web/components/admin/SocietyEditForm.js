@@ -61,7 +61,7 @@ export default function SocietyEditForm({ society, areas }) {
       if (brochureFile) fd.append('brochure_file', brochureFile);
       if (removeBrochure) fd.append('remove_brochure', '1');
 
-      const res = await clientFetch(`/admin/societies/${society.id}`, { method: 'PATCH', body: fd });
+      const res = await clientFetch(`/admin/societies/edit/${society.id}`, { method: 'POST', body: fd });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || `Save failed (${res.status})`);

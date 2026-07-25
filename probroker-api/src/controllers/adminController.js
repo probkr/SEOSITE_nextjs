@@ -957,8 +957,8 @@ exports.changeAdminPassword = async (req, res) => {
 };
 
 exports.saveSiteSettings = async (req, res) => {
-  const { site_name = 'PRObroker', contact_phone = '', whatsapp = '' } = req.body;
-  await Setting.updateOne({ key: 'site' }, { $set: { key: 'site', site_name, contact_phone, whatsapp } }, { upsert: true });
+  const { site_name = 'PRObroker', contact_phone = '', whatsapp = '', logo_url = '', logo_width = 0 } = req.body;
+  await Setting.updateOne({ key: 'site' }, { $set: { key: 'site', site_name, contact_phone, whatsapp, logo_url, logo_width } }, { upsert: true });
   res.json({ success: true });
 };
 
@@ -1147,6 +1147,14 @@ exports.uploadBlogImage = async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   if (req.file.size > 10 * 1024 * 1024) return res.status(400).json({ error: 'File too large (max 10MB)' });
   const result = await uploadImageToR2(req.file.buffer, req.file.originalname, 'blog');
+  if (result.success) return res.json({ url: result.url });
+  res.status(500).json({ error: result.error || 'Upload failed' });
+};
+
+exports.uploadSiteLogo = async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+  if (req.file.size > 10 * 1024 * 1024) return res.status(400).json({ error: 'File too large (max 10MB)' });
+  const result = await uploadImageToR2(req.file.buffer, req.file.originalname, 'site');
   if (result.success) return res.json({ url: result.url });
   res.status(500).json({ error: result.error || 'Upload failed' });
 };

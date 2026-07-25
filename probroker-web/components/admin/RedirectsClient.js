@@ -19,7 +19,7 @@ export default function RedirectsClient({ redirects }) {
     if (!form.source_url.trim()) { setError('Source URL is required'); return; }
     setSaving(true);
     try {
-      await clientFetchJson('/admin/redirects', { method: 'POST', body: JSON.stringify(form) });
+      await clientFetchJson('/admin/redirects/add', { method: 'POST', body: JSON.stringify(form) });
       setForm({ source_url: '', destination_url: '/', redirect_type: '301' });
       router.refresh();
     } catch (err) {
@@ -45,7 +45,7 @@ export default function RedirectsClient({ redirects }) {
     if (!confirm('Delete this redirect?')) return;
     setBusyId(id);
     try {
-      await clientFetchJson(`/admin/redirects/${id}`, { method: 'DELETE' });
+      await clientFetchJson(`/admin/redirects/${id}/delete`, { method: 'POST' });
       router.refresh();
     } catch (e) {
       alert('Error: ' + e.message);

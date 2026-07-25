@@ -69,4 +69,13 @@ export default async function AreaLandingView({ area, city }) {
           <div className="space-y-4 max-w-3xl">
             {faqs.map((f, i) => (
               <div key={i} className="card p-4">
-                <div className="font-semibold text-gray-900">{f.ques
+                <div className="font-semibold text-gray-900">{f.question}</div>
+                <div className="text-gray-600 mt-1">{f.answer}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

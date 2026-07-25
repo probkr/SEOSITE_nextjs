@@ -28,7 +28,7 @@ export default function PageEditForm({ slug, label, url, initial }) {
     }
     setSaving(true);
     try {
-      await clientFetchJson(`/admin/pages/${slug}`, { method: 'PATCH', body: JSON.stringify(form) });
+      await clientFetchJson(`/admin/pages/edit/${slug}`, { method: 'POST', body: JSON.stringify(form) });
       setMessage({ type: 'success', text: 'Page saved successfully' });
       router.refresh();
     } catch (err) {

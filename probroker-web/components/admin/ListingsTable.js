@@ -18,7 +18,7 @@ export default function ListingsTable({ listings }) {
     if (p.status === 'active' && !confirm('Mark as sold?')) return;
     setBusyId(p.propertyId);
     try {
-      await clientFetchJson(`/admin/properties/${p.propertyId}/status`, {
+      await clientFetchJson(`/admin/listings/${p.propertyId}/status`, {
         method: 'POST',
         body: JSON.stringify({ status: newStatus })
       });
@@ -34,7 +34,7 @@ export default function ListingsTable({ listings }) {
     if (!confirm('Delete this property?')) return;
     setBusyId(p.propertyId);
     try {
-      await clientFetchJson(`/admin/properties/${p.propertyId}`, { method: 'DELETE' });
+      await clientFetchJson(`/admin/listings/${p.propertyId}/delete`, { method: 'POST' });
       router.refresh();
     } catch (e) {
       alert('Error: ' + e.message);
