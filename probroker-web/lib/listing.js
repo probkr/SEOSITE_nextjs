@@ -91,6 +91,7 @@ export async function fetchListingData({ citySlug, category, trans, areaSlug, pa
   const maxPrice = result?.maxPrice || 0;
   const priceRangeText = minPrice && maxPrice ? ` Price range ${fmtPrice(minPrice)} to ${fmtPrice(maxPrice)}.` : '';
 
+  const pageSuffix = page > 1 ? ` \u2013 Page ${page}` : '';
   const title = `${total}+ ${catName} Properties for ${tn} in ${location}${pageSuffix} | PRObroker`;
   const desc = `Browse ${total} verified ${catName.toLowerCase()} properties for ${tw} in ${location}.${priceRangeText} Updated daily on PRObroker.`;
   const h1 = `${total}+ ${catName} Properties for ${tn} in ${location}${pageSuffix}`;
@@ -103,7 +104,6 @@ export async function fetchListingData({ citySlug, category, trans, areaSlug, pa
     : page > 1
       ? `${cleanPath}?page=${page}`
       : cleanPath;
-  const pageSuffix = page > 1 ? ` \u2013 Page ${page}` : '';
 
   let popularAreas = [];
   if (city) {
