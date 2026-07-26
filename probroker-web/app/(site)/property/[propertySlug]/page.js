@@ -24,7 +24,9 @@ export async function generateMetadata({ params }) {
   }
   const correctSlug = prop.slug || buildPropertySlug(prop);
   const canonical = `${SITE_URL}/property/${correctSlug}/`;
-  const title = `${buildPropertyTitle(prop)} | PRObroker`;
+  const rawTitle = buildPropertyTitle(prop);
+  const shortTitle = rawTitle.length > 47 ? `${rawTitle.slice(0, 47).replace(/[\s,\-]+$/, '')}…` : rawTitle;
+  const title = `${shortTitle} | PRObroker`;
   const desc = prop.aiDescription || fmtPropDesc(prop);
   const image = prop.photos?.[0];
   return {
@@ -67,6 +69,14 @@ export default async function PropertyPage({ params }) {
   }
   if (prop.areaName && prop.citySlug && prop.areaSlug) {
     breadcrumbItems.push({ name: prop.areaName, url: `${SITE_URL}/${prop.citySlug}/${prop.areaSlug}/` });
+  }
+  if (prop.citySlug && prop.category && prop.transactionType) {
+    const bTrans = prop.transactionType === 'buy' ? 'sale' : 'rent';
+    const bCat = prop.category === 'commercial' ? 'Commercial' : 'Residential';
+    breadcrumbItems.push({
+      name: `${bCat} for ${bTrans === 'sale' ? 'Sale' : 'Rent'}`,
+      url: `${SITE_URL}/${prop.citySlug}/${prop.category}-property-for-${bTrans}/`,
+    });
   }
   breadcrumbItems.push({ name: title, url: canonical });
   const breadcrumbLd = breadcrumbSchema(breadcrumbItems);

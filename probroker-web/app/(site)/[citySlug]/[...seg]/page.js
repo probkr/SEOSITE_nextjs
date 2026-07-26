@@ -12,7 +12,8 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params, searchParams }) {
   const page = parseInt(searchParams?.page || '1', 10) || 1;
-  const result = await resolveCitySegments(params.citySlug, params.seg, page);
+  const metaFilters = parseListingFilters(searchParams);
+  const result = await resolveCitySegments(params.citySlug, params.seg, page, metaFilters);
 
   if (result.type === 'notfound') return { robots: { index: false, follow: false } };
 
@@ -21,8 +22,17 @@ export async function generateMetadata({ params, searchParams }) {
     return {
       title: data.title,
       description: data.metaDescription,
+      robots: data.noindex ? { index: false, follow: true } : { index: true, follow: true },
       alternates: { canonical: data.canonical },
       openGraph: { title: data.title, description: data.metaDescription, url: data.canonical },
+      ...(data.prevUrl || data.nextUrl
+        ? {
+            other: {
+              ...(data.prevUrl ? { 'link-prev': data.prevUrl } : {}),
+              ...(data.nextUrl ? { 'link-next': data.nextUrl } : {}),
+            },
+          }
+        : {}),
     };
   }
 

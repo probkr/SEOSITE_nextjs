@@ -137,10 +137,12 @@ async function resolveCatchAll(citySlug, city, catchAll, page, extraFilters = {}
   const total = result?.total ?? properties.length;
   const totalPages = result?.totalPages || Math.max(1, Math.ceil(total / perPage));
 
-  const title = `${propTypeLabel} for ${tn} in ${placeName} | PRObroker`;
+  const pageSuffix = page > 1 ? ` – Page ${page}` : '';
+  const title = `${propTypeLabel} for ${tn} in ${placeName}${pageSuffix} | PRObroker`;
   const desc = `Browse ${total} verified ${propTypeLabel.toLowerCase()} for ${tw} in ${placeName}. Updated daily with prices, photos, and details on PRObroker.`;
-  const canonical = `${SITE_URL}/${citySlug}/${areaSlug ? `${areaSlug}/` : ''}${catchAll}/`;
-  const h1 = `${propTypeLabel} for ${tn} in ${placeName} – ${total}+ Listings`;
+  const cleanPath = `${SITE_URL}/${citySlug}/${areaSlug ? `${areaSlug}/` : ''}${catchAll}/`;
+  const canonical = extraFilters.hasFilters ? cleanPath : page > 1 ? `${cleanPath}?page=${page}` : cleanPath;
+  const h1 = `${propTypeLabel} for ${tn} in ${placeName} – ${total}+ Listings${pageSuffix}`;
 
   let popularAreas = [];
   if (city) {
@@ -153,6 +155,9 @@ async function resolveCatchAll(citySlug, city, catchAll, page, extraFilters = {}
       title, metaDescription: desc, canonical, h1,
       city: city || { name: cityName, slug: citySlug },
       category, transactionType, properties, total, page, totalPages,
+      noindex: !!extraFilters.hasFilters,
+      prevUrl: page > 2 ? `${cleanPath}?page=${page - 1}` : page === 2 ? cleanPath : null,
+      nextUrl: page < totalPages ? `${cleanPath}?page=${page + 1}` : null,
       popularAreas, societies: [],
       activeFilters: extraFilters,
     },
