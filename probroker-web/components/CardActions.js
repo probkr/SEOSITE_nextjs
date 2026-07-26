@@ -49,7 +49,7 @@ export default function CardActions({ id, title, path }) {
         type="button"
         onClick={toggleSave}
         aria-label={saved ? 'Remove from saved' : 'Save property'}
-        className={`w-8 h-8 rounded-full flex items-center justify-center shadow-card transition-colors ${
+        className={`w-11 h-11 rounded-full flex items-center justify-center shadow-card transition-colors ${
           saved ? 'bg-primary text-white' : 'bg-white/95 text-gray-500 hover:text-primary'
         }`}
       >
@@ -61,7 +61,7 @@ export default function CardActions({ id, title, path }) {
         type="button"
         onClick={share}
         aria-label="Share property"
-        className="w-8 h-8 rounded-full bg-white/95 text-gray-500 hover:text-primary shadow-card flex items-center justify-center"
+        className="w-11 h-11 rounded-full bg-white/95 text-gray-500 hover:text-primary shadow-card flex items-center justify-center"
       >
         <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
           <circle cx="15" cy="4.5" r="2.2" />

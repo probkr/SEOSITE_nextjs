@@ -17,7 +17,11 @@ export default function Header({ settings } = {}) {
   return (
     <header className="bg-white/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-40 shadow-sm">
       <div className="container-px flex items-center justify-between h-16">
-        <Link href="/" className="flex items-center gap-1.5 text-2xl font-extrabold font-heading text-primary tracking-tight">
+        <Link
+          href="/"
+          aria-label={`${(settings && settings.site_name) || 'PRObroker'} home`}
+          className="flex items-center gap-1.5 text-2xl font-extrabold font-heading text-primary tracking-tight"
+        >
           {logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={logoUrl} alt={(settings && settings.site_name) || 'PRObroker'} style={{ width: `${logoWidth}px` }} className="h-auto max-h-10 object-contain" />

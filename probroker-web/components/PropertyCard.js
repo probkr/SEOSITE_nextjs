@@ -41,7 +41,7 @@ export default function PropertyCard({ p, variant = 'grid' }) {
 
   const titleRow = (
     <div className="flex items-start gap-1.5">
-      <div className="text-[15px] font-semibold text-gray-900 line-clamp-1 flex-1">{title}</div>
+      <h3 className="text-[15px] font-semibold text-gray-900 line-clamp-1 flex-1">{title}</h3>
       {isVerified && (
         <span className="badge bg-green-50 text-green-700 border border-green-200 shrink-0 !py-0.5">
           <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">

@@ -8,7 +8,7 @@ export default async function SiteLayout({ children }) {
   return (
     <>
       <Header settings={settings} />
-      <main>{children}</main>
+      <main id="main-content">{children}</main>
       <Footer settings={settings} />
       <LeadPopup />
     </>
