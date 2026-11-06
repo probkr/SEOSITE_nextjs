@@ -6,6 +6,13 @@ import { useEffect, useRef } from 'react';
 // (iOS drops the whole code into the first box) fills every box at once.
 export default function OtpInput({ value, onChange, length = 4, disabled, invalid, autoFocus }) {
   const refs = useRef([]);
+  // Focus moves before React re-renders, so the focus guard must read the newest value.
+  const latest = useRef(value);
+  latest.current = value;
+  const commit = (next) => {
+    latest.current = next;
+    onChange(next);
+  };
   const focusAt = (i) => refs.current[Math.max(0, Math.min(i, length - 1))]?.focus();
 
   useEffect(() => {
@@ -15,7 +22,7 @@ export default function OtpInput({ value, onChange, length = 4, disabled, invali
 
   function fill(code) {
     const next = code.replace(/\D/g, '').slice(0, length);
-    onChange(next);
+    commit(next);
     focusAt(next.length);
   }
 
@@ -24,7 +31,7 @@ export default function OtpInput({ value, onChange, length = 4, disabled, invali
     if (typed.length >= length) return fill(typed);
     const digit = typed.slice(-1);
     if (!digit) return;
-    onChange((value.slice(0, i) + digit + value.slice(i + 1)).slice(0, length));
+    commit((value.slice(0, i) + digit + value.slice(i + 1)).slice(0, length));
     focusAt(i + 1);
   }
 
@@ -33,7 +40,7 @@ export default function OtpInput({ value, onChange, length = 4, disabled, invali
       e.preventDefault();
       const at = value[i] ? i : i - 1;
       if (at < 0) return;
-      onChange(value.slice(0, at) + value.slice(at + 1));
+      commit(value.slice(0, at) + value.slice(at + 1));
       focusAt(at);
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
@@ -58,7 +65,7 @@ export default function OtpInput({ value, onChange, length = 4, disabled, invali
           disabled={disabled}
           onFocus={(e) => {
             // Don't let the cursor land past the first empty box.
-            if (i > value.length) focusAt(value.length);
+            if (i > latest.current.length) focusAt(latest.current.length);
             else e.target.select();
           }}
           onChange={(e) => handleChange(i, e.target.value)}
