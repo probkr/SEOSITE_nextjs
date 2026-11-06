@@ -121,12 +121,32 @@ confirmed, update DNS to make `prbroker.in` point here for real, then monitor Go
 Search Console for crawl errors over the following 1–2 weeks before decommissioning
 the old Emergent-hosted Python app.
 
-## Updating the site later (your intern's day-to-day workflow)
+## Updating the site later
+
+Merge your change into `main` and push. GitHub Actions (`.github/workflows/deploy.yml`) then:
+
+1. Checks the API code and builds the website against a stub API.
+2. Connects to the server and runs `scripts/deploy.sh` with the commit.
+3. Rebuilds only the services whose files changed.
+4. Checks the site, and puts the previous images back if the check fails.
+
+Follow each run in the repo's **Actions** tab. A push that doesn't reach `main` deploys nothing.
+
+Never edit tracked files on the server: `deploy.sh` stops if it finds any. `.env` files aren't
+tracked, so they stay on the server. After changing one, run:
 
 ```bash
-cd probroker
-git pull
-docker compose up -d --build
+docker compose up -d --force-recreate --no-deps api
+```
+
+The pipeline needs three repository secrets: `VPS_HOST`, `VPS_SSH_KEY` and `VPS_KNOWN_HOSTS`. The
+matching public key sits in the server's `authorized_keys` and may only run `scripts/deploy.sh`.
+
+To deploy by hand, use the full commit SHA of a commit on `main`:
+
+```bash
+cd /root/probroker
+bash scripts/deploy.sh <full-commit-sha>
 ```
 
 ## Logs / troubleshooting
