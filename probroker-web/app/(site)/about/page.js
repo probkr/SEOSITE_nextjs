@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getPage, getProperties, getCities, getSocieties } from '@/lib/api';
+import { getPage, getProperties, getCities, getSocietyCount } from '@/lib/api';
 import { STATIC_PAGE_DEFAULTS } from '@/lib/staticPages';
 import { SITE_URL } from '@/lib/config';
 import JsonLd from '@/components/JsonLd';
@@ -20,10 +20,10 @@ export async function generateMetadata() {
 }
 
 const WHY_US = [
-  { title: 'Zero Brokerage', desc: 'List and browse owner properties directly — no middlemen, no hidden commission.' },
+  { title: 'No Listing Fees', desc: 'Post your property for free - no hidden costs, no commission to list.' },
   { title: 'Verified Listings', desc: 'Every property is reviewed by our team before it goes live, so you deal with genuine listings.' },
   { title: 'Local Expertise', desc: 'We focus only on Ahmedabad and Gandhinagar, so our data on localities and pricing runs deep.' },
-  { title: 'Direct Owner Contact', desc: 'Talk straight to the property owner — faster answers, no games.' },
+  { title: 'Quick Responses', desc: 'Submit an enquiry and hear back fast, no waiting around.' },
 ];
 
 export default async function AboutPage() {
@@ -31,17 +31,17 @@ export default async function AboutPage() {
   const d = STATIC_PAGE_DEFAULTS[SLUG];
   const content = page.content || d.content;
 
-  const [propResult, cities, societies] = await Promise.all([
+  const [propResult, cities, societyCount] = await Promise.all([
     getProperties({ status: 'active', isApproved: true, limit: 1 }, { revalidate: 3600 }),
     getCities({ revalidate: 3600 }),
-    getSocieties({}, { revalidate: 3600 }),
+    getSocietyCount({}, { revalidate: 3600 }),
   ]);
 
   const stats = [
     { label: 'Property Listings', value: `${propResult?.total || 0}+` },
-    { label: 'Societies & Projects', value: `${(societies || []).length}+` },
+    { label: 'Societies & Projects', value: `${societyCount}+` },
     { label: 'Cities Covered', value: `${(cities || []).length}` },
-    { label: 'Brokerage Charged', value: '₹0' },
+  { label: 'Listing Fees', value: '₹0' },
   ];
 
   return (
@@ -72,7 +72,7 @@ export default async function AboutPage() {
             <h2 className="text-2xl md:text-3xl font-bold font-heading mb-4 text-gray-900">Our Mission</h2>
             <p className="text-gray-600 leading-relaxed mb-4">
               PRObroker was built to make finding and listing property in Ahmedabad and Gandhinagar simple,
-              transparent, and free of unnecessary brokerage. We connect owners directly with genuine buyers
+            transparent, and reliable. We connect owners and brokers with genuine buyers
               and tenants, backed by a team that manually verifies every listing before it goes live.
             </p>
             <p className="text-gray-600 leading-relaxed">

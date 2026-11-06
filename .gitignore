@@ -4,3 +4,10 @@ node_modules/
 .env.local
 *.log
 .DS_Store
+
+# Secrets that live on the server
+nginx/certbot/
+*.bak
+.env.*
+!.env.example
+!.env.local.example

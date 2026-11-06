@@ -1,6 +1,10 @@
 import { API_URL } from './config';
 
-async function apiFetch(path, { revalidate = 900, params, method = 'GET', body, cache } = {}) {
+// Next.js data-cache tag on every property fetch, so admin edits can clear listing/detail pages
+// immediately (app/api/revalidate) instead of waiting out the 15-minute revalidate window.
+export const PROPERTY_CACHE_TAG = 'properties';
+
+async function apiFetch(path, { revalidate = 900, params, method = 'GET', body, cache, tags } = {}) {
   let url = `${API_URL}${path}`;
   if (params) {
     const qs = new URLSearchParams(
@@ -17,7 +21,7 @@ async function apiFetch(path, { revalidate = 900, params, method = 'GET', body, 
     if (cache) {
       opts.cache = cache;
     } else {
-      opts.next = { revalidate };
+      opts.next = tags ? { revalidate, tags } : { revalidate };
     }
     const res = await fetch(url, opts);
     if (!res.ok) return null;
@@ -37,14 +41,20 @@ export const getCity = (slug, opts) => apiFetch(`/cities/${slug}`, opts).then((r
 export const getAreas = (params, opts) => apiFetch('/areas', { params, ...opts }).then((r) => r?.data || r || []);
 export const getArea = (slug, opts) => apiFetch(`/areas/${slug}`, opts).then((r) => r?.data || r || null);
 export const getSocieties = (params, opts) => apiFetch('/societies', { params, ...opts }).then((r) => r?.data || r || []);
+// The full society list is ~10 MB (13k+ docs) -- use this when only the number is needed.
+// Paged list: { data, total, page, pages }.
+export const getSocietiesPage = (params, opts) => apiFetch('/societies', { params, ...opts }).then((r) => r || { data: [], total: 0, page: 1, pages: 0 });
+export const getSocietyCount = (params, opts) => apiFetch('/societies', { params: { ...params, count: 1 }, ...opts }).then((r) => r?.count || 0);
+export const getTopAreas = (params, opts) => apiFetch('/areas-featured/top', { params, ...opts }).then((r) => r?.data || r || []);
+export const getTopSocieties =(params, opts) => apiFetch('/societies-featured/top', { params, ...opts }).then((r) => r?.data || r || []);
 export const getSociety = (slug, opts) => apiFetch(`/societies/${slug}`, opts).then((r) => r?.data || r || null);
-export const getProperties = (params, opts) => apiFetch('/properties', { params, ...opts }).then((r) => {
+export const getProperties = (params, opts) => apiFetch('/properties', { params, tags: [PROPERTY_CACHE_TAG], ...opts }).then((r) => {
   // API returns { properties, total, page, pages, ... } — normalize to { data, total, ... }
   // so every caller can use latest.data consistently regardless of the API's own key name.
   if (!r) return { data: [], total: 0 };
   return { ...r, data: r.data || r.properties || [] };
 });
-export const getProperty = (slug, opts) => apiFetch(`/properties/${slug}`, opts).then((r) => r?.data || r || null);
+export const getProperty = (slug, opts) => apiFetch(`/properties/${slug}`, { tags: [PROPERTY_CACHE_TAG], ...opts }).then((r) => r?.data || r || null);
 export const searchApi = (q, opts) => apiFetch('/search', { params: { q }, ...opts }).then((r) => r?.data || r || []);
 export const getBlogPosts = (opts) => apiFetch('/blog', opts).then((r) => {
   // API returns { posts: [...] } — normalize like getProperties above.
@@ -101,8 +111,15 @@ export async function clientFetch(path, options = {}) {
     opts.headers = { 'Content-Type': 'application/json' };
   }
   const res = await fetch(url, opts);
+  // Any successful admin change to listings must show on the public site right away.
+  const method = (opts.method || 'GET').toUpperCase();
+  if (typeof window !== 'undefined' && res.ok && method !== 'GET' && LISTING_MUTATION_RE.test(path)) {
+    fetch('/api/revalidate', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+  }
   return res;
 }
+
+const LISTING_MUTATION_RE = /^\/admin\/(listings|owner-listings|bulk-import)/;
 
 export async function clientFetchJson(path, options = {}) {
   const res = await clientFetch(path, options);

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import PropertyCard from './PropertyCard';
 import JsonLd from './JsonLd';
-import ListingFilters from './ListingFilters';
+import { ListingFilterBar, ListingResultsBar } from './ListingFilters';
 import LeadCaptureCard from './LeadCaptureCard';
 import PaginationLinks from './PaginationLinks';
 import { itemListSchema, breadcrumbSchema } from '@/lib/schema';
@@ -18,11 +18,21 @@ export default function ListingView({ data, basePath }) {
   const breadcrumbLd = breadcrumbSchema(breadcrumbItems);
 
   return (
-    <div className="container-px py-5">
+    <>
       <JsonLd data={itemListLd} />
       <JsonLd data={breadcrumbLd} />
 
-      <nav className="text-xs text-gray-500 mb-3 flex flex-wrap gap-1">
+      {/* Filters: full-width strip stuck under the header, Housing.com-style */}
+      <ListingFilterBar
+        activeFilters={activeFilters}
+        resultCount={total}
+        areas={popularAreas || []}
+        showAreaFilter={!area}
+      />
+
+    <div className="container-px pt-3 pb-6">
+
+      <nav className="text-xs text-gray-500 mb-1.5 flex flex-wrap gap-1">
         {breadcrumbItems.map((b, i) => (
           <span key={b.url} className="flex items-center gap-1">
             {i > 0 && <span>/</span>}
@@ -31,21 +41,13 @@ export default function ListingView({ data, basePath }) {
         ))}
       </nav>
 
-      <h1 className="text-xl md:text-2xl font-bold font-heading mb-2 text-gray-900">{h1}</h1>
+      <h1 className="text-xl md:text-2xl font-bold font-heading leading-snug text-gray-900">{h1}</h1>
 
       {area?.description && (
-        <p className="text-gray-600 mb-6 max-w-3xl leading-relaxed">{area.description}</p>
+        <p className="text-sm text-gray-600 mt-1 max-w-3xl leading-relaxed">{area.description}</p>
       )}
 
-      {/* Filters: full-width horizontal bar above the listing, Housing.com-style */}
-      <div className="mb-5">
-        <ListingFilters
-            activeFilters={activeFilters}
-            resultCount={total}
-            areas={popularAreas || []}
-            showAreaFilter={!area}
-          />
-      </div>
+      <ListingResultsBar activeFilters={activeFilters} resultCount={total} areas={popularAreas || []} />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
         {/* Main column: property cards */}
@@ -101,7 +103,8 @@ export default function ListingView({ data, basePath }) {
 
         {/* Right sidebar: lead capture, promotional CTA, quick links — Housing.com-style */}
         <aside className="space-y-6">
-          <div className="lg:sticky lg:top-20 space-y-6">
+          {/* Clears the sticky header (64px) + filter strip (~57px) */}
+          <div className="lg:sticky lg:top-[9rem] space-y-6">
             <LeadCaptureCard context={h1} />
 
             <div className="card p-4 bg-primary-50 border-primary-100">
@@ -139,5 +142,6 @@ export default function ListingView({ data, basePath }) {
         </aside>
       </div>
     </div>
+    </>
   );
 }

@@ -74,6 +74,10 @@ async function resolveCatchAll(citySlug, city, catchAll, page, extraFilters = {}
     postedBy: extraFilters.postedBy || undefined,
     postedSince: extraFilters.postedSince || undefined,
     familyOrBachelors: extraFilters.familyOrBachelors || undefined,
+    amenities: extraFilters.amenities || undefined,
+    hasPhotos: extraFilters.hasPhotos || undefined,
+    parking: extraFilters.parking || undefined,
+    verified: extraFilters.verified || undefined,
   };
 
   let propTypeLabel = '';

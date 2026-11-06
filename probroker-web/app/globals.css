@@ -22,3 +22,11 @@ a { @apply no-underline; }
 .bg-brand-hero { @apply bg-brand-gradient; }
 
 .badge { @apply inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full; }
+
+/* On listing pages the header sits on top of the sticky filter strip: make it solid (content
+   would show through the translucent version) and keep a clear divider so they read as two bands. */
+body:has(.filter-strip) .site-header { background-color: #fff; border-bottom-color: #e5e7eb; box-shadow: none; backdrop-filter: none; }
+
+/* Horizontal scrollers (filter bar) that still scroll by touch/trackpad but show no bar. */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

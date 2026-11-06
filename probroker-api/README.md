@@ -31,8 +31,9 @@ the database.
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | Single-admin credentials checked on login | `os.environ.get('ADMIN_USERNAME'/'ADMIN_PASSWORD')` |
 | `JWT_EXPIRES_IN` | JWT/cookie lifetime (default `7d`) | (session cookie lifetime) |
 | `R2_ENDPOINT` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET_NAME` / `R2_PUBLIC_URL` | Cloudflare R2 (S3-compatible) storage | same names in `services/r2_storage.py` |
-| `TWOFACTOR_API_KEY` / `TWOFACTOR_TEMPLATE` | 2Factor.in SMS OTP provider | same names in `services/sms_service.py`. Blank/placeholder falls back to **dev mode**, returning `dev_otp` directly in the `/api/v1/otp/send` response body. |
-| `WEBHOOK_SECRET` | Reserved for the `/api/webhook/property` equivalent (not yet wired — see "Not ported" below) | `os.environ.get('WEBHOOK_SECRET')` |
+| `TWOFACTOR_API_KEY` / `TWOFACTOR_TEMPLATE` | 2Factor.in SMS OTP provider | same names in `services/sms_service.py`. If SMS fails, OTP requests return an error. |
+| `OTP_DEV_MODE` | Local development only: `true` returns `dev_otp` in the response when SMS fails. Ignored when `NODE_ENV=production`; never set it on a server. | (new) |
+| `WEBHOOK_AUTH_KEY` | Bearer key for `POST` and `DELETE /api/v1/webhooks/listings`. Leave empty to keep the webhook off. | (new) |
 
 ## Project layout
 
@@ -86,10 +87,6 @@ renders `/admin/...` in the browser and calls this API at `/api/admin/...` under
 - **HTML admin UI, Jinja2 templates, session-cookie CSRF**: intentionally dropped per the shared
   contract -- the Next.js admin panel replaces all `templates/admin/*.html` rendering. Only the
   JSON logic behind each handler was ported.
-- **`POST /api/webhook/property`** (external webhook ingesting a single property, guarded by
-  `WEBHOOK_SECRET`) was not ported -- not in the contract's minimum endpoint set and its payload
-  shape wasn't fully specified in the time available. `WEBHOOK_SECRET` is still in `.env.example`
-  as a placeholder for whoever adds it.
 - **`POST /api/admin/seed-sample-data`** (dev-only sample data seeder using `SAMPLE_PROBROKER_DATA`)
   was not ported -- low value for a production port; `bulk-import`/`bulk-import-csv` cover the
   real-world import path and were fully ported instead.

@@ -1,57 +1,42 @@
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
-const OtpSession = require('../models/OtpSession');
 const User = require('../models/User');
 const Property = require('../models/Property');
 const OwnerListing = require('../models/OwnerListing');
 const Inquiry = require('../models/Inquiry');
 const PropertyDraft = require('../models/PropertyDraft');
-const { sendOtpSms, verifyOtpSession } = require('../services/smsService');
-const { getCurrentUser } = require('../middleware/userAuth');
+const Requirement = require('../models/Requirement');
+const { normalizePhone, isValidPhone, maskPhone, issueOtp, checkOtp } = require('../services/otpService');
+const WebUser = require('../models/WebUser');
+const { getCurrentUser, setUserSession, clearUserSession } = require('../middleware/userAuth');
+const { adminPhones } = require('../middleware/adminAuth');
+const { ensureWallet } = require('../services/creditService');
+const { sessionCookieOpts } = require('../config/cookies');
 
-function normalizePhone(raw) {
-  let phone = String(raw || '').trim().replace('+91', '').replace(/\s+/g, '');
-  if (phone.startsWith('91') && phone.length === 12) phone = phone.slice(2);
-  return phone.slice(-10);
-}
-
-const cookieOpts = () => ({
-  httpOnly: true,
-  secure: process.env.COOKIE_SECURE === 'true',
-  sameSite: 'lax',
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-});
+const cookieOpts = () => ({ ...sessionCookieOpts(), maxAge: 7 * 24 * 60 * 60 * 1000 });
 
 // ---------- OTP ----------
+// The only purposes a caller may name on /otp/*. Admin and WebUser flows set their own purpose
+// server-side, so accepting them here would let this route create OTPs for those logins.
+const PUBLIC_OTP_PURPOSES = new Set(['login', 'post-property']);
+
 exports.otpSend = async (req, res) => {
   const { phone: rawPhone, name = '', purpose = 'login' } = req.body || {};
   const phone = normalizePhone(rawPhone);
-  if (phone.length !== 10 || !/^\d+$/.test(phone)) {
+  if (!isValidPhone(phone)) {
     return res.status(400).json({ success: false, error: 'Invalid phone number. Must be 10 digits.' });
   }
-
-  const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-  const recentCount = await OtpSession.countDocuments({ phone, createdAt: { $gte: tenMinAgo } });
-  if (recentCount >= 3) {
-    return res.status(429).json({ success: false, error: 'Too many OTP requests. Please wait 10 minutes.' });
+  if (!PUBLIC_OTP_PURPOSES.has(purpose)) {
+    return res.status(400).json({ success: false, error: 'Invalid OTP purpose' });
   }
 
-  const result = await sendOtpSms(phone);
-  if (!result.success) {
-    return res.status(500).json({ success: false, error: result.error || 'Failed to send OTP' });
+  const result = await issueOtp({ phone, purpose, name });
+  if (!result.ok) {
+    return res.status(result.status).json({ success: false, error: result.error });
   }
 
-  const now = new Date();
-  const expires = new Date(now.getTime() + 10 * 60 * 1000);
-  await OtpSession.create({
-    phone, name, otp: result.otp, session_id: result.session_id || '',
-    purpose, createdAt: now.toISOString(), expiresAt: expires.toISOString(),
-    isUsed: false, attempts: 0,
-  });
-
-  const maskedPhone = `****${phone.slice(-4)}`;
-  const respData = { success: true, message: `OTP sent to ${maskedPhone}` };
-  if (result.dev_mode) respData.dev_otp = result.otp;
+  const respData = { success: true, message: `OTP sent to ${maskPhone(phone)}` };
+  if (result.devOtp && process.env.NODE_ENV !== 'production') respData.dev_otp = result.devOtp;
   res.json(respData);
 };
 
@@ -63,84 +48,113 @@ exports.otpVerify = async (req, res) => {
   if (phone.length !== 10 || otp.length !== 4) {
     return res.status(400).json({ success: false, error: 'Invalid phone or OTP format' });
   }
+  if (!PUBLIC_OTP_PURPOSES.has(purpose)) {
+    return res.status(400).json({ success: false, error: 'Invalid OTP purpose' });
+  }
+
+  const check = await checkOtp({ phone, otp, purpose });
+  if (!check.ok) {
+    return res.status(check.status).json({ success: false, error: check.error });
+  }
 
   const nowIso = new Date().toISOString();
-  const session = await OtpSession.findOne(
-    { phone, purpose, isUsed: false, expiresAt: { $gte: nowIso } },
-    { _id: 0 },
-  ).sort({ createdAt: -1 }).lean();
-
-  if (!session) {
-    return res.status(400).json({ success: false, error: 'No valid OTP session found. Please request a new OTP.' });
+  let userName = check.session.name || '';
+  const existingUser = await User.findOne({ phone }, { _id: 0 }).lean();
+  let userId;
+  if (!existingUser) {
+    userId = uuidv4();
+    await User.create({ id: userId, phone, name: userName || 'User', createdAt: nowIso, lastLogin: nowIso });
+  } else {
+    userId = existingUser.id;
+    const updateFields = { lastLogin: nowIso };
+    if (userName && userName !== existingUser.name) updateFields.name = userName;
+    await User.updateOne({ phone }, { $set: updateFields });
+    if (!userName) userName = existingUser.name || 'User';
   }
 
-  if ((session.attempts || 0) >= 3) {
-    await OtpSession.updateOne({ phone, session_id: session.session_id }, { $set: { isUsed: true } });
-    return res.status(400).json({ success: false, error: 'Too many wrong attempts. Please request a new OTP.' });
-  }
+  setUserSession(res, { phone, name: userName || 'User', userId });
+  res.json({ success: true, phone, name: userName });
+};
 
-  let verified = false;
-  if (session.session_id) verified = await verifyOtpSession(session.session_id, otp);
-  if (!verified) verified = otp === session.otp;
-
-  if (verified) {
-    await OtpSession.updateOne({ phone, session_id: session.session_id }, { $set: { isUsed: true } });
-
-    let userName = session.name || '';
-    let existingUser = await User.findOne({ phone }, { _id: 0 }).lean();
-    let userId;
-    if (!existingUser) {
-      userId = uuidv4();
-      await User.create({ id: userId, phone, name: userName || 'User', createdAt: nowIso, lastLogin: nowIso });
-    } else {
-      userId = existingUser.id;
-      const updateFields = { lastLogin: nowIso };
-      if (userName && userName !== existingUser.name) updateFields.name = userName;
-      await User.updateOne({ phone }, { $set: updateFields });
-      if (!userName) userName = existingUser.name || 'User';
-    }
-
-    const token = jwt.sign({ phone, name: userName || 'User', userId }, process.env.SECRET_KEY, {
-      expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-    });
-    res.cookie('user_token', token, cookieOpts());
-    return res.json({ success: true, phone, name: userName });
-  }
-
-  const remaining = 2 - (session.attempts || 0);
-  await OtpSession.updateOne({ phone, session_id: session.session_id }, { $inc: { attempts: 1 } });
-  const errorMsg = remaining > 0
-    ? `Wrong OTP. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.`
-    : 'Too many wrong attempts. Please request a new OTP.';
-  res.status(400).json({ success: false, error: errorMsg });
+const SESSION_ENDED_MSG = {
+  SESSION_REPLACED: 'You were logged out because your account was signed in on another device.',
+  SESSION_EXPIRED: 'Your session has expired. Please log in again.',
+  BLOCKED: 'This account has been disabled. Please contact support.',
 };
 
 exports.me = async (req, res) => {
+  if (req.sessionEnded) {
+    return res.status(401).json({ error: SESSION_ENDED_MSG[req.sessionEnded], code: req.sessionEnded });
+  }
   const user = getCurrentUser(req);
   if (!user) return res.status(401).json({ error: 'Not logged in' });
-  res.json({ phone: user.phone, name: user.name });
+  // Also covers sessions that started before wallets existed, which never pass through login.
+  const wallet = await ensureWallet(user);
+  res.json({ phone: user.phone, name: user.name, email: user.email || '', freeCredits: wallet.freeCredits });
 };
 
 exports.logout = async (req, res) => {
-  res.clearCookie('user_token');
+  const user = getCurrentUser(req);
+  // Only revoke the token this device holds -- never sign out a newer session elsewhere.
+  if (user && user.src === 'web' && user.sid) {
+    await WebUser.updateOne({ id: user.userId, authToken: user.sid }, { $unset: { authToken: '' } });
+  }
+  clearUserSession(res);
   res.json({ success: true });
 };
 
 // ---------- Admin login (JWT httpOnly cookie, replaces FastAPI SessionMiddleware) ----------
-exports.adminLogin = async (req, res) => {
-  const { username, password } = req.body || {};
-  if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
-    const token = jwt.sign({ isAdmin: true, username }, process.env.SECRET_KEY, {
-      expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-    });
-    res.cookie('admin_token', token, cookieOpts());
-    return res.json({ success: true });
+// Admin login is mobile OTP only (2Factor), limited to the numbers in ADMIN_PHONES.
+const ADMIN_OTP_PURPOSE = 'admin-login';
+
+exports.adminSendOtp = async (req, res) => {
+  const phone = normalizePhone((req.body || {}).phone);
+  if (!isValidPhone(phone)) {
+    return res.status(400).json({ success: false, error: 'Enter a valid 10-digit mobile number.' });
   }
-  res.status(401).json({ success: false, error: 'Invalid username or password' });
+  const allowed = adminPhones();
+  if (allowed.length === 0) {
+    return res.status(503).json({ success: false, error: 'Admin login is not configured. Set ADMIN_PHONES in the API .env.' });
+  }
+  const body = { success: true, message: `OTP sent to ${maskPhone(phone)}` };
+  // Same reply for any number, with no SMS sent, so this route can't be used to find admin numbers.
+  if (!allowed.includes(phone)) return res.json(body);
+
+  const result = await issueOtp({ phone, purpose: ADMIN_OTP_PURPOSE });
+  if (!result.ok) return res.status(result.status).json({ success: false, error: result.error });
+
+  if (result.devOtp && process.env.NODE_ENV !== 'production') body.dev_otp = result.devOtp;
+  res.json(body);
+};
+
+exports.adminVerifyOtp = async (req, res) => {
+  const body = req.body || {};
+  const phone = normalizePhone(body.phone);
+  const otp = String(body.otp || '').trim();
+  if (!isValidPhone(phone) || !/^\d{4}$/.test(otp)) {
+    return res.status(400).json({ success: false, error: 'Invalid phone or OTP format' });
+  }
+  // Matches checkOtp's "no session" reply, so a non-admin number looks like any expired OTP.
+  if (!adminPhones().includes(phone)) {
+    return res.status(400).json({ success: false, error: 'No valid OTP session found. Please request a new OTP.' });
+  }
+
+  const check = await checkOtp({ phone, otp, purpose: ADMIN_OTP_PURPOSE });
+  if (!check.ok) return res.status(check.status).json({ success: false, error: check.error });
+
+  const token = jwt.sign({ isAdmin: true, via: 'otp', phone, username: maskPhone(phone) }, process.env.SECRET_KEY, {
+    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  });
+  res.cookie('admin_token', token, cookieOpts());
+  res.json({ success: true });
+};
+
+exports.adminMe = async (req, res) => {
+  res.json({ phone: req.admin.phone, username: req.admin.username });
 };
 
 exports.adminLogout = async (req, res) => {
-  res.clearCookie('admin_token');
+  res.clearCookie('admin_token', sessionCookieOpts());
   res.json({ success: true });
 };
 
@@ -162,6 +176,22 @@ exports.myInquiries = async (req, res) => {
   const propIds = myProps.map((p) => p.propertyId);
   const inquiries = await Inquiry.find({ propertyId: { $in: propIds } }, { _id: 0 }).sort({ createdAt: -1 }).lean();
   res.json(inquiries);
+};
+
+// Requirements carry no user id, only the phone typed into the form, so match on that.
+// Older rows may hold a +91/91/0-prefixed number; new ones are normalised in createRequirement.
+// type "contact-us" rows are Contact-page messages stored in the same collection -- not requirements.
+exports.myRequirements = async (req, res) => {
+  const user = getCurrentUser(req);
+  if (!user) return res.status(401).json({ error: 'Login required' });
+  const phone = normalizePhone(user.phone);
+  if (!isValidPhone(phone)) return res.json({ requirements: [] });
+
+  const requirements = await Requirement.find(
+    { phone: { $in: [phone, `+91${phone}`, `+91 ${phone}`, `91${phone}`, `0${phone}`] }, type: { $ne: 'contact-us' } },
+    { _id: 0, id: 1, type: 1, property_type: 1, bhk: 1, budget_min: 1, budget_max: 1, city: 1, area: 1, notes: 1, status: 1, createdAt: 1 },
+  ).sort({ createdAt: -1 }).lean();
+  res.json({ requirements });
 };
 
 exports.updateMyPropertyStatus = async (req, res) => {

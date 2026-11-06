@@ -2,7 +2,8 @@ const mongoose = require('mongoose');
 
 const InquirySchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
-  propertyId: { type: String, required: true, index: true },
+  // Empty for general leads (LeadPopup, LeadCaptureCard), which aren't about one property.
+  propertyId: { type: String, default: '', index: true },
   name: { type: String, required: true },
   phone: { type: String, required: true },
   email: { type: String, default: '' },

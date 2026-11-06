@@ -23,16 +23,22 @@ export function parseListingFilters(searchParams = {}) {
   const postedSince = searchParams.postedSince || '';
   const familyOrBachelors = searchParams.familyOrBachelors || '';
   const area = searchParams.area || '';
+  const amenities = searchParams.amenities || '';
+  const hasPhotos = searchParams.hasPhotos === 'true' ? 'true' : '';
+  const parking = searchParams.parking === 'true' ? 'true' : '';
+  const verified = searchParams.verified === 'true' ? 'true' : '';
   // Any of these present means the URL is a filter permutation: it must NOT be indexed
   // (unbounded combinations) but should still be crawled so listings are discovered.
   const FILTER_KEYS = [
     'bhk', 'minPrice', 'maxPrice', 'furnishing', 'propertyType', 'minSqft', 'maxSqft',
     'postedBy', 'postedSince', 'familyOrBachelors', 'area', 'q', 'sort',
+    'amenities', 'hasPhotos', 'parking', 'verified',
   ];
   const hasFilters = FILTER_KEYS.some((k) => searchParams[k]);
   return {
     bhk, minPrice, maxPrice, furnishing, sort, q,
     propertyType, minSqft, maxSqft, postedBy, postedSince, familyOrBachelors, area,
+    amenities, hasPhotos, parking, verified,
     hasFilters,
   };
 }
@@ -77,6 +83,10 @@ export async function fetchListingData({ citySlug, category, trans, areaSlug, pa
     postedBy: extraFilters.postedBy || undefined,
     postedSince: extraFilters.postedSince || undefined,
     familyOrBachelors: extraFilters.familyOrBachelors || undefined,
+    amenities: extraFilters.amenities || undefined,
+    hasPhotos: extraFilters.hasPhotos || undefined,
+    parking: extraFilters.parking || undefined,
+    verified: extraFilters.verified || undefined,
     // A locality picked from the filter bar narrows within the current path.
     area: !areaSlug && extraFilters.area ? extraFilters.area : undefined,
   };

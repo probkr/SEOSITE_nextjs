@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 import { postJson } from '@/lib/api';
 
 export default function RequirementForm() {
@@ -20,6 +21,7 @@ export default function RequirementForm() {
       <div className="card p-6 text-center max-w-xl">
         <h2 className="font-bold text-lg text-primary mb-2">Requirement submitted!</h2>
         <p className="text-gray-500">Our team will get in touch with matching properties soon.</p>
+        <Link href="/my-requirements/" className="inline-block mt-4 text-sm font-semibold text-primary hover:underline underline-offset-2">View my requirements →</Link>
       </div>
     );
   }

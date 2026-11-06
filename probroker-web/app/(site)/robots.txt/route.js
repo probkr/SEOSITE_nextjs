@@ -6,6 +6,7 @@ Allow: /
 Disallow: /admin/
 Disallow: /api/
 Disallow: /my-properties/
+Disallow: /my-contacts/
 Disallow: /search/
 
 Sitemap: https://prbroker.in/sitemap.xml

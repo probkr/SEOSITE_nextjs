@@ -9,8 +9,39 @@ const BlogPost = require('../models/BlogPost');
 const Setting = require('../models/Setting');
 const { generatePropertySlug, generatePropertyId } = require('../services/slugify');
 const { getCurrentUser } = require('../middleware/userAuth');
+const { normalizePhone, isValidPhone } = require('../services/otpService');
+const { hasContact } = require('../services/creditService');
 
 const esc = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+function maskContactName(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '';
+  if (parts.length === 1) return parts[0].length <= 2 ? parts[0] : `${parts[0][0]}***`;
+  return `${parts[0]} ${parts[parts.length - 1][0]}.`;
+}
+
+function cleanupDescription(text) {
+  if (!text) return text;
+  return String(text)
+    .replace(/, Near /g, ', ')
+    .replace(/ {2,}/g, ' ')
+    .replace(/ +,/g, ',')
+    .replace(/,{2,}/g, ',')
+    .trim();
+}
+
+// Every listing response goes through this, so owner details never reach the public site:
+// the phone number is removed and the name is masked.
+function publicProperty(prop) {
+  const { contactPhone, ...rest } = prop;
+  return {
+    ...rest,
+    contactName: maskContactName(prop.contactName),
+    description: cleanupDescription(prop.description),
+    hasContact: hasContact(prop),
+  };
+}
 
 // ---------- Site settings (public, safe subset) ----------
 exports.getSiteSettings = async (req, res) => {
@@ -51,12 +82,39 @@ exports.getAreaBySlug = async (req, res) => {
 };
 
 // ---------- Societies ----------
+// There are 13k+ societies (~10 MB as full documents), so callers that only need a number
+// pass ?count=1, and list callers pass ?fields=a,b,c to download just those columns.
+const SOCIETY_LIST_FIELDS = new Set([
+  'id', 'name', 'slug', 'areaId', 'cityId', 'areaSlug', 'citySlug', 'project_type',
+  'is_featured', 'createdAt', 'updatedAt',
+]);
+
 exports.listSocieties = async (req, res) => {
   const q = {};
   if (req.query.areaId) q.areaId = req.query.areaId;
   if (req.query.cityId) q.cityId = req.query.cityId;
   if (req.query.isActive !== 'false') q.isActive = true;
-  const societies = await Society.find(q, { _id: 0 }).sort({ name: 1 }).lean();
+
+  if (req.query.count === '1') {
+    return res.json({ count: await Society.countDocuments(q) });
+  }
+
+  const projection = { _id: 0 };
+  const fields = String(req.query.fields || '').split(',').map((f) => f.trim()).filter((f) => SOCIETY_LIST_FIELDS.has(f));
+  for (const f of fields) projection[f] = 1;
+
+  // ?limit= switches to a paged response: { data, total, page, pages }.
+  const limit = Math.min(parseInt(req.query.limit, 10) || 0, 100);
+  if (limit > 0) {
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const [total, data] = await Promise.all([
+      Society.countDocuments(q),
+      Society.find(q, projection).sort({ name: 1 }).skip((page - 1) * limit).limit(limit).lean(),
+    ]);
+    return res.json({ data, total, page, pages: Math.ceil(total / limit) });
+  }
+
+  const societies = await Society.find(q, projection).sort({ name: 1 }).lean();
   res.json(societies);
 };
 
@@ -77,7 +135,7 @@ exports.listProperties = async (req, res) => {
     transaction_type, transactionType,
     bhk, min_price, minPrice, max_price, maxPrice,
     property_type, propertyType,
-    furnishing, parking, familyOrBachelors,
+    furnishing, parking, familyOrBachelors, amenities, hasPhotos, verified,
     minSqft, maxSqft, min_sqft, max_sqft,
     totalFloors, minFloors, maxFloors,
     maxAge, minAge, ageOfProperty,
@@ -122,7 +180,15 @@ exports.listProperties = async (req, res) => {
 
   if (_propertyType) query.propertyType = { $regex: `^${esc(_propertyType)}$`, $options: 'i' };
   if (furnishing) query.furnishing = { $regex: esc(furnishing), $options: 'i' };
-  if (parking && String(parking).toLowerCase() === 'true') query.parking = true;
+  const and = [];
+  // Parking is recorded either as the boolean or as a "Parking" amenity, depending on the source.
+  if (parking && String(parking).toLowerCase() === 'true') and.push({ $or: [{ parking: true }, { amenities: 'Parking' }] });
+  if (amenities) {
+    const list = String(amenities).split(',').map((a) => a.trim()).filter(Boolean).slice(0, 20);
+    if (list.length) query.amenities = { $all: list };
+  }
+  if (hasPhotos && String(hasPhotos).toLowerCase() === 'true') query['photos.0'] = { $exists: true };
+  if (verified && String(verified).toLowerCase() === 'true') query.isVerified = true;
   if (familyOrBachelors) query.familyOrBachelors = { $regex: `^${esc(familyOrBachelors)}$`, $options: 'i' };
 
   // --- Area (sqft) range ---
@@ -159,8 +225,10 @@ exports.listProperties = async (req, res) => {
   // --- Posted by (owner vs broker/probroker) ---
   if (postedBy) {
     const pb = String(postedBy).toLowerCase();
-    if (pb === 'owner') query.source = 'owner';
-    else if (pb === 'broker' || pb === 'probroker' || pb === 'agent') query.source = 'probroker';
+    // Who posted it lives in listingType. `source` only records which pipeline created the row
+    // (imports are all "probroker", even owner listings), so filtering on it hid 461 of 464 owners.
+    if (pb === 'owner') query.listingType = 'owner';
+    else if (pb === 'broker' || pb === 'probroker' || pb === 'agent') query.listingType = 'broker';
   }
 
   // --- Posted since (days ago) ---
@@ -197,6 +265,8 @@ exports.listProperties = async (req, res) => {
     query.$or = orConditions;
   }
 
+  if (and.length) query.$and = and;
+
   let sortField = 'createdAt';
   let sortDir = -1;
   if (_sort === 'price_asc') { sortField = 'price'; sortDir = 1; }
@@ -227,7 +297,7 @@ exports.listProperties = async (req, res) => {
 
   const ps = priceStats[0] || {};
   res.json({
-    properties,
+    properties: properties.map(publicProperty),
     total,
     page,
     pages: Math.ceil(total / limit),
@@ -254,7 +324,7 @@ exports.latestProperties = async (req, res) => {
     p.areaName = areaMap[p.areaId]?.name || '';
     p.cityName = cityMap[p.cityId]?.name || '';
   }
-  res.json(properties);
+  res.json(properties.map(publicProperty));
 };
 
 exports.similarProperties = async (req, res) => {
@@ -271,7 +341,7 @@ exports.similarProperties = async (req, res) => {
     transactionType: base.transactionType,
     $or: [{ areaId: base.areaId }, { cityId: base.cityId }],
   }, { _id: 0 }).sort({ createdAt: -1 }).limit(lim).lean();
-  res.json(properties);
+  res.json(properties.map(publicProperty));
 };
 
 exports.getPropertyBySlug = async (req, res) => {
@@ -289,7 +359,7 @@ exports.getPropertyBySlug = async (req, res) => {
   prop.area = area;
   prop.city = city;
   prop.society = society;
-  res.json(prop);
+  res.json(publicProperty(prop));
 };
 
 // POST /api/v1/properties -- save-first-then-photos pattern (port of /api/post-property)
@@ -455,11 +525,16 @@ exports.deleteProperty = async (req, res) => {
 // ---------- Inquiries / Requirements ----------
 exports.createInquiry = async (req, res) => {
   const body = req.body || {};
+  const name = String(body.name || '').trim();
+  const phone = String(body.phone || '').trim();
+  if (!name || !phone) {
+    return res.status(400).json({ success: false, error: 'Name and phone are required' });
+  }
   const doc = {
     id: uuidv4(),
     propertyId: body.propertyId || '',
-    name: body.name || '',
-    phone: body.phone || '',
+    name,
+    phone,
     email: body.email || '',
     message: body.message || '',
     budget: body.budget || '',
@@ -474,6 +549,9 @@ exports.createInquiry = async (req, res) => {
 exports.createRequirement = async (req, res) => {
   const body = req.body || {};
   const Requirement = require('../models/Requirement');
+  // Stored as a bare 10-digit number so /my-requirements can find it by the user's login phone.
+  const rawPhone = String(body.phone || '').trim();
+  const phone10 = normalizePhone(rawPhone);
   const doc = {
     id: uuidv4(),
     type: body.type || 'buy',
@@ -484,7 +562,7 @@ exports.createRequirement = async (req, res) => {
     bhk: body.bhk || '',
     property_type: body.property_type || '',
     name: body.name || '',
-    phone: body.phone || '',
+    phone: isValidPhone(phone10) ? phone10 : rawPhone,
     notes: body.notes || '',
     status: 'new',
     createdAt: new Date().toISOString(),
@@ -514,13 +592,32 @@ exports.cityStats = async (req, res) => {
 };
 
 // ---------- Blog (public) ----------
+// List views never render the body, and a body with pasted (base64) images can be several MB,
+// so drop `content` inside MongoDB and send a precomputed read time instead.
+function blogSummaryPipeline(q, { skip = 0, limit }) {
+  return [
+    { $match: q },
+    { $sort: { publishedAt: -1 } },
+    { $skip: skip },
+    { $limit: limit },
+    {
+      $addFields: {
+        readTime: {
+          $max: [1, { $round: [{ $divide: [{ $size: { $split: [{ $ifNull: ['$content', ''] }, ' '] } }, 200] }, 0] }],
+        },
+      },
+    },
+    { $project: { _id: 0, content: 0 } },
+  ];
+}
+
 exports.listBlogPosts = async (req, res) => {
   const page = parseInt(req.query.page, 10) || 1;
   const limit = 10;
   const q = { status: 'published' };
   const [total, posts] = await Promise.all([
     BlogPost.countDocuments(q),
-    BlogPost.find(q, { _id: 0 }).sort({ publishedAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+    BlogPost.aggregate(blogSummaryPipeline(q, { skip: (page - 1) * limit, limit })),
   ]);
   res.json({ posts, total, page, pages: Math.ceil(total / limit) });
 };
@@ -534,7 +631,7 @@ exports.getBlogPostBySlug = async (req, res) => {
 
 exports.latestBlogPosts = async (req, res) => {
   const limit = parseInt(req.query.limit, 10) || 3;
-  const posts = await BlogPost.find({ status: 'published' }, { _id: 0 }).sort({ publishedAt: -1 }).limit(limit).lean();
+  const posts = await BlogPost.aggregate(blogSummaryPipeline({ status: 'published' }, { limit }));
   res.json(posts);
 };
 
@@ -542,4 +639,87 @@ exports.popularSocieties = async (req, res) => {
   const limit = parseInt(req.query.limit, 10) || 8;
   const societies = await Society.find({ isActive: true, is_featured: true }, { _id: 0 }).limit(limit).lean();
   res.json(societies);
+};
+
+// Areas ranked by number of active, approved listings ("Top Areas" on the homepage).
+exports.topAreas = async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit, 10) || 10, 30);
+  const match = { status: 'active', isApproved: true };
+  if (req.query.cityId) match.cityId = req.query.cityId;
+
+  const counts = await Property.aggregate([
+    { $match: match },
+    { $group: { _id: '$areaId', count: { $sum: 1 } } },
+    { $sort: { count: -1 } },
+    // Headroom for areas that turn out to be inactive or deleted.
+    { $limit: limit * 2 },
+  ]);
+
+  const areas = await Area.find(
+    { id: { $in: counts.map((c) => c._id) }, isActive: { $ne: false } },
+    { _id: 0, id: 1, name: 1, slug: 1, cityId: 1 }
+  ).lean();
+  const cities = await City.find({ id: { $in: [...new Set(areas.map((a) => a.cityId))] } }, { _id: 0, id: 1, name: 1, slug: 1 }).lean();
+
+  const areaById = new Map(areas.map((a) => [a.id, a]));
+  const cityById = new Map(cities.map((c) => [c.id, c]));
+
+  const result = counts
+    .filter((c) => areaById.has(c._id))
+    .slice(0, limit)
+    .map((c) => {
+      const area = areaById.get(c._id);
+      const city = cityById.get(area.cityId);
+      return { ...area, propertyCount: c.count, cityName: city?.name || '', citySlug: city?.slug || '' };
+    });
+
+  res.json(result);
+};
+
+// Societies ranked by number of active, approved listings ("Top Societies" on the homepage).
+// Returns slim society docs plus propertyCount and the area/city names + slugs needed to link them.
+exports.topSocieties = async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit, 10) || 8, 24);
+  const match = { status: 'active', isApproved: true, societyId: { $nin: [null, ''] } };
+  if (req.query.cityId) match.cityId = req.query.cityId;
+
+  const counts = await Property.aggregate([
+    { $match: match },
+    { $group: { _id: '$societyId', count: { $sum: 1 } } },
+    { $sort: { count: -1 } },
+    // Headroom for societies that turn out to be inactive or deleted.
+    { $limit: limit * 2 },
+  ]);
+
+  const societies = await Society.find(
+    { id: { $in: counts.map((c) => c._id) }, isActive: true },
+    { _id: 0, id: 1, name: 1, slug: 1, areaId: 1, cityId: 1, project_type: 1 }
+  ).lean();
+  const [areas, cities] = await Promise.all([
+    Area.find({ id: { $in: [...new Set(societies.map((s) => s.areaId))] } }, { _id: 0, id: 1, name: 1, slug: 1 }).lean(),
+    City.find({ id: { $in: [...new Set(societies.map((s) => s.cityId))] } }, { _id: 0, id: 1, name: 1, slug: 1 }).lean(),
+  ]);
+
+  const societyById = new Map(societies.map((s) => [s.id, s]));
+  const areaById = new Map(areas.map((a) => [a.id, a]));
+  const cityById = new Map(cities.map((c) => [c.id, c]));
+
+  const result = counts
+    .filter((c) => societyById.has(c._id))
+    .slice(0, limit)
+    .map((c) => {
+      const s = societyById.get(c._id);
+      const area = areaById.get(s.areaId);
+      const city = cityById.get(s.cityId);
+      return {
+        ...s,
+        propertyCount: c.count,
+        areaName: area?.name || '',
+        areaSlug: area?.slug || '',
+        cityName: city?.name || '',
+        citySlug: city?.slug || '',
+      };
+    });
+
+  res.json(result);
 };

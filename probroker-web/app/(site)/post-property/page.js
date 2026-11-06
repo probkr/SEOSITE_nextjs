@@ -1,5 +1,5 @@
 import PostPropertyForm from '@/components/PostPropertyForm';
-import { getProperties, getSocieties } from '@/lib/api';
+import { getProperties, getSocietyCount } from '@/lib/api';
 import { SITE_URL } from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
@@ -13,13 +13,13 @@ export async function generateMetadata() {
 }
 
 export default async function PostPropertyPage() {
-  const [propResult, societies] = await Promise.all([
+  const [propResult, societyCount] = await Promise.all([
     getProperties({ status: 'active', isApproved: true, limit: 1 }, { revalidate: 3600 }),
-    getSocieties({}, { revalidate: 3600 }),
+    getSocietyCount({}, { revalidate: 3600 }),
   ]);
   const stats = {
     listings: propResult?.total || 0,
-    societies: (societies || []).length,
+    societies: societyCount,
   };
   return <PostPropertyForm stats={stats} />;
 }

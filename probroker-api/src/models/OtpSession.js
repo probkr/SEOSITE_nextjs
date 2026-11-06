@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const OtpSessionSchema = new mongoose.Schema({
   phone: { type: String, required: true, index: true },
   name: { type: String, default: '' },
+  email: { type: String, default: '' },
   otp: { type: String, required: true },
   session_id: { type: String, default: '' },
   purpose: { type: String, default: 'login' },

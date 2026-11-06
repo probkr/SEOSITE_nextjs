@@ -21,6 +21,9 @@ services:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
     container_name: probroker-web
     restart: unless-stopped
+    environment:
+      # Read from the root .env. Must match REVALIDATE_SECRET in probroker-api/.env.
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:-}
     expose:
       - "3000"
     depends_on:

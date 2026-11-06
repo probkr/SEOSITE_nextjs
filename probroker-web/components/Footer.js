@@ -66,7 +66,7 @@ export default function Footer({ settings } = {}) {
             )}
           </div>
           <p className="text-gray-400 leading-relaxed">
-            Verified residential &amp; commercial property listings across Ahmedabad and Gandhinagar. Talk directly to owners &mdash; zero brokerage on owner listings.
+            Verified residential &amp; commercial property listings across Ahmedabad and Gandhinagar. Connect with owners and trusted brokers in one place.
           </p>
           <div className="flex items-center gap-3 mt-4">
             {['Facebook', 'Instagram', 'YouTube'].map((s) => (

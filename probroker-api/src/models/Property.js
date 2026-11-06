@@ -16,7 +16,7 @@ const PropertySchema = new mongoose.Schema({
   nearby: { type: String, default: '' },
   description: { type: String, default: '' },
   ageOfProperty: { type: Number, default: null },
-  furnishing: { type: String, default: 'unfurnished' },
+  furnishing: { type: String, default: 'unfurnished' },             
   familyOrBachelors: { type: String, default: null },
   floorNumber: { type: Number, default: null },
   totalFloors: { type: Number, default: null },
@@ -30,6 +30,9 @@ const PropertySchema = new mongoose.Schema({
   status: { type: String, enum: ['active', 'sold', 'rented', 'pending'], default: 'active', index: true },
   source: { type: String, enum: ['probroker', 'owner'], default: 'probroker' },
   isApproved: { type: Boolean, default: true, index: true },
+  // Separate from approval (every live listing is approved): set by admin, or by a CRM import
+  // row with verifyStatus "verified". Drives the card badge and the "Verified" filter.
+  isVerified: { type: Boolean, default: false },
   slug: { type: String, required: true, unique: true },
   oldSlug: { type: String, default: '' },
   title: { type: String, default: '' },

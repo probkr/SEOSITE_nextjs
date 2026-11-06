@@ -17,6 +17,8 @@ const ImportJob = require('../models/ImportJob');
 
 const { generateSlug, generatePropertySlug, generatePropertyId } = require('../services/slugify');
 const { uploadImageToR2, uploadRawToR2 } = require('../services/r2Storage');
+const { normalizeImportRecord } = require('../services/importMapper');
+const { generateAiDescription } = require('../services/priceFormat');
 
 const esc = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const nowIso = () => new Date().toISOString();
@@ -37,7 +39,7 @@ exports.dashboard = async (req, res) => {
 
 // ==================== LISTINGS (properties) ====================
 exports.listListings = async (req, res) => {
-  const { page: pageParam = 1, city = '', status = '', q = '', date_from = '', date_to = '' } = req.query;
+  const { page: pageParam = 1, city = '', status = '', q = '', date_from = '', date_to = '', verified = '' } = req.query;
   const page = parseInt(pageParam, 10) || 1;
   const filters = {};
   if (city) {
@@ -45,6 +47,8 @@ exports.listListings = async (req, res) => {
     if (cityDoc) filters.cityId = cityDoc.id;
   }
   if (status) filters.status = status;
+  if (verified === 'true') filters.isVerified = true;
+  else if (verified === 'false') filters.isVerified = { $ne: true };
   if (q) {
     filters.$or = [
       { title: { $regex: esc(q), $options: 'i' } },
@@ -89,6 +93,13 @@ exports.updateListingStatus = async (req, res) => {
   const { status } = req.body;
   await Property.updateOne({ propertyId }, { $set: { status, updatedAt: nowIso() } });
   res.json({ success: true });
+};
+
+exports.setListingVerified = async (req, res) => {
+  const verified = (req.body || {}).verified === true;
+  const r = await Property.updateOne({ propertyId: req.params.propertyId }, { $set: { isVerified: verified, updatedAt: nowIso() } });
+  if (!r.matchedCount) return res.status(404).json({ error: 'Property not found' });
+  res.json({ success: true, isVerified: verified });
 };
 
 exports.deleteListing = async (req, res) => {
@@ -165,6 +176,7 @@ exports.saveListingEdit = async (req, res) => {
 
   if (form.status) update.status = form.status;
   if (form.isApproved !== undefined) update.isApproved = form.isApproved === 'true' || form.isApproved === true;
+  if (form.isVerified !== undefined) update.isVerified = form.isVerified === 'true' || form.isVerified === true;
 
   if (form.custom_schema && form.custom_schema.trim()) {
     try {
@@ -616,7 +628,20 @@ exports.listInquiries = async (req, res) => {
     Inquiry.countDocuments({}),
     Inquiry.find({}, { _id: 0 }).sort({ createdAt: -1 }).skip((page - 1) * perPage).limit(perPage).lean(),
   ]);
-  res.json({ inquiries, total, page, totalPages: Math.ceil(total / perPage) || 1 });
+
+  // Names the property each lead is about, so the team knows what to call back about.
+  const propertyIds = [...new Set(inquiries.map((i) => i.propertyId).filter(Boolean))];
+  const properties = propertyIds.length
+    ? await Property.find({ propertyId: { $in: propertyIds } }, { _id: 0, propertyId: 1, slug: 1, premiseName: 1, propertyType: 1, bhk: 1 }).lean()
+    : [];
+  const byId = new Map(properties.map((p) => [p.propertyId, p]));
+  const withProperty = inquiries.map((i) => {
+    const p = byId.get(i.propertyId);
+    const name = p ? [p.bhk ? `${p.bhk} BHK` : '', p.propertyType, p.premiseName].filter(Boolean).join(' ') : '';
+    return { ...i, propertyName: name || i.propertyId || 'General enquiry', propertySlug: p?.slug || '' };
+  });
+
+  res.json({ inquiries: withProperty, total, page, totalPages: Math.ceil(total / perPage) || 1 });
 };
 
 exports.exportInquiries = async (req, res) => {
@@ -633,22 +658,62 @@ exports.exportInquiries = async (req, res) => {
 };
 
 // ==================== BULK IMPORT ====================
+// On an update these are only overwritten when the incoming record actually carries them
+// (any of the listed source keys), so a partial record (e.g. a webhook push) doesn't reset
+// views, the original listing date, admin verification or contact details.
+const KEEP_UNLESS_SENT = {
+  views: ['views'],
+  createdAt: ['createdAt', 'listedDate', 'createdOn'],
+  isVerified: ['isVerified', 'verifyStatus'],
+  amenities: ['amenities'],
+  contactName: ['contactName', 'name'],
+  contactPhone: ['contactPhone', 'number', 'phone'],
+  listingType: ['listingType', 'userType'],
+  floorNumber: ['floorNumber', 'floor', 'floors'],
+  ageOfProperty: ['ageOfProperty', 'age'],
+  photos: ['photos', 'images'],
+  images: ['photos', 'images'],
+  slug: ['slug'],
+};
+
 async function processBulkImport(body, startIdx = 0) {
   let imported = 0, updated = 0, skipped = 0, errors = 0, areasCreated = 0, societiesCreated = 0;
   const errorDetails = [];
   const sampleResults = [];
+  // One entry per input record, in order (used by the listings webhook response).
+  const results = [];
+
+  const skip = (idx, reason, propertyId) => {
+    skipped++;
+    results.push({ row: startIdx + idx + 1, propertyId: propertyId || null, action: 'skipped', reason });
+    if (errorDetails.length < 50) errorDetails.push(`Row ${startIdx + idx + 1}: skipped -- ${reason}`);
+  };
 
   for (let idx = 0; idx < body.length; idx++) {
-    const item = body[idx];
+    const raw = body[idx] || {};
     try {
-      if (item.status === 'inactive') { skipped++; continue; }
-      const price = Number(item.price) || 0;
-      if (!price) { skipped++; continue; }
+      // Accepts both native fields and the CRM export format (see services/importMapper.js).
+      const item = normalizeImportRecord(raw);
+      const existing = item.propertyId ? await Property.findOne({ propertyId: item.propertyId }, { _id: 0, propertyId: 1, slug: 1 }).lean() : null;
 
-      const cityName = item.city || item.cityName || 'Ahmedabad';
-      let cityDoc = await City.findOne({ name: { $regex: `^${esc(cityName)}$`, $options: 'i' } }, { _id: 0 }).lean();
-      if (!cityDoc) cityDoc = await City.findOne({ isActive: true }, { _id: 0 }).lean();
-      if (!cityDoc) { skipped++; continue; }
+      // A rented/sold/deleted row only matters if we already list it -- then take it down.
+      if (item.status !== 'active') {
+        if (existing) {
+          await Property.updateOne({ propertyId: item.propertyId }, { $set: { status: item.status, updatedAt: nowIso() } });
+          updated++;
+          results.push({ row: startIdx + idx + 1, propertyId: item.propertyId, action: 'taken_down', status: item.status, slug: existing.slug });
+        } else {
+          skip(idx, `status is "${item.status}"`, item.propertyId);
+        }
+        continue;
+      }
+      const price = item.price;
+      if (!price) { skip(idx, 'no price', item.propertyId); continue; }
+
+      const cityName = item.city || 'Ahmedabad';
+      const cityDoc = await City.findOne({ name: { $regex: `^${esc(cityName)}$`, $options: 'i' } }, { _id: 0 }).lean();
+      // Never guess a city: a wrong one would publish the listing on the wrong city's pages.
+      if (!cityDoc) { skip(idx, `unknown city "${cityName}"`, item.propertyId); continue; }
       const resolvedCityId = cityDoc.id;
       const resolvedCitySlug = cityDoc.slug;
 
@@ -690,7 +755,6 @@ async function processBulkImport(body, startIdx = 0) {
       }
       const resolvedSocietyId = societyDoc ? societyDoc.id : null;
       const propertyId = item.propertyId || generatePropertyId();
-      const existing = await Property.findOne({ propertyId }, { _id: 0 }).lean();
 
       const slug = item.slug || generatePropertySlug({
         propertyType: item.propertyType || 'flat', bhk: item.bhk, areaSlug: resolvedAreaSlug,
@@ -704,33 +768,51 @@ async function processBulkImport(body, startIdx = 0) {
         societyId: resolvedSocietyId, areaId: resolvedAreaId, cityId: resolvedCityId,
         nearby: item.nearby || '', description: item.description || '', amenities: item.amenities || [],
         furnishing: item.furnishing || 'unfurnished', familyOrBachelors: item.familyOrBachelors || 'both',
+        ageOfProperty: item.ageOfProperty || null,
         floorNumber: item.floorNumber || 0, totalFloors: item.totalFloors || 0, parking: !!item.parking,
         additionalDetails: item.additionalDetails || '', contactName: item.contactName || 'PRObroker',
         contactPhone: item.contactPhone || '0000000000', listingType: item.listingType || 'broker',
-        photos: item.photos || [], status: item.status || 'active', source: 'probroker', isApproved: true,
+        photos: item.photos || [], status: item.status || 'active', source: 'probroker', isApproved: true, isVerified: !!item.isVerified,
         views: item.views || 0, slug, createdAt: item.createdAt || nowIso(), updatedAt: nowIso(),
       };
+      // Same derived fields the admin edit screen writes: SEO title, image objects with alt text, AI copy.
+      const names = { areaName: areaDoc ? areaDoc.name : '', cityName: cityDoc.name };
+      doc.title = buildPropertyTitle({ ...doc, ...names });
+      doc.images = doc.photos.map((url, i) => ({
+        url, alt_text: doc.title + (i > 0 ? ` - image ${i + 1}` : ''), title: '', caption: '', order_index: i, is_primary: i === 0,
+      }));
+      doc.aiDescription = generateAiDescription(doc, names.areaName, names.cityName);
 
       if (existing) {
-        const { id, ...rest } = doc;
+        const { id, createdAt, ...rest } = doc;
+        for (const [field, keys] of Object.entries(KEEP_UNLESS_SENT)) {
+          if (!keys.some((k) => raw[k] !== undefined && raw[k] !== null && raw[k] !== '')) delete rest[field];
+        }
+        // Keep the old URL resolvable when area/society/BHK changes produce a new slug.
+        if (rest.slug && existing.slug && rest.slug !== existing.slug) rest.oldSlug = existing.slug;
         await Property.updateOne({ propertyId }, { $set: rest });
         updated++;
+        results.push({ row: startIdx + idx + 1, propertyId, action: 'updated', slug: rest.slug || existing.slug });
       } else {
         await Property.create(doc);
         imported++;
+        results.push({ row: startIdx + idx + 1, propertyId, action: 'created', slug });
       }
       if (sampleResults.length < 5) sampleResults.push(doc);
     } catch (e) {
       errors++;
       errorDetails.push(`Row ${startIdx + idx}: ${e.message}`);
+      results.push({ row: startIdx + idx + 1, propertyId: raw.propertyId || null, action: 'error', reason: e.message });
     }
   }
 
   return {
     imported, updated, skipped, errors, areas_created: areasCreated, societies_created: societiesCreated,
-    total_processed: body.length, error_details: errorDetails.slice(0, 20), sample_results: sampleResults.slice(0, 5),
+    total_processed: body.length, error_details: errorDetails.slice(0, 20), sample_results: sampleResults.slice(0, 5), results,
   };
 }
+
+exports.processBulkImport = processBulkImport;
 
 async function processBulkImportBackground(body, jobId) {
   const BATCH_SIZE = 50;
@@ -796,8 +878,18 @@ exports.bulkImportCsv = async (req, res) => {
       return cleaned;
     });
     if (!rows.length) return res.status(400).json({ error: 'CSV file is empty or has no valid rows' });
-    const result = await processBulkImport(rows);
-    res.json(result);
+    if (rows.length <= 200) {
+      const result = await processBulkImport(rows);
+      return res.json(result);
+    }
+    const total = rows.length;
+    const jobId = uuidv4();
+    await ImportJob.create({
+      job_id: jobId, status: 'processing', total, imported: 0, updated: 0, skipped: 0, errors: 0,
+      areas_created: 0, societies_created: 0, started_at: nowIso(),
+    });
+    processBulkImportBackground(rows, jobId).catch((e) => console.error('Background CSV import failed:', e));
+    res.json({ success: true, job_id: jobId, message: `Import started for ${total} records. Processing in background.`, total });
   } catch (e) {
     res.status(400).json({ error: `CSV parsing error: ${e.message}` });
   }
@@ -942,18 +1034,6 @@ exports.getSettings = async (req, res) => {
   const settings = await Setting.findOne({ key: 'site' }, { _id: 0 }).lean() || {};
   const hpSchemaDoc = await Setting.findOne({ key: 'homepage_schema' }, { _id: 0 }).lean();
   res.json({ settings, homepage_schema: hpSchemaDoc ? hpSchemaDoc.schema : '' });
-};
-
-exports.changeAdminPassword = async (req, res) => {
-  // NOTE: matches the Python app's behavior -- password is env-var based and this only
-  // changes it in-memory for the life of the process (not persisted). Set ADMIN_PASSWORD
-  // in your env/secret manager for a durable change.
-  const { current_password, new_password, confirm_password } = req.body;
-  if (current_password !== process.env.ADMIN_PASSWORD) return res.status(400).json({ error: 'Current password is incorrect' });
-  if (new_password !== confirm_password) return res.status(400).json({ error: 'Passwords do not match' });
-  if (!new_password || new_password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
-  process.env.ADMIN_PASSWORD = new_password;
-  res.json({ success: true });
 };
 
 exports.saveSiteSettings = async (req, res) => {

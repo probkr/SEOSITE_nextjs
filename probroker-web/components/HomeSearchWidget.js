@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { CITY_STORAGE_KEY, CITY_EVENT } from './Header';
+import { startNavigationProgress } from '@/components/NavigationProgress';
 
 // Category tabs -> which SEO category they map to.
 // `pt` = property-type slug used by the /{city}/{type}s-for-{trans}/ router.
@@ -34,8 +36,15 @@ const SUBTYPES = {
 
 const BHK_OPTIONS = ['1', '2', '3', '4'];
 
-const selectCls =
-  'h-12 px-3 rounded-lg border-0 focus:ring-2 focus:ring-primary outline-none text-sm text-gray-700 bg-transparent cursor-pointer';
+const TRANS_OPTIONS = [
+  { value: 'sale', label: 'Buy' },
+  { value: 'rent', label: 'Rent' },
+];
+
+// Each field is a labelled cell; focus-within highlights the whole cell instead of a ring on the bare control.
+const fieldCls = 'flex flex-col justify-center gap-0.5 px-4 py-2.5 rounded-xl hover:bg-gray-50 focus-within:bg-gray-50 transition-colors min-w-0';
+const labelCls = 'text-[11px] font-bold uppercase tracking-wider text-gray-400';
+const selectCls = 'w-full -ml-1 bg-transparent border-0 outline-none text-[15px] font-semibold text-gray-900 cursor-pointer';
 
 export default function HomeSearchWidget({ cities = [], areas = [] }) {
   const router = useRouter();
@@ -64,10 +73,33 @@ export default function HomeSearchWidget({ cities = [], areas = [] }) {
     if (!term) return [];
     const cityObj = cityList.find((c) => c.slug === city);
     const cid = cityObj?.id || cityObj?._id;
+    // The areas collection has duplicate rows sharing one slug (e.g. three "Chandkheda"s);
+    // they all open the same page, so show each slug once.
+    const seen = new Set();
     return areas
-      .filter((a) => (!cid || a.cityId === cid) && a.name?.toLowerCase().includes(term))
+      .filter((a) => {
+        if ((cid && a.cityId !== cid) || !a.name?.toLowerCase().includes(term) || seen.has(a.slug)) return false;
+        seen.add(a.slug);
+        return true;
+      })
       .slice(0, 8);
   }, [q, city, areas, cityList]);
+
+  // Follow the city chosen in the header's city picker.
+  useEffect(() => {
+    const apply = (slug) => {
+      if (slug && cityList.some((c) => c.slug === slug)) {
+        setCity(slug);
+        setPicked(null);
+        setQ('');
+      }
+    };
+    try { apply(localStorage.getItem(CITY_STORAGE_KEY)); } catch {}
+    const onChange = (e) => apply(e.detail);
+    window.addEventListener(CITY_EVENT, onChange);
+    return () => window.removeEventListener(CITY_EVENT, onChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     function onDocClick(e) {
@@ -99,139 +131,157 @@ export default function HomeSearchWidget({ cities = [], areas = [] }) {
 
     const base = `/${city}/${areaSeg}${leaf}/`;
     const qs = params.toString();
+    startNavigationProgress();
     router.push(qs ? `${base}?${qs}` : base);
   }
 
-  const tabBtn = (active) =>
-    `px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-      active ? 'bg-primary text-white shadow-card' : 'text-gray-600 hover:text-primary'
-    }`;
-
   return (
-    <div className="w-full max-w-5xl mx-auto">
-      {/* Stage 1 — property category */}
-      <div className="inline-flex flex-wrap items-center gap-1 bg-white rounded-xl p-1.5 shadow-card mb-3">
-        {TABS.map((t) => (
-          <button key={t.key} type="button" onClick={() => setTab(t.key)} className={tabBtn(tab === t.key)}>
-            {t.label}
-          </button>
-        ))}
+    <div className="w-full max-w-5xl mx-auto text-left bg-white rounded-2xl border border-gray-200 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.18)]">
+      {/* Category tabs + Buy/Rent, attached to the top of the same card */}
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3 md:px-5 border-b border-gray-100">
+        <div className="flex items-center" role="tablist" aria-label="Property category">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.key}
+              onClick={() => setTab(t.key)}
+              className={`relative px-3 md:px-4 py-4 text-sm md:text-[15px] font-semibold transition-colors ${
+                tab === t.key ? 'text-primary' : 'text-gray-500 hover:text-gray-900'
+              }`}
+            >
+              {t.label}
+              {tab === t.key && <span className="absolute left-3 right-3 md:left-4 md:right-4 bottom-0 h-0.5 rounded-full bg-primary" />}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center bg-gray-100 rounded-full p-1 text-sm font-semibold" role="group" aria-label="Buy or Rent">
+          {TRANS_OPTIONS.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              aria-pressed={trans === o.value}
+              onClick={() => setTrans(o.value)}
+              className={`px-4 py-1.5 rounded-full transition-colors ${
+                trans === o.value ? 'bg-white text-gray-900 shadow-card' : 'text-gray-500 hover:text-gray-900'
+              }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Stages 2-5 */}
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white rounded-xl shadow-float border border-gray-100 p-2 flex flex-col lg:flex-row gap-2"
-      >
-        {/* Buy / Rent */}
-        <select
-          value={trans}
-          onChange={(e) => setTrans(e.target.value)}
-          aria-label="Buy or Rent"
-          className={`${selectCls} bg-primary-50 rounded-lg lg:w-28 shrink-0`}
-        >
-          <option value="sale">Buy</option>
-          <option value="rent">Rent</option>
-        </select>
-
-        {/* City */}
-        <select
-          value={city}
-          onChange={(e) => {
-            setCity(e.target.value);
-            setPicked(null);
-            setQ('');
-          }}
-          aria-label="City"
-          className={`${selectCls} bg-gray-50 rounded-lg lg:w-40 shrink-0`}
-        >
-          {cityList.map((c) => (
-            <option key={c.slug} value={c.slug}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-
-        {/* Locality autocomplete */}
-        <div ref={boxRef} className="relative flex-1 min-w-0">
-          <input
-            type="text"
-            value={picked ? picked.name : q}
-            onChange={(e) => {
-              setQ(e.target.value);
-              setPicked(null);
-              setOpen(true);
-            }}
-            onFocus={() => setOpen(true)}
-            placeholder="Search locality, society, or landmark..."
-            aria-label="Search locality"
-            className="w-full h-12 px-3 rounded-lg border-0 outline-none focus:ring-2 focus:ring-primary text-sm text-gray-700 placeholder:text-gray-400"
-          />
-          {picked && (
-            <button
-              type="button"
-              onClick={() => {
+      <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row lg:items-stretch p-2">
+        <div className="flex flex-col lg:flex-row flex-1 min-w-0 divide-y lg:divide-y-0 lg:divide-x divide-gray-100">
+          {/* City */}
+          <label className={`${fieldCls} lg:w-44`}>
+            <span className={labelCls}>City</span>
+            <select
+              value={city}
+              onChange={(e) => {
+                setCity(e.target.value);
                 setPicked(null);
                 setQ('');
               }}
-              aria-label="Clear locality"
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg leading-none px-1"
+              className={selectCls}
             >
-              &times;
-            </button>
-          )}
-          {open && suggestions.length > 0 && (
-            <ul className="absolute z-30 left-0 right-0 top-full mt-1 bg-white border border-gray-100 rounded-lg shadow-float max-h-64 overflow-y-auto py-1">
-              {suggestions.map((a) => (
-                <li key={a.slug}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPicked({ slug: a.slug, name: a.name });
-                      setOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary"
-                  >
-                    {a.name}
-                  </button>
-                </li>
+              {cityList.map((c) => (
+                <option key={c.slug} value={c.slug}>
+                  {c.name}
+                </option>
               ))}
-            </ul>
+            </select>
+          </label>
+
+          {/* Locality autocomplete */}
+          <div ref={boxRef} className={`${fieldCls} relative flex-1`}>
+            <label htmlFor="home-locality" className={labelCls}>Locality</label>
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="M20 20l-3.5-3.5" /></svg>
+              <input
+                id="home-locality"
+                type="text"
+                value={picked ? picked.name : q}
+                onChange={(e) => {
+                  setQ(e.target.value);
+                  setPicked(null);
+                  setOpen(true);
+                }}
+                onFocus={() => setOpen(true)}
+                placeholder="Search locality, society or landmark"
+                autoComplete="off"
+                className="w-full bg-transparent border-0 p-0 outline-none text-[15px] font-semibold text-gray-900 placeholder:text-gray-400 placeholder:font-normal"
+              />
+              {picked && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPicked(null);
+                    setQ('');
+                  }}
+                  aria-label="Clear locality"
+                  className="text-gray-400 hover:text-gray-600 text-lg leading-none px-1"
+                >
+                  &times;
+                </button>
+              )}
+            </div>
+            {open && suggestions.length > 0 && (
+              <ul className="absolute z-30 left-0 right-0 top-full mt-2 bg-white border border-gray-100 rounded-xl shadow-float max-h-64 overflow-y-auto py-1">
+                {suggestions.map((a) => (
+                  <li key={a.slug}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPicked({ slug: a.slug, name: a.name });
+                        setOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary"
+                    >
+                      {a.name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Subtype */}
+          <label className={`${fieldCls} lg:w-48`}>
+            <span className={labelCls}>Property Type</span>
+            <select value={subtype} onChange={(e) => setSubtype(e.target.value)} className={selectCls}>
+              {subtypeList.map((s) => (
+                <option key={s.slug || 'all'} value={s.slug}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {/* BHK — only meaningful for residential dwellings */}
+          {tab === 'residential' && (
+            <label className={`${fieldCls} lg:w-32`}>
+              <span className={labelCls}>BHK</span>
+              <select value={bhk} onChange={(e) => setBhk(e.target.value)} className={selectCls}>
+                <option value="">Any</option>
+                {BHK_OPTIONS.map((b) => (
+                  <option key={b} value={b}>
+                    {b} BHK
+                  </option>
+                ))}
+              </select>
+            </label>
           )}
         </div>
 
-        {/* Subtype */}
-        <select
-          value={subtype}
-          onChange={(e) => setSubtype(e.target.value)}
-          aria-label="Property type"
-          className={`${selectCls} bg-gray-50 rounded-lg lg:w-44 shrink-0`}
+        <button
+          type="submit"
+          className="btn-primary !rounded-xl gap-2 h-14 lg:h-auto mt-2 lg:mt-0 lg:ml-2 lg:px-8 shrink-0 text-base"
         >
-          {subtypeList.map((s) => (
-            <option key={s.slug || 'all'} value={s.slug}>
-              {s.label}
-            </option>
-          ))}
-        </select>
-
-        {/* BHK — only meaningful for residential dwellings */}
-        {tab === 'residential' && (
-          <select
-            value={bhk}
-            onChange={(e) => setBhk(e.target.value)}
-            aria-label="BHK"
-            className={`${selectCls} bg-gray-50 rounded-lg lg:w-24 shrink-0`}
-          >
-            <option value="">BHK</option>
-            {BHK_OPTIONS.map((b) => (
-              <option key={b} value={b}>
-                {b} BHK
-              </option>
-            ))}
-          </select>
-        )}
-
-        <button type="submit" className="btn-primary h-12 lg:w-32 shrink-0 justify-center">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="M20 20l-3.5-3.5" /></svg>
           Search
         </button>
       </form>

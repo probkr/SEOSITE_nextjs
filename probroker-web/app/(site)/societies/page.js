@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getCities, getSocieties } from '@/lib/api';
+import { getCities, getSocietyCount } from '@/lib/api';
 import { SITE_URL } from '@/lib/config';
 
 export const revalidate = 3600;
@@ -16,8 +16,8 @@ export default async function SocietiesPage() {
   const cities = (await getCities({ revalidate: 3600 })) || [];
   const withCounts = await Promise.all(
     cities.map(async (c) => {
-      const socs = (await getSocieties({ cityId: c.id || c._id }, { revalidate: 3600 })) || [];
-      return { ...c, count: socs.length };
+      const count = await getSocietyCount({ cityId: c.id || c._id }, { revalidate: 3600 });
+      return { ...c, count };
     })
   );
 
