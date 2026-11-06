@@ -1,7 +1,13 @@
 import Link from 'next/link';
 import { fmtPrice, buildPropertyTitle, buildPropertySlug } from '@/lib/format';
+import { CONTACT_CREDITS_ENABLED } from '@/lib/config';
 import PropertyImagePlaceholder from './PropertyImagePlaceholder';
 import CardActions from './CardActions';
+import ContactButton from './ContactButton';
+import ContactActions from './ContactActions';
+
+// Only My Contacts shows these: it keeps listings that have since left the site.
+const INACTIVE_LABEL = { sold: 'Sold', rented: 'Rented', pending: 'Not live' };
 
 export default function PropertyCard({ p, variant = 'grid' }) {
   const title = buildPropertyTitle(p);
@@ -12,11 +18,12 @@ export default function PropertyCard({ p, variant = 'grid' }) {
   const area = p.areaName || p.area || '';
   const city = p.cityName || '';
   const loc = [area, city].filter(Boolean).join(', ');
-  const trans = p.transactionType === 'rent' ? 'For Rent' : 'For Sale';
+  const trans = INACTIVE_LABEL[p.status] || (p.transactionType === 'rent' ? 'For Rent' : 'For Sale');
   const societyName = p.premiseName || p.societyName || '';
   const ownerName = p.contactName || '';
-  const isVerified = p.isApproved !== false;
+  const isVerified = p.isVerified === true;
   const cardId = p.propertyId || p.slug || slug;
+  const pricePerSqft = p.sqft && p.price ? Math.round(p.price / p.sqft) : null;
 
   const imageInner = hasPhoto ? (
     // eslint-disable-next-line @next/next/no-img-element
@@ -27,7 +34,7 @@ export default function PropertyCard({ p, variant = 'grid' }) {
       loading="lazy"
     />
   ) : (
-    <PropertyImagePlaceholder category={p.category} propertyType={p.propertyType} />
+    <PropertyImagePlaceholder category={p.category} propertyType={p.propertyType} seed={cardId} />
   );
 
   const badges = (
@@ -58,25 +65,64 @@ export default function PropertyCard({ p, variant = 'grid' }) {
   const locationRow = loc ? (
     <div className="text-sm text-gray-500 flex items-center gap-1">
       <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M9.69 18.933a.75.75 0 00.62 0c.058-.026.128-.061.207-.108a17.5 17.5 0 001.907-1.311c.653-.51 1.32-1.144 1.94-1.9C16.104 13.727 17 11.9 17 9.75 17 5.856 13.866 2.75 10 2.75S3 5.856 3 9.75c0 2.15.896 3.977 2.646 6.144.62.756 1.287 1.39 1.94 1.9a17.5 17.5 0 002.114 1.419l.001.001zM10 11.75a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+        <path fillRule="evenodd" d="M9.69 18.933a.75.75 0 00.62.058c.058-.026.128-.061.207-.108a17.5 17.5 0 001.907-1.311c.653-.51 1.32-1.144 1.94-1.9C16.104 13.727 17 11.9 17 9.75 17 5.856 13.866 2.75 10 2.75S3 5.856 3 9.75c0 2.146.895 3.977 2.646 6.144.62.756 1.287 1.39 1.94 1.9a17.5 17.5 0 002.114 1.4191.001.001zM10 11.75a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
       </svg>
       <span className="line-clamp-1">{loc}</span>
     </div>
   ) : null;
 
-  const factsRow = (
-    <div className="flex gap-3 text-xs text-gray-600 pt-2 border-t border-gray-100">
-      {p.sqft ? <span>{p.sqft} sqft</span> : null}
-      {p.furnishing ? <span>&middot; {p.furnishing}</span> : null}
-      {p.propertyType ? <span className="capitalize">&middot; {p.propertyType}</span> : null}
+  const priceRow = (
+    <div className="flex items-baseline gap-2 flex-wrap">
+      <div className="text-xl font-bold text-primary font-heading">{fmtPrice(p.price)}</div>
+      {pricePerSqft ? <div className="text-xs text-gray-400">&#8377;{pricePerSqft.toLocaleString('en-IN')}/sqft</div> : null}
     </div>
   );
+
+  const factItems = [
+    p.sqft ? { label: 'Area', value: `${p.sqft} sqft` } : null,
+    p.propertyType ? { label: 'Type', value: p.propertyType, capitalize: true } : null,
+    p.furnishing ? { label: 'Furnishing', value: p.furnishing, capitalize: true } : null,
+    p.floorNumber ? { label: 'Floor', value: `${p.floorNumber}${p.totalFloors ? `/${p.totalFloors}` : ''}` } : null,
+    p.listingType ? { label: 'Posted by', value: p.listingType, capitalize: true } : null,
+  ].filter(Boolean);
+
+  const factsRow = factItems.length > 0 ? (
+    <div className="flex flex-wrap gap-x-4 gap-y-1.5 pt-2 border-t border-gray-100">
+      {factItems.map((f) => (
+        <div key={f.label} className="flex flex-col leading-tight">
+          <span className="text-[10px] uppercase tracking-wide text-gray-400">{f.label}</span>
+          <span className={`text-xs font-medium text-gray-800 ${f.capitalize ? 'capitalize' : ''}`}>{f.value}</span>
+        </div>
+      ))}
+    </div>
+  ) : null;
 
   const ownerRow = ownerName ? (
     <div className="text-xs text-gray-500 truncate">
       Owner: <span className="text-gray-700 font-medium">{ownerName}</span>
     </div>
   ) : null;
+
+  // contactPhone only reaches a card from My Contacts, where the number is already unlocked.
+  const contactButton = (className) => {
+    if (p.contactPhone) {
+      return (
+        <div className={`relative z-10 pointer-events-auto ${className}`}>
+          <ContactActions phone={p.contactPhone} propertyTitle={title} />
+        </div>
+      );
+    }
+    return CONTACT_CREDITS_ENABLED && p.hasContact ? (
+      <ContactButton
+        propertyId={p.propertyId}
+        propertyTitle={title}
+        contactName={ownerName}
+        listingType={p.listingType}
+        href={href}
+        className={className}
+      />
+    ) : null;
+  };
 
   if (variant === 'row') {
     return (
@@ -92,10 +138,13 @@ export default function PropertyCard({ p, variant = 'grid' }) {
             <CardActions id={cardId} title={title} path={href} />
           </div>
           {societyRow}
-          <div className="text-xl font-bold text-primary font-heading">{fmtPrice(p.price)}</div>
+          {priceRow}
           {locationRow}
           <div className="mt-1">{factsRow}</div>
-          {ownerRow}
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">{ownerRow}</div>
+            {contactButton('shrink-0')}
+          </div>
         </div>
       </div>
     );
@@ -114,10 +163,11 @@ export default function PropertyCard({ p, variant = 'grid' }) {
       <div className="p-4 flex-1 flex flex-col gap-1.5 pointer-events-none">
         {titleRow}
         {societyRow}
-        <div className="text-xl font-bold text-primary font-heading">{fmtPrice(p.price)}</div>
+        {priceRow}
         {locationRow}
         <div className="mt-2">{factsRow}</div>
         {ownerRow}
+        {contactButton('w-full mt-auto')}
       </div>
     </div>
   );

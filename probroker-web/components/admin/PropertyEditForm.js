@@ -27,6 +27,7 @@ export default function PropertyEditForm({ property, cities, areas, societies })
     contactPhone: property.contactPhone || '',
     status: property.status || 'active',
     isApproved: property.isApproved ? 'true' : 'false',
+    isVerified: property.isVerified ? 'true' : 'false',
     custom_schema: property.custom_schema || ''
   });
   const [images, setImages] = useState(
@@ -120,6 +121,7 @@ export default function PropertyEditForm({ property, cities, areas, societies })
           floorNumber: form.floorNumber === '' ? null : Number(form.floorNumber),
           totalFloors: form.totalFloors === '' ? null : Number(form.totalFloors),
           isApproved: form.isApproved === 'true',
+          isVerified: form.isVerified === 'true',
           images
         })
       });
@@ -269,6 +271,14 @@ export default function PropertyEditForm({ property, cities, areas, societies })
                   <option value="true">Yes</option>
                   <option value="false">No</option>
                 </select>
+              </div>
+              <div className="mb-4">
+                <label className="block text-xs font-semibold mb-1">Verified</label>
+                <select className="w-full border border-gray-200 rounded-md px-2.5 py-2 text-sm" value={form.isVerified} onChange={(e) => setField('isVerified', e.target.value)}>
+                  <option value="false">No</option>
+                  <option value="true">Yes, show Verified badge</option>
+                </select>
+                <p className="text-[11px] text-gray-400 mt-1">Only verified listings get the badge and show under the Verified filter.</p>
               </div>
               <button type="submit" disabled={saving} className="w-full bg-primary text-white rounded-md py-2.5 font-semibold disabled:opacity-60">
                 {saving ? 'Saving…' : 'Save All Changes'}

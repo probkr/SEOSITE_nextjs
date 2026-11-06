@@ -1,4 +1,11 @@
+const dns = require('dns');
 const mongoose = require('mongoose');
+
+// Optional: override the DNS servers Node uses. Needed on some Windows machines where Node
+// picks up 127.0.0.1 as its resolver and mongodb+srv:// lookups fail with querySrv ECONNREFUSED.
+if (process.env.DNS_SERVERS) {
+  dns.setServers(process.env.DNS_SERVERS.split(',').map((s) => s.trim()).filter(Boolean));
+}
 
 async function connectDB() {
   const mongoUrl = process.env.MONGO_URL;

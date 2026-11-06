@@ -77,7 +77,7 @@ export default async function BlogListPage({ searchParams }) {
                 <div className="text-sm text-gray-500 flex items-center gap-2">
                   <span>{featured.author || 'PRObroker Team'}</span>
                   {featured.publishedAt && <><span>&middot;</span><span>{formatDate(featured.publishedAt)}</span></>}
-                  <span>&middot;</span><span>{readTime(featured.content)} min read</span>
+                  <span>&middot;</span><span>{featured.readTime || readTime(featured.content)} min read</span>
                 </div>
               </div>
             </Link>
@@ -102,7 +102,7 @@ export default async function BlogListPage({ searchParams }) {
                       <div className="text-xs text-gray-400 flex items-center gap-1.5 pt-2 border-t border-gray-100">
                         <span>{p.author || 'PRObroker Team'}</span>
                         <span>&middot;</span>
-                        <span>{readTime(p.content)} min read</span>
+                        <span>{p.readTime || readTime(p.content)} min read</span>
                       </div>
                     </div>
                   </Link>

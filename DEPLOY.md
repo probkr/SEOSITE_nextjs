@@ -36,14 +36,38 @@ cd probroker
 
 ## 3. Configure environment variables
 
+The API reads only `probroker-api/.env`. `.env.example` is a template that nothing reads at
+runtime. `.env` is gitignored, so `git pull` never creates, changes or deletes it: create it
+once on the server, and never commit it.
+
 ```bash
 cp probroker-api/.env.example probroker-api/.env
 nano probroker-api/.env
 ```
 
-Fill in: `MONGO_URL`, `DB_NAME`, `SECRET_KEY` (generate with `openssl rand -hex 32`),
-`ADMIN_USERNAME`, `ADMIN_PASSWORD`, R2 credentials, `TWOFACTOR_API_KEY`. Set
-`CORS_ORIGINS=https://prbroker.in,https://www.prbroker.in`.
+Run `openssl rand -hex 32` once for each of `SECRET_KEY`, `WEBHOOK_AUTH_KEY` and
+`REVALIDATE_SECRET`, so each gets its own value. Use different values from your local machine.
+The API will not start if `SECRET_KEY` is missing, or if any of the three is short or a known
+example value. Changing `SECRET_KEY` logs everyone out, and a new `WEBHOOK_AUTH_KEY` must also be
+updated in the CRM that calls the webhook.
+
+Also fill in `MONGO_URL`, `DB_NAME`, `ADMIN_PHONES`, the R2 credentials and
+`TWOFACTOR_API_KEY`, and set:
+
+```
+NODE_ENV=production
+COOKIE_SECURE=true
+OTP_DEV_MODE=false
+SITE_URL=https://prbroker.in
+CORS_ORIGINS=https://prbroker.in,https://www.prbroker.in
+```
+
+After any later change to `.env`, recreate the container. A plain `docker compose restart`
+keeps the old values:
+
+```bash
+docker compose up -d --force-recreate api
+```
 
 Then create the root `.env` (used by docker-compose for the frontend build):
 
@@ -51,6 +75,7 @@ Then create the root `.env` (used by docker-compose for the frontend build):
 cat > .env << 'EOF'
 NEXT_PUBLIC_API_URL=https://api.prbroker.in/api/v1
 NEXT_PUBLIC_SITE_URL=https://prbroker.in
+REVALIDATE_SECRET=same-value-as-in-probroker-api-.env
 EOF
 ```
 
@@ -96,12 +121,32 @@ confirmed, update DNS to make `prbroker.in` point here for real, then monitor Go
 Search Console for crawl errors over the following 1–2 weeks before decommissioning
 the old Emergent-hosted Python app.
 
-## Updating the site later (your intern's day-to-day workflow)
+## Updating the site later
+
+Merge your change into `main` and push. GitHub Actions (`.github/workflows/deploy.yml`) then:
+
+1. Checks the API code and builds the website against a stub API.
+2. Connects to the server and runs `scripts/deploy.sh` with the commit.
+3. Rebuilds only the services whose files changed.
+4. Checks the site, and puts the previous images back if the check fails.
+
+Follow each run in the repo's **Actions** tab. A push that doesn't reach `main` deploys nothing.
+
+Never edit tracked files on the server: `deploy.sh` stops if it finds any. `.env` files aren't
+tracked, so they stay on the server. After changing one, run:
 
 ```bash
-cd probroker
-git pull
-docker compose up -d --build
+docker compose up -d --force-recreate --no-deps api
+```
+
+The pipeline needs three repository secrets: `VPS_HOST`, `VPS_SSH_KEY` and `VPS_KNOWN_HOSTS`. The
+matching public key sits in the server's `authorized_keys` and may only run `scripts/deploy.sh`.
+
+To deploy by hand, use the full commit SHA of a commit on `main`:
+
+```bash
+cd /root/probroker
+bash scripts/deploy.sh <full-commit-sha>
 ```
 
 ## Logs / troubleshooting

@@ -12,6 +12,23 @@ const SOURCE_BADGE = { import: 'blue', owner: 'yellow', probroker: 'purple' };
 export default function ListingsTable({ listings }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState(null);
+  // Optimistic per-row verified state, so the tag flips instantly without refetching the page.
+  const [verifiedOverride, setVerifiedOverride] = useState({});
+  const isVerified = (p) => (p.propertyId in verifiedOverride ? verifiedOverride[p.propertyId] : p.isVerified === true);
+
+  async function toggleVerified(p) {
+    const next = !isVerified(p);
+    setVerifiedOverride((m) => ({ ...m, [p.propertyId]: next }));
+    try {
+      await clientFetchJson(`/admin/listings/${p.propertyId}/verify`, {
+        method: 'POST',
+        body: JSON.stringify({ verified: next })
+      });
+    } catch (e) {
+      setVerifiedOverride((m) => ({ ...m, [p.propertyId]: !next }));
+      alert('Error: ' + e.message);
+    }
+  }
 
   async function toggleStatus(p) {
     const newStatus = p.status === 'active' ? 'sold' : 'active';
@@ -53,6 +70,7 @@ export default function ListingsTable({ listings }) {
           <th className="text-left px-3.5 py-2.5">Type</th>
           <th className="text-left px-3.5 py-2.5">Status</th>
           <th className="text-left px-3.5 py-2.5">Source</th>
+          <th className="text-left px-3.5 py-2.5">Verified</th>
           <th className="text-left px-3.5 py-2.5">Date</th>
           <th className="text-left px-3.5 py-2.5">Actions</th>
         </tr>
@@ -75,6 +93,21 @@ export default function ListingsTable({ listings }) {
             </td>
             <td className="px-3.5 py-2.5"><Badge color={STATUS_BADGE[p.status] || 'gray'}>{p.status}</Badge></td>
             <td className="px-3.5 py-2.5"><Badge color={SOURCE_BADGE[p.source] || 'purple'}>{p.source || 'probroker'}</Badge></td>
+            <td className="px-3.5 py-2.5">
+              <button
+                type="button"
+                onClick={() => toggleVerified(p)}
+                aria-pressed={isVerified(p)}
+                title={isVerified(p) ? 'Click to remove the Verified tag' : 'Click to mark as Verified'}
+                className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-semibold border transition-colors ${
+                  isVerified(p)
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-200'
+                    : 'bg-white text-gray-500 border-dashed border-gray-300 hover:border-emerald-400 hover:text-emerald-700'
+                }`}
+              >
+                {isVerified(p) ? '✓ Verified' : '+ Verify'}
+              </button>
+            </td>
             <td className="px-3.5 py-2.5 text-xs text-gray-400 whitespace-nowrap">{formatDate(p.createdAt)}</td>
             <td className="px-3.5 py-2.5 whitespace-nowrap">
               <div className="flex gap-1">
@@ -89,7 +122,7 @@ export default function ListingsTable({ listings }) {
           </tr>
         ))}
         {listings.length === 0 && (
-          <tr><td colSpan={8} className="text-center py-10 text-gray-400">No properties found</td></tr>
+          <tr><td colSpan={9} className="text-center py-10 text-gray-400">No properties found</td></tr>
         )}
       </tbody>
     </table>

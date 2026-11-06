@@ -11,8 +11,9 @@ export default async function ListingsPage({ searchParams }) {
   const status = searchParams.status || '';
   const date_from = searchParams.date_from || '';
   const date_to = searchParams.date_to || '';
+  const verified = searchParams.verified || '';
 
-  const qs = new URLSearchParams({ page, q, city, status, date_from, date_to }).toString();
+  const qs = new URLSearchParams({ page, q, city, status, date_from, date_to, verified }).toString();
 
   let data = { listings: [], total: 0, total_pages: 1, cities: [] };
   try {
@@ -20,9 +21,10 @@ export default async function ListingsPage({ searchParams }) {
   } catch (e) {
     data = { listings: [], total: 0, total_pages: 1, cities: [], error: e.message };
   }
-  const { listings = [], total = 0, total_pages = 1, cities = [] } = data;
+  const { listings = [], total = 0, cities = [] } = data;
+  const total_pages = data.total_pages || data.totalPages || 1;
 
-  const extraQuery = `&q=${encodeURIComponent(q)}&city=${encodeURIComponent(city)}&status=${encodeURIComponent(status)}&date_from=${date_from}&date_to=${date_to}`;
+  const extraQuery = `&q=${encodeURIComponent(q)}&city=${encodeURIComponent(city)}&status=${encodeURIComponent(status)}&date_from=${date_from}&date_to=${date_to}&verified=${verified}`;
 
   return (
     <div>
@@ -43,6 +45,11 @@ export default async function ListingsPage({ searchParams }) {
           <option value="pending">Pending</option>
           <option value="sold">Sold</option>
           <option value="rented">Rented</option>
+        </select>
+        <select name="verified" defaultValue={verified} className="border border-gray-200 rounded-md px-3 py-2 text-sm">
+          <option value="">Verified: All</option>
+          <option value="true">Verified only</option>
+          <option value="false">Not verified</option>
         </select>
         <input type="date" name="date_from" defaultValue={date_from} className="border border-gray-200 rounded-md px-3 py-2 text-sm" />
         <input type="date" name="date_to" defaultValue={date_to} className="border border-gray-200 rounded-md px-3 py-2 text-sm" />

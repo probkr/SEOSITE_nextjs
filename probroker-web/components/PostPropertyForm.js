@@ -13,9 +13,9 @@ const CITIES = [
   { slug: 'gandhinagar', name: 'Gandhinagar' },
 ];
 const BENEFITS = [
-  { title: 'Zero Brokerage', desc: 'List directly as an owner — no commission, no middlemen.' },
+  { title: 'Free to List', desc: 'Post your property in minutes — no listing fees.' },
   { title: 'Verified Badge', desc: 'Approved listings carry a verified badge that buyers trust.' },
-  { title: 'Direct Enquiries', desc: 'Interested buyers and tenants contact you directly, instantly.' },
+  { title: 'Instant Enquiries', desc: 'Interested buyers and tenants reach out the moment they are interested.' },
   { title: 'Free Forever', desc: 'Posting your property on PRObroker costs nothing, always.' },
 ];
 const HOW_IT_WORKS = [
@@ -214,7 +214,7 @@ export default function PostPropertyForm({ stats }) {
               Post Your Property <span className="text-accent-500">FREE</span>
             </h1>
             <p className="mt-4 text-primary-100 text-lg max-w-2xl mx-auto">
-              Reach thousands of genuine buyers and tenants in Ahmedabad &amp; Gandhinagar &mdash; zero brokerage, ever.
+              Reach thousands of genuine buyers and tenants in Ahmedabad &amp; Gandhinagar &mdash; completely free to list.
             </p>
             <button onClick={() => setStage('basic')} className="btn-accent mt-8 text-base !px-8 !py-3.5">
               Get Started &rarr;
@@ -230,7 +230,7 @@ export default function PostPropertyForm({ stats }) {
               </div>
               <div>
                 <div className="text-2xl font-extrabold font-heading">₹0</div>
-                <div className="text-xs text-primary-100">Brokerage</div>
+              <div className="text-xs text-primary-100">Listing Fee</div>
               </div>
             </div>
           </div>

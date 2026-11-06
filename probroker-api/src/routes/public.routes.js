@@ -31,5 +31,7 @@ router.get('/blog/latest', pub.latestBlogPosts);
 router.get('/blog/:slug', pub.getBlogPostBySlug);
 
 router.get('/societies-featured/popular', pub.popularSocieties);
+router.get('/societies-featured/top', pub.topSocieties);
+router.get('/areas-featured/top', pub.topAreas);
 
 module.exports = router;

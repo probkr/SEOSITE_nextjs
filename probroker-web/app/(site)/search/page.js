@@ -40,6 +40,15 @@ export default async function SearchPage({ searchParams }) {
         maxPrice: filters.maxPrice || undefined,
         furnishing: filters.furnishing || undefined,
         parking: filters.parking || undefined,
+        propertyType: filters.propertyType || undefined,
+        minSqft: filters.minSqft || undefined,
+        maxSqft: filters.maxSqft || undefined,
+        postedBy: filters.postedBy || undefined,
+        postedSince: filters.postedSince || undefined,
+        familyOrBachelors: filters.familyOrBachelors || undefined,
+        amenities: filters.amenities || undefined,
+        hasPhotos: filters.hasPhotos || undefined,
+        verified: filters.verified || undefined,
         sort: SORT_MAP[filters.sort] || '-createdAt',
         page,
         limit: perPage,
@@ -70,29 +79,25 @@ export default async function SearchPage({ searchParams }) {
       {!q ? (
         <p className="text-gray-500">Enter a locality, society, or city name above to find properties.</p>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
-          <aside className="hidden lg:block">
+        <>
+          {/* Filters: full-width horizontal bar above the listing, matches city/category pages */}
+          <div className="mb-5">
             <ListingFilters activeFilters={filters} resultCount={total} />
-          </aside>
-          <div>
-            <div className="lg:hidden mb-5">
-              <ListingFilters activeFilters={filters} resultCount={total} />
-            </div>
-            {properties.length === 0 ? (
-              <div className="card p-10 text-center">
-                <p className="text-gray-600 font-medium mb-1">No properties found for &quot;{q}&quot;</p>
-                <p className="text-sm text-gray-500">Try a different locality, society name, or clear your filters.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 mb-8">
-                {properties.map((p) => (
-                  <PropertyCard key={p.propertyId || p.slug} p={p} />
-                ))}
-              </div>
-            )}
-            {totalPages > 1 && <PaginationLinks basePath="/search/" page={page} totalPages={totalPages} />}
           </div>
-        </div>
+          {properties.length === 0 ? (
+            <div className="card p-10 text-center">
+              <p className="text-gray-600 font-medium mb-1">No properties found for &quot;{q}&quot;</p>
+              <p className="text-sm text-gray-500">Try a different locality, society name, or clear your filters.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 mb-8">
+              {properties.map((p) => (
+                <PropertyCard key={p.propertyId || p.slug} p={p} />
+              ))}
+            </div>
+          )}
+          {totalPages > 1 && <PaginationLinks basePath="/search/" page={page} totalPages={totalPages} />}
+        </>
       )}
     </div>
   );

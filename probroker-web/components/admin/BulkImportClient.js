@@ -26,9 +26,9 @@ function ResultCard({ result }) {
 // We support both: if the immediate response includes a job_id (and no final
 // counts yet), poll until the job reports done/failed.
 async function pollJobStatus(jobId, onTick) {
-  for (let i = 0; i < 120; i++) {
+  for (let i = 0; i < 2400; i++) {
     await new Promise((r) => setTimeout(r, 1500));
-    const res = await clientFetch(`/admin/bulk-import/status/${jobId}`);
+    const res = await clientFetch(`/admin/import-status/${jobId}`);
     if (!res.ok) continue;
     const data = await res.json();
     onTick(data);
@@ -36,7 +36,7 @@ async function pollJobStatus(jobId, onTick) {
       return data;
     }
   }
-  throw new Error('Import job timed out while polling status');
+  throw new Error('Still processing in the background -- refresh this page later to see final results.');
 }
 
 export default function BulkImportClient({ dbInfo }) {
@@ -115,8 +115,8 @@ export default function BulkImportClient({ dbInfo }) {
   }
 
   function downloadCsvTemplate() {
-    const headers = 'title,type,unitType,bhk,rentValue,area,city,society,name,number,furnishedType,sqFt,builtUpArea,carpetArea,floor,totalFloor,facing,parking,balcony,status';
-    const sample = 'My Property,Residential Sale,Flat,3,7500000,Satellite,Ahmedabad,Shaligram Greens,Owner Name,919876543210,Semi Furnished,1450,1300,1100,5,12,East,1,2,Active';
+    const headers = 'propertyId,status,transactionType,category,propertyType,price,bhk,sqft,cityName,areaName,premiseName,floorNumber,totalFloors,furnishing,familyOrBachelors,parking,contactName,contactPhone,listingType,description,nearby,additionalDetails';
+    const sample = ',active,buy,residential,flat,7500000,3,1450,Ahmedabad,Satellite,Shaligram Greens,5,12,semi-furnished,family,true,Owner Name,9876543210,broker,Spacious 3BHK flat with good ventilation,Near SG Highway,Well maintained society';
     const blob = new Blob([headers + '\n' + sample + '\n'], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -129,7 +129,7 @@ export default function BulkImportClient({ dbInfo }) {
       <div className="bg-white rounded-lg shadow mb-6">
         <div className="px-5 py-4 border-b border-gray-200 font-bold text-gray-900">Upload JSON File</div>
         <div className="p-5">
-          <p className="text-sm text-gray-500 mb-3">Upload your PRObroker JSON export. Fields are auto-mapped, SEO descriptions generated, amenities extracted.</p>
+          <p className="text-sm text-gray-500 mb-3">Upload a JSON array of properties, either a CRM export (Proeprty-Details: title, type, rentValue, number, images…) or PRObroker fields. Existing propertyIds are updated; deleted, rented and sold rows are skipped (or taken down if already live).</p>
           <label className="block border-2 border-dashed border-gray-200 rounded-lg p-8 text-center cursor-pointer hover:border-primary">
             <input ref={jsonInputRef} type="file" accept=".json" className="hidden" onChange={(e) => setJsonFile(e.target.files[0] || null)} />
             <div className="text-3xl mb-2">📥</div>

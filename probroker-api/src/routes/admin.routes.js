@@ -15,6 +15,7 @@ router.get('/dashboard', admin.dashboard);
 // Listings (properties)
 router.get('/listings', admin.listListings);
 router.post('/listings/:propertyId/status', admin.updateListingStatus);
+router.post('/listings/:propertyId/verify', admin.setListingVerified);
 router.post('/listings/:propertyId/delete', admin.deleteListing);
 router.get('/listings/:propertyId/edit', admin.getListingForEdit);
 router.post('/listings/:propertyId/edit', admin.saveListingEdit);
@@ -64,7 +65,6 @@ router.get('/export-backup', admin.exportBackup);
 
 // Settings
 router.get('/settings', admin.getSettings);
-router.post('/settings/password', admin.changeAdminPassword);
 router.post('/settings/site', admin.saveSiteSettings);
 router.post('/settings/logo-upload', upload.single('image'), admin.uploadSiteLogo);
 router.post('/settings/homepage-schema', admin.saveHomepageSchema);

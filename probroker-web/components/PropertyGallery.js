@@ -1,8 +1,10 @@
 'use client';
 import { useState, useCallback, useEffect } from 'react';
+import { getPlaceholderPhotoUrl } from './PropertyImagePlaceholder';
 
-export default function PropertyGallery({ photos, title }) {
-  const imgs = photos && photos.length ? photos : ['/placeholder-property.svg'];
+export default function PropertyGallery({ photos, title, category, propertyType, seed }) {
+  const hasPhotos = photos && photos.length > 0;
+  const imgs = hasPhotos ? photos : [getPlaceholderPhotoUrl({ category, propertyType, seed }) + '?auto=format&fit=crop&w=1200&q=60'];
   const [active, setActive] = useState(0);
   const [lightbox, setLightbox] = useState(false);
 
@@ -23,14 +25,24 @@ export default function PropertyGallery({ photos, title }) {
   return (
     <div>
       {/* Main image */}
-      <div className="relative rounded-2xl overflow-hidden bg-primary-50 aspect-[16/10] group cursor-zoom-in shadow-float" onClick={() => setLightbox(true)}>
+      <div className={`relative rounded-2xl overflow-hidden bg-primary-50 aspect-[16/10] group shadow-float ${hasPhotos ? 'cursor-zoom-in' : ''}`} onClick={hasPhotos ? () => setLightbox(true) : undefined}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={imgs[active]} alt={`${title} photo ${active + 1}`} className="w-full h-full object-cover" />
+        <img src={imgs[active]} alt={`${title} photo ${active + 1}`} className={`w-full h-full object-cover ${hasPhotos ? '' : 'blur-md scale-110'}`} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-        <div className="absolute bottom-4 right-4 bg-white/95 backdrop-blur text-gray-900 text-sm font-bold px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-card">
-          <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-          +{imgs.length} Photos
-        </div>
+        {hasPhotos ? (
+          <div className="absolute bottom-4 right-4 bg-white/95 backdrop-blur text-gray-900 text-sm font-bold px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-card">
+            <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            +{imgs.length} Photos
+          </div>
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/10 pointer-events-none">
+            <span className="inline-flex items-center gap-2 bg-white/95 backdrop-blur text-gray-900 text-sm font-bold px-4 py-2 rounded-full shadow-card">
+              <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              Request Photos
+            </span>
+            <span className="text-white text-xs font-medium drop-shadow bg-black/30 px-2.5 py-1 rounded-full">Photos coming soon from the owner</span>
+          </div>
+        )}
         {imgs.length > 1 && (
           <>
             <button

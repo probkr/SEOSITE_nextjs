@@ -1,4 +1,5 @@
-import { adminFetchJson, API_URL } from '@/lib/api';
+import { adminFetchJson } from '@/lib/api';
+import { API_URL } from '@/lib/config';
 import { formatDate } from '@/lib/format';
 import Pagination from '@/components/admin/Pagination';
 
@@ -12,7 +13,8 @@ export default async function InquiriesPage({ searchParams }) {
   } catch (e) {
     data = { inquiries: [], total: 0, total_pages: 1, error: e.message };
   }
-  const { inquiries = [], total = 0, total_pages = 1 } = data;
+  const { inquiries = [], total = 0 } = data;
+  const total_pages = data.total_pages || data.totalPages || 1;
 
   return (
     <div>
@@ -31,7 +33,11 @@ export default async function InquiriesPage({ searchParams }) {
               <tr key={i} className="border-t border-gray-100 align-top">
                 <td className="px-3.5 py-2.5 font-semibold text-gray-900">{inq.name}</td>
                 <td className="px-3.5 py-2.5">{inq.phone}</td>
-                <td className="px-3.5 py-2.5 max-w-[200px] truncate">{inq.propertyName}</td>
+                <td className="px-3.5 py-2.5 max-w-[200px] truncate">
+                  {inq.propertySlug ? (
+                    <a href={`/property/${inq.propertySlug}/`} target="_blank" rel="noreferrer" className="text-primary hover:underline">{inq.propertyName}</a>
+                  ) : inq.propertyName}
+                </td>
                 <td className="px-3.5 py-2.5 max-w-[220px] text-gray-500">{inq.message || '—'}</td>
                 <td className="px-3.5 py-2.5 text-xs text-gray-400 whitespace-nowrap">{formatDate(inq.createdAt)}</td>
               </tr>

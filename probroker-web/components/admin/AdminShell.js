@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { clientFetch } from '@/lib/api';
 
@@ -23,8 +24,29 @@ const NAV = [
 export default function AdminShell({ children }) {
   const pathname = usePathname();
   const router = useRouter();
+  const isLogin = pathname === '/admin/login';
+  const [admin, setAdmin] = useState(null);
 
-  if (pathname === '/admin/login') {
+  // Shows who is signed in, and sends the browser back to login if the API no longer accepts
+  // the session (expired, or the number was removed from ADMIN_PHONES).
+  useEffect(() => {
+    if (isLogin) return undefined;
+    let alive = true;
+    clientFetch('/admin/me', { cache: 'no-store' })
+      .then(async (res) => {
+        if (res.status === 401) {
+          router.replace(`/admin/login?next=${encodeURIComponent(pathname)}`);
+          return;
+        }
+        const data = await res.json().catch(() => null);
+        if (alive && data) setAdmin(data);
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLogin]);
+
+  if (isLogin) {
     return <>{children}</>;
   }
 
@@ -63,7 +85,7 @@ export default function AdminShell({ children }) {
           })}
         </nav>
         <div className="px-4 py-3 border-t border-white/10">
-          <div className="text-[12px] text-white/50 mb-1.5">Logged in as <strong>admin</strong></div>
+          <div className="text-[12px] text-white/50 mb-1.5">Logged in as <strong>{admin ? `+91 ${admin.username}` : 'admin'}</strong></div>
           <button onClick={handleLogout} className="text-[12px] font-semibold text-red-400 hover:opacity-80">
             ✖ Logout
           </button>

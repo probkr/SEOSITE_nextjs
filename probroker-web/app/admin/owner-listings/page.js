@@ -12,7 +12,8 @@ export default async function OwnerListingsPage({ searchParams }) {
   } catch (e) {
     data = { listings: [], total: 0, total_pages: 1, error: e.message };
   }
-  const { listings = [], total = 0, total_pages = 1 } = data;
+  const { listings = [], total = 0 } = data;
+  const total_pages = data.total_pages || data.totalPages || 1;
 
   if (total === 0) {
     return (

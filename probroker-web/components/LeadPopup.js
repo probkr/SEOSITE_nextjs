@@ -52,7 +52,7 @@ export default function LeadPopup() {
         propertyId: null,
         name: form.name,
         phone: form.phone,
-        message: `Zero Brokerage lead — ${form.purpose} ${form.propertyType}/${form.subType} in ${form.city}. Localities: ${
+        message: `New listing enquiry — ${form.purpose} ${form.propertyType}/${form.subType} in ${form.city}. Localities: ${
           form.localities || 'any'
         }. I am: ${form.role}.`,
       });
@@ -97,7 +97,7 @@ export default function LeadPopup() {
         </button>
 
         <div className="text-center mb-4">
-          <h2 className="text-2xl font-extrabold font-heading text-primary">Zero Brokerage Offer</h2>
+          <h2 className="text-2xl font-extrabold font-heading text-primary">New Verified Listings</h2>
           <p className="text-sm text-gray-600 mt-1">
             Your dream home is calling you! Choose from 2,872+ verified properties.
           </p>

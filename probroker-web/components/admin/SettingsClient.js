@@ -4,10 +4,6 @@ import { useState } from 'react';
 import { clientFetch, clientFetchJson } from '@/lib/api';
 
 export default function SettingsClient({ settings, homepageSchema }) {
-  const [pwForm, setPwForm] = useState({ current_password: '', new_password: '', confirm_password: '' });
-  const [pwMsg, setPwMsg] = useState(null);
-  const [pwSaving, setPwSaving] = useState(false);
-
   const [siteForm, setSiteForm] = useState({
     site_name: settings.site_name || 'PRObroker',
     contact_phone: settings.contact_phone || '',
@@ -27,23 +23,6 @@ export default function SettingsClient({ settings, homepageSchema }) {
   const [schemaError, setSchemaError] = useState('');
   const [schemaMsg, setSchemaMsg] = useState(null);
   const [schemaSaving, setSchemaSaving] = useState(false);
-
-  async function savePassword(e) {
-    e.preventDefault();
-    setPwMsg(null);
-    if (pwForm.new_password !== pwForm.confirm_password) { setPwMsg({ type: 'error', text: 'Passwords do not match' }); return; }
-    if (pwForm.new_password.length < 6) { setPwMsg({ type: 'error', text: 'Password must be at least 6 characters' }); return; }
-    setPwSaving(true);
-    try {
-      await clientFetchJson('/admin/settings/password', { method: 'POST', body: JSON.stringify(pwForm) });
-      setPwMsg({ type: 'success', text: 'Password updated successfully' });
-      setPwForm({ current_password: '', new_password: '', confirm_password: '' });
-    } catch (err) {
-      setPwMsg({ type: 'error', text: err.message });
-    } finally {
-      setPwSaving(false);
-    }
-  }
 
   async function saveSite(e) {
     e.preventDefault();
@@ -127,23 +106,15 @@ export default function SettingsClient({ settings, homepageSchema }) {
     <div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         <div className="bg-white rounded-lg shadow">
-          <div className="px-5 py-4 border-b border-gray-200 font-bold text-gray-900">Change Password</div>
-          <form onSubmit={savePassword} className="p-5">
-            {pwMsg && <div className={`px-3 py-2 rounded mb-3 text-sm ${pwMsg.type === 'success' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>{pwMsg.text}</div>}
-            <div className="mb-3">
-              <label className="block text-xs font-semibold mb-1">Current Password</label>
-              <input type="password" required className="w-full border border-gray-200 rounded-md px-2.5 py-2 text-sm" value={pwForm.current_password} onChange={(e) => setPwForm({ ...pwForm, current_password: e.target.value })} />
-            </div>
-            <div className="mb-3">
-              <label className="block text-xs font-semibold mb-1">New Password</label>
-              <input type="password" required minLength={6} className="w-full border border-gray-200 rounded-md px-2.5 py-2 text-sm" value={pwForm.new_password} onChange={(e) => setPwForm({ ...pwForm, new_password: e.target.value })} />
-            </div>
-            <div className="mb-3">
-              <label className="block text-xs font-semibold mb-1">Confirm New Password</label>
-              <input type="password" required minLength={6} className="w-full border border-gray-200 rounded-md px-2.5 py-2 text-sm" value={pwForm.confirm_password} onChange={(e) => setPwForm({ ...pwForm, confirm_password: e.target.value })} />
-            </div>
-            <button type="submit" disabled={pwSaving} className="bg-primary text-white rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-60">{pwSaving ? 'Saving…' : 'Update Password'}</button>
-          </form>
+          <div className="px-5 py-4 border-b border-gray-200 font-bold text-gray-900">Admin Access</div>
+          <div className="p-5 text-sm text-gray-600 space-y-3">
+            <p>Admins sign in with a one-time code sent by SMS (2Factor). There is no password.</p>
+            <p>
+              To add or remove an admin, edit <code className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-800 text-xs">ADMIN_PHONES</code> in
+              the API <code className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-800 text-xs">.env</code> (comma-separated 10-digit numbers)
+              and restart the API. A removed number loses access immediately, even if it is already logged in.
+            </p>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow">
