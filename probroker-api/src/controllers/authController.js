@@ -87,7 +87,11 @@ exports.me = async (req, res) => {
     return res.status(401).json({ error: SESSION_ENDED_MSG[req.sessionEnded], code: req.sessionEnded });
   }
   const user = getCurrentUser(req);
-  if (!user) return res.status(401).json({ error: 'Not logged in' });
+  if (!user) {
+    // An expired token leaves the flag behind, which would make the site keep asking.
+    clearUserSession(res);
+    return res.status(401).json({ error: 'Not logged in' });
+  }
   // Also covers sessions that started before wallets existed, which never pass through login.
   const wallet = await ensureWallet(user);
   res.json({ phone: user.phone, name: user.name, email: user.email || '', freeCredits: wallet.freeCredits });

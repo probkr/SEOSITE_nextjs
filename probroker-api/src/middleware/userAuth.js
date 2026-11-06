@@ -3,6 +3,9 @@ const WebUser = require('../models/WebUser');
 const { sessionCookieOpts } = require('../config/cookies');
 
 const USER_COOKIE = 'user_token';
+// Readable by the site, so guests can skip /auth/me. It holds no user data and proves nothing:
+// the API still trusts only the httpOnly token.
+const SESSION_FLAG_COOKIE = 'pb_session';
 const SESSION_MS = 7 * 24 * 60 * 60 * 1000;
 
 const cookieOpts = sessionCookieOpts;
@@ -61,10 +64,12 @@ function setUserSession(res, payload) {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   });
   res.cookie(USER_COOKIE, token, { ...cookieOpts(), maxAge: SESSION_MS });
+  res.cookie(SESSION_FLAG_COOKIE, '1', { ...cookieOpts(), httpOnly: false, maxAge: SESSION_MS });
 }
 
 function clearUserSession(res) {
   res.clearCookie(USER_COOKIE, cookieOpts());
+  res.clearCookie(SESSION_FLAG_COOKIE, { ...cookieOpts(), httpOnly: false });
 }
 
 function requireUser(req, res, next) {

@@ -35,6 +35,7 @@ export default async function SearchPage({ searchParams }) {
         status: 'active',
         isApproved: true,
         search: q,
+        city: searchParams?.city || undefined,
         bhk: filters.bhk || undefined,
         minPrice: filters.minPrice || undefined,
         maxPrice: filters.maxPrice || undefined,
@@ -65,17 +66,6 @@ export default async function SearchPage({ searchParams }) {
       <h1 className="text-2xl font-bold font-heading mb-2 text-gray-900">
         {q ? <>Search results for &quot;{q}&quot;</> : 'Search Properties'}
       </h1>
-      <form className="mb-6 flex gap-2 max-w-xl" action="/search/" method="get">
-        <input
-          type="text"
-          name="q"
-          defaultValue={q}
-          placeholder="Search by area, society, or city..."
-          className="flex-1 border-2 border-gray-200 rounded-lg px-3.5 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-        />
-        <button className="btn-primary" type="submit">Search</button>
-      </form>
-
       {!q ? (
         <p className="text-gray-500">Enter a locality, society, or city name above to find properties.</p>
       ) : (

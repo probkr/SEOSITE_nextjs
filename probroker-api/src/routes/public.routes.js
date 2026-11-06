@@ -24,6 +24,7 @@ router.post('/inquiries', pub.createInquiry);
 router.post('/requirements', pub.createRequirement);
 
 router.get('/search', pub.search);
+router.get('/search-suggestions', pub.searchSuggestions);
 router.get('/stats/:citySlug', pub.cityStats);
 
 router.get('/blog', pub.listBlogPosts);

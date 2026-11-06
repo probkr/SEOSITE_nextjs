@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { CITY_STORAGE_KEY, CITY_EVENT } from './Header';
+import { CITY_STORAGE_KEY, CITY_EVENT } from '@/lib/config';
 import { startNavigationProgress } from '@/components/NavigationProgress';
 
 // Category tabs -> which SEO category they map to.

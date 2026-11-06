@@ -257,6 +257,7 @@ exports.listProperties = async (req, res) => {
     ]);
     const orConditions = [
       { premiseName: searchRegex },
+      { nearby: searchRegex },
       { additionalDetails: searchRegex },
       { aiDescription: searchRegex },
     ];
@@ -578,6 +579,57 @@ exports.search = async (req, res) => {
 };
 
 // ---------- Stats ----------
+// GET /api/v1/search-suggestions?q=&city= -- places for the header search box. The full society
+// list is too big to send to the browser, so it is searched here instead.
+const SUGGESTION_LIMIT = 5;
+const JUNK_PLACE_RE = /^#?n\/?a$/i;
+
+exports.searchSuggestions = async (req, res) => {
+  const term = String(req.query.q || '').trim().slice(0, 60);
+  if (term.length < 2) return res.json({ areas: [], societies: [] });
+
+  const cityDoc = req.query.city ? await City.findOne({ slug: String(req.query.city) }, { _id: 0, id: 1 }).lean() : null;
+  const match = { name: { $regex: esc(term), $options: 'i' }, ...(cityDoc && { cityId: cityDoc.id }) };
+  const [areaDocs, societyDocs] = await Promise.all([
+    Area.find({ ...match, isActive: { $ne: false } }, { _id: 0, name: 1, slug: 1, cityId: 1 }).sort({ name: 1 }).limit(30).lean(),
+    Society.find({ ...match, isActive: true }, { _id: 0, name: 1, slug: 1, areaId: 1, cityId: 1 }).sort({ name: 1 }).limit(30).lean(),
+  ]);
+
+  const [cities, societyAreas] = await Promise.all([
+    City.find({ id: { $in: [...new Set([...areaDocs, ...societyDocs].map((d) => d.cityId))] } }, { _id: 0, id: 1, slug: 1 }).lean(),
+    Area.find({ id: { $in: [...new Set(societyDocs.map((s) => s.areaId))] } }, { _id: 0, id: 1, name: 1, slug: 1 }).lean(),
+  ]);
+  const citySlug = new Map(cities.map((c) => [c.id, c.slug]));
+  const areaById = new Map(societyAreas.map((a) => [a.id, a]));
+
+  // Names that begin with the typed text are the likeliest match, so they go first.
+  const lower = term.toLowerCase();
+  const rank = (d) => (d.name.toLowerCase().startsWith(lower) ? 0 : 1);
+  const bestFirst = (docs) => [...docs].sort((a, b) => rank(a) - rank(b));
+
+  // The areas collection has duplicate rows sharing one slug, which all open the same page.
+  const seen = new Set();
+  const areas = bestFirst(areaDocs)
+    .filter((a) => {
+      const key = `${a.cityId}/${a.slug}`;
+      if (seen.has(key) || JUNK_PLACE_RE.test(a.name) || !citySlug.has(a.cityId)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, SUGGESTION_LIMIT)
+    .map((a) => ({ name: a.name, slug: a.slug, citySlug: citySlug.get(a.cityId) }));
+
+  const societies = bestFirst(societyDocs)
+    .filter((s) => areaById.has(s.areaId) && citySlug.has(s.cityId))
+    .slice(0, SUGGESTION_LIMIT)
+    .map((s) => {
+      const area = areaById.get(s.areaId);
+      return { name: s.name, slug: s.slug, citySlug: citySlug.get(s.cityId), areaSlug: area.slug, areaName: area.name };
+    });
+
+  res.json({ areas, societies });
+};
+
 exports.cityStats = async (req, res) => {
   const city = await City.findOne({ slug: req.params.citySlug }, { _id: 0 }).lean();
   if (!city) return res.status(404).json({ error: 'City not found' });

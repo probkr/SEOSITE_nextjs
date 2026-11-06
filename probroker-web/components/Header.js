@@ -4,17 +4,9 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import LogoMark from './LogoMark';
+import HeaderSearch from './HeaderSearch';
 import { useWebUser, logoutWebUser } from '@/lib/webUser';
-import { CONTACT_CREDITS_ENABLED } from '@/lib/config';
-
-const CITIES = [
-  { slug: 'ahmedabad', name: 'Ahmedabad' },
-  { slug: 'gandhinagar', name: 'Gandhinagar' },
-];
-
-// Shared with HomeSearchWidget so the header city and the hero search city stay in sync.
-export const CITY_STORAGE_KEY = 'pb_city';
-export const CITY_EVENT = 'pb:city-change';
+import { CITIES, CITY_EVENT, CITY_STORAGE_KEY, CONTACT_CREDITS_ENABLED } from '@/lib/config';
 
 const postBtnCls = (onDark) =>
   `hidden md:inline-flex items-center gap-2 h-10 px-4 rounded-lg border-2 whitespace-nowrap shrink-0 text-sm font-bold transition-colors ${
@@ -273,8 +265,17 @@ export default function Header({ settings } = {}) {
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
   const isHome = pathname === '/';
+  // The homepage has its own hero search, and auth pages should stay free of distractions.
+  const withSearch = !isHome && !pathname.startsWith('/auth');
   const logoUrl = settings && settings.logo_url;
   const logoWidth = (settings && settings.logo_width) || 140;
+  const headerRef = useRef(null);
+  const closeMenu = useCallback(() => setOpen(false), []);
+  useDismiss(headerRef, open, closeMenu);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -289,6 +290,7 @@ export default function Header({ settings } = {}) {
 
   return (
     <header
+      ref={headerRef}
       className={`site-header sticky top-0 z-40 backdrop-blur-md transition-colors duration-300 ${
         onDark ? 'bg-white/5 border-b border-white/10' : 'bg-white/70 border-b border-gray-200/60 shadow-sm'
       }`}
@@ -313,7 +315,14 @@ export default function Header({ settings } = {}) {
           <div className="hidden sm:block"><CityPicker onDark={onDark} /></div>
         </div>
 
-        <nav className={`hidden xl:flex items-center gap-7 text-sm font-semibold transition-colors ${onDark ? 'text-white' : 'text-gray-700'}`}>
+        {withSearch && (
+          <div className="hidden lg:block flex-1 min-w-0 max-w-xl mx-4 xl:mx-6">
+            <HeaderSearch />
+          </div>
+        )}
+
+        {/* Pages with the search box keep these links in the menu instead, so the header stays clean. */}
+        <nav className={`hidden ${withSearch ? '' : 'xl:flex'} items-center gap-7 text-sm font-semibold transition-colors ${onDark ? 'text-white' : 'text-gray-700'}`}>
           <div className="relative group">
             <button className={`py-2 flex items-center gap-1 transition-colors ${navHover}`}>
               Residential
@@ -356,7 +365,7 @@ export default function Header({ settings } = {}) {
           </Link>
           <ProfileMenu onDark={onDark} />
           <button
-            className={`xl:hidden p-2 rounded-md ${onDark ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
+            className={`${withSearch ? '' : 'xl:hidden'} p-2 rounded-md ${onDark ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
             aria-label="Toggle menu"
             onClick={() => setOpen((v) => !v)}
           >
@@ -367,23 +376,34 @@ export default function Header({ settings } = {}) {
         </div>
       </div>
 
+      {withSearch && (
+        <div className="header-search-row lg:hidden px-4 pb-3">
+          <HeaderSearch />
+        </div>
+      )}
+
       {open && (
-        <div className="xl:hidden border-t border-gray-100 bg-white px-4 py-4 space-y-3 text-sm font-semibold text-gray-700">
+        <div className={`${withSearch ? '' : 'xl:hidden'} border-t border-gray-100 bg-white px-4 py-4 space-y-3 text-sm font-semibold text-gray-700 lg:absolute lg:right-4 lg:top-full lg:mt-2 lg:w-[26rem] lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:rounded-xl lg:border lg:shadow-dropdown`}>
           <div className="sm:hidden"><CityPicker onDark={false} /></div>
-          {CITIES.map((c) => (
-            <div key={c.slug} className="pb-2 border-b border-gray-50">
-              <div className="text-xs uppercase tracking-wide text-gray-400 font-bold mb-1">{c.name}</div>
-              <Link className="block py-1" href={`/${c.slug}/residential-property-for-sale/`}>Residential Buy</Link>
-              <Link className="block py-1" href={`/${c.slug}/residential-property-for-rent/`}>Residential Rent</Link>
-              <Link className="block py-1" href={`/${c.slug}/commercial-property-for-sale/`}>Commercial Buy</Link>
-              <Link className="block py-1" href={`/${c.slug}/commercial-property-for-rent/`}>Commercial Rent</Link>
-            </div>
-          ))}
-          <Link href="/societies/" className="block py-1">Societies</Link>
-          <Link href="/blog/" className="block py-1">Blog</Link>
-          <Link href="/about/" className="block py-1">About</Link>
-          <Link href="/contact/" className="block py-1">Contact</Link>
-          <Link href="/post-property/" className={`${postBtnCls(false)} !flex w-full justify-center mt-2`}>
+          <div className="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4">
+            {CITIES.map((c) => (
+              <div key={c.slug} className="pb-2 border-b border-gray-50">
+                <div className="text-xs uppercase tracking-wide text-gray-400 font-bold mb-1">{c.name}</div>
+                <Link className="block py-1 hover:text-primary" href={`/${c.slug}/residential-property-for-sale/`}>Residential Buy</Link>
+                <Link className="block py-1 hover:text-primary" href={`/${c.slug}/residential-property-for-rent/`}>Residential Rent</Link>
+                <Link className="block py-1 hover:text-primary" href={`/${c.slug}/commercial-property-for-sale/`}>Commercial Buy</Link>
+                <Link className="block py-1 hover:text-primary" href={`/${c.slug}/commercial-property-for-rent/`}>Commercial Rent</Link>
+              </div>
+            ))}
+          </div>
+          <div className="lg:grid lg:grid-cols-2 lg:gap-x-4">
+            <Link href="/societies/" className="block py-1 hover:text-primary">Societies</Link>
+            <Link href="/blog/" className="block py-1 hover:text-primary">Blog</Link>
+            <Link href="/about/" className="block py-1 hover:text-primary">About</Link>
+            <Link href="/contact/" className="block py-1 hover:text-primary">Contact</Link>
+          </div>
+          {/* The header shows this button from md up, so the menu only needs it on phones. */}
+          <Link href="/post-property/" className={`${postBtnCls(false)} !flex md:!hidden w-full justify-center mt-2`}>
             Post Property <span className={freeBadgeCls}>Free</span>
           </Link>
         </div>

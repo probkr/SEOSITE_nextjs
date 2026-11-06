@@ -608,7 +608,7 @@ function Chips({ s, resultCount }) {
 export function ListingFilterBar({ activeFilters = {}, resultCount, areas = [], showAreaFilter = false }) {
   const s = useListingFilters(activeFilters, areas);
   return (
-    <div className="filter-strip sticky top-16 z-30 bg-white border-b border-gray-200">
+    <div className="filter-strip sticky top-[var(--header-h)] z-30 bg-white border-b border-gray-200">
       <div className="container-px flex items-center gap-2 py-3 overflow-x-auto no-scrollbar">
         <FilterButtons s={s} areas={areas} showAreaFilter={showAreaFilter} resultCount={resultCount} />
         {s.chips.length > 0 && (

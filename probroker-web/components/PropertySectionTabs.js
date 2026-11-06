@@ -63,7 +63,7 @@ export default function PropertySectionTabs({ sections }) {
   return (
     <nav
       aria-label="Property sections"
-      className="sticky top-16 z-20 -mx-4 md:mx-0 mb-6 bg-white border-y md:border md:rounded-xl border-gray-100 shadow-[0_2px_10px_-6px_rgba(0,0,0,0.15)]"
+      className="sticky top-[var(--header-h)] z-20 -mx-4 md:mx-0 mb-6 bg-white border-y md:border md:rounded-xl border-gray-100 shadow-[0_2px_10px_-6px_rgba(0,0,0,0.15)]"
     >
       <div ref={barRef} className="flex gap-6 px-4 md:px-5 overflow-x-auto no-scrollbar">
         {sections.map((s) => (

@@ -25,6 +25,12 @@ a { @apply no-underline; }
 
 /* On listing pages the header sits on top of the sticky filter strip: make it solid (content
    would show through the translucent version) and keep a clear divider so they read as two bands. */
+/* Sticky bars sit right under the header, which gains a search row on small screens. */
+:root { --header-h: 4rem; }
+@media (max-width: 1023.98px) {
+  body:has(.header-search-row) { --header-h: 7.25rem; }
+}
+
 body:has(.filter-strip) .site-header { background-color: #fff; border-bottom-color: #e5e7eb; box-shadow: none; backdrop-filter: none; }
 
 /* Horizontal scrollers (filter bar) that still scroll by touch/trackpad but show no bar. */
