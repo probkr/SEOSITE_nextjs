@@ -24,26 +24,22 @@ const app = express();
 app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
-// ---- Inbound webhooks (shared-secret auth) ----
-// Mounted before the site CORS policy: callers authenticate with a Bearer WEBHOOK_AUTH_KEY,
-// not cookies, so any origin (e.g. the CRM web app) may call it; without the key it is a 401.
-app.use(
-  '/api/v1/webhooks',
-  cors({ origin: true, methods: ['POST', 'DELETE'], allowedHeaders: ['Content-Type', 'Authorization'] }),
-  express.json({ limit: '10mb' }),
-  webhookRoutes,
-);
-
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000')
   .split(',').map((o) => o.trim()).filter(Boolean);
-app.use(cors({
+const siteCors = cors({
   origin(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
-}));
+});
 
+// ---- Inbound webhooks (WEBHOOK_AUTH_KEY) ----
+// Mounted before the body limits below because listing batches can be large. Browser callers such
+// as the CRM must be listed in CORS_ORIGINS, and every caller still needs the key.
+app.use('/api/v1/webhooks', siteCors, express.json({ limit: '50mb' }), webhookRoutes);
+
+app.use(siteCors);
 app.use(cookieParser());
 // Bulk imports send large JSON bodies; everything else keeps the smaller limit.
 app.use('/api/v1/admin', express.json({ limit: '50mb' }));
