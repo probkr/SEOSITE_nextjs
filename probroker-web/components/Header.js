@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import LogoMark from './LogoMark';
 import HeaderSearch from './HeaderSearch';
 import { useWebUser, logoutWebUser } from '@/lib/webUser';
-import { CITIES, CITY_EVENT, CITY_STORAGE_KEY, CONTACT_CREDITS_ENABLED } from '@/lib/config';
+import { CITIES, CITY_EVENT, CITY_STORAGE_KEY } from '@/lib/config';
 
 const postBtnCls = (onDark) =>
   `hidden md:inline-flex items-center gap-2 h-10 px-4 rounded-lg border-2 whitespace-nowrap shrink-0 text-sm font-bold transition-colors ${
@@ -40,7 +40,7 @@ function useDismiss(ref, open, close) {
 const PROFILE_LINKS = [
   { href: '/my-properties/', label: 'My Properties', icon: 'M3 12l9-9 9 9M5 10v10h14V10' },
   { href: '/my-requirements/', label: 'My Requirements', icon: 'M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z' },
-  ...(CONTACT_CREDITS_ENABLED ? [{ href: '/my-contacts/', label: 'My Contacts', icon: 'M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z' }] : []),
+  { href: '/my-contacts/', label: 'My Contacts', icon: 'M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z' },
   { href: '/post-property/', label: 'Post Property', icon: 'M12 4v16m8-8H4' },
   { href: '/contact/', label: 'Help & Support', icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
 ];
@@ -96,7 +96,7 @@ function ProfileMenu({ onDark }) {
 
   return (
     <div ref={boxRef} className="relative flex items-center gap-2">
-      {CONTACT_CREDITS_ENABLED && user && user.freeCredits !== undefined && <CreditsBadge credits={user.freeCredits} onDark={onDark} />}
+      {user && user.freeCredits !== undefined && <CreditsBadge credits={user.freeCredits} onDark={onDark} />}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

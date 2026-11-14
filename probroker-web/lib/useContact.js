@@ -22,7 +22,8 @@ export function useContact(propertyId) {
     try {
       const res = await clientFetchJson('/properties/contact', { method: 'POST', body: { propertyId } });
       notifyCredits(res.freeCredits);
-      setState({ status: 'done', phone: res.contactPhone, charged: res.charged, freeCredits: res.freeCredits });
+      // Listings only show a masked name; the real one arrives with the number.
+      setState({ status: 'done', phone: res.contactPhone, contactName: res.contactName, charged: res.charged, freeCredits: res.freeCredits });
       return 'done';
     } catch (err) {
       const code = err.data?.code;

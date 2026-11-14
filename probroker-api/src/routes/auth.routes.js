@@ -24,13 +24,9 @@ router.post('/auth/signup/verify', wrap(webAuth.signupVerify));
 router.post('/auth/login/send-otp', wrap(webAuth.loginSendOtp));
 router.post('/auth/login/verify', wrap(webAuth.loginVerify));
 
-// "Get Contact" on a property page: spends one credit from the user's PaidUsers wallet.
-// Off by default: owner numbers stay private and visitors use the inquiry form.
-const creditsEnabled = (req, res, next) => (
-  process.env.CONTACT_CREDITS_ENABLED === 'true' ? next() : res.status(404).json({ error: 'Not found' })
-);
-router.post('/properties/contact', creditsEnabled, requireUser, wrap(contact.getContact));
-router.get('/my-contacts', creditsEnabled, requireUser, wrap(contact.myContacts));
+// "Get Contact" on a property page: spends one credit from the user's PaidUsers wallet
+router.post('/properties/contact', requireUser, wrap(contact.getContact));
+router.get('/my-contacts', requireUser, wrap(contact.myContacts));
 
 router.post('/admin/login/send-otp', wrap(auth.adminSendOtp));
 router.post('/admin/login/verify', wrap(auth.adminVerifyOtp));

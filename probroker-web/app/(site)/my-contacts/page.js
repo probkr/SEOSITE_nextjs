@@ -1,6 +1,5 @@
 import MyContactsClient from '@/components/MyContactsClient';
-import { notFound } from 'next/navigation';
-import { CONTACT_CREDITS_ENABLED, SITE_URL } from '@/lib/config';
+import { SITE_URL } from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +13,6 @@ export async function generateMetadata() {
 }
 
 export default function MyContactsPage() {
-  if (!CONTACT_CREDITS_ENABLED) notFound();
   return (
     <div className="container-px py-8 md:py-10">
       <div className="mb-6">

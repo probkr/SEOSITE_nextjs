@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { fmtPrice, buildPropertyTitle, buildPropertySlug } from '@/lib/format';
-import { CONTACT_CREDITS_ENABLED } from '@/lib/config';
 import PropertyImagePlaceholder from './PropertyImagePlaceholder';
 import CardActions from './CardActions';
 import ContactButton from './ContactButton';
@@ -112,7 +111,7 @@ export default function PropertyCard({ p, variant = 'grid' }) {
         </div>
       );
     }
-    return CONTACT_CREDITS_ENABLED && p.hasContact ? (
+    return p.hasContact ? (
       <ContactButton
         propertyId={p.propertyId}
         propertyTitle={title}

@@ -1,7 +1,6 @@
 'use client';
 import { useState } from 'react';
 import { postJson } from '@/lib/api';
-import { CONTACT_CREDITS_ENABLED } from '@/lib/config';
 import { useWebUser } from '@/lib/webUser';
 import { authHref, creditsLeft, useContact } from '@/lib/useContact';
 import ContactActions, { PhoneIcon } from './ContactActions';
@@ -11,7 +10,7 @@ export default function InquiryForm({ propertyId, propertyTitle, contactName, ha
   const [form, setForm] = useState({ name: '', phone: '', email: '', message: '' });
   const [status, setStatus] = useState(null);
   const contact = useContact(propertyId);
-  const showContact = CONTACT_CREDITS_ENABLED && hasContact;
+  const showContact = hasContact;
 
   async function getContact() {
     if ((await contact.fetchContact()) === 'login') window.location.href = authHref('login');
@@ -26,7 +25,8 @@ export default function InquiryForm({ propertyId, propertyTitle, contactName, ha
 
   const inputCls = 'w-full border-2 border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all';
   const posterLabel = listingType === 'owner' ? 'Owner' : 'Dealer';
-  const initials = (contactName || 'P').trim().charAt(0).toUpperCase();
+  const shownName = contact.contactName || contactName;
+  const initials = (shownName || 'P').trim().charAt(0).toUpperCase();
 
   return (
     <div className="space-y-4">
@@ -37,7 +37,7 @@ export default function InquiryForm({ propertyId, propertyTitle, contactName, ha
             {initials}
           </div>
           <div className="min-w-0">
-            <div className="font-semibold text-gray-900 truncate">{contactName || 'PRObroker Listing'}</div>
+            <div className="font-semibold text-gray-900 truncate">{shownName || 'PRObroker Listing'}</div>
             <div className="text-xs text-gray-500">{posterLabel}</div>
           </div>
         </div>

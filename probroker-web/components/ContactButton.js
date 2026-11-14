@@ -128,7 +128,7 @@ export default function ContactButton({ propertyId, propertyTitle, contactName, 
         Contact
       </button>
       {open && createPortal(
-        <ContactPopup title={contactName || `Contact ${poster}`} subtitle={propertyTitle} onClose={close}>
+        <ContactPopup title={contact.contactName || contactName || `Contact ${poster}`} subtitle={propertyTitle} onClose={close}>
           <PopupBody contact={contact} propertyTitle={propertyTitle} href={href} />
         </ContactPopup>,
         document.body,
