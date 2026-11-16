@@ -1,5 +1,6 @@
 import { SITE_URL } from './config';
 import { buildPropertyTitle, buildPropertySlug } from './format';
+import { firstImageUrl } from './media';
 
 // schema.org addressRegion expects the administrative region (state), not the city.
 // Extend this as new cities are added.
@@ -63,7 +64,7 @@ export function realEstateListingSchema(property, desc, canonicalUrl) {
     name: title,
     description: desc,
     url: canonicalUrl,
-    image: property.photos?.[0] || `${SITE_URL}/og-default.jpg`,
+    image: firstImageUrl(property.photos) || `${SITE_URL}/og-default.jpg`,
     offers: {
       '@type': 'Offer',
       price: String(property.price || ''),

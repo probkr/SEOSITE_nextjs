@@ -9,7 +9,7 @@ export function authHref(mode) {
   return `/auth/${mode}/?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
 }
 
-export const creditsLeft = (n) => `${n} free ${n === 1 ? 'credit' : 'credits'} left`;
+export const creditsLeft = (n) => `${n} free ${n === 1 ? 'coin' : 'coins'} left`;
 
 // One credit-checked unlock, shared by the property page and the listing-card popup. The number
 // never ships with a page: it only arrives here. status is idle | loading | done | login |

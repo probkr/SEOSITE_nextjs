@@ -62,13 +62,13 @@ export default function InquiryForm({ propertyId, propertyTitle, contactName, ha
 
         {(contact.status === 'error' || contact.status === 'no-credits') && <p className="text-red-600 text-sm mt-2">{contact.message}</p>}
         {showContact && user === null && (
-          <p className="text-xs text-gray-500 mt-2">Log in to view this number. New accounts get 10 free credits.</p>
+          <p className="text-xs text-gray-500 mt-2">Log in to view this number. New accounts get 10 free coins.</p>
         )}
         {showContact && user && user.freeCredits !== undefined && (
           <p className="text-xs text-gray-500 mt-2">
             {contact.status === 'done'
-              ? `${contact.charged ? '1 credit used' : 'No credit used'}. ${creditsLeft(user.freeCredits)}.`
-              : `${creditsLeft(user.freeCredits)}. Each new contact uses 1 credit.`}
+              ? `${contact.charged ? '1 coin used' : 'No coin used'}. ${creditsLeft(user.freeCredits)}.`
+              : `${creditsLeft(user.freeCredits)}. Each new contact uses 1 coin.`}
           </p>
         )}
       </div>

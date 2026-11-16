@@ -1,12 +1,15 @@
 'use client';
 import { useState, useCallback, useEffect } from 'react';
 import { getPlaceholderPhotoUrl } from './PropertyImagePlaceholder';
+import PropertyMedia from './PropertyMedia';
+import { isVideoUrl } from '@/lib/media';
 
 export default function PropertyGallery({ photos, title, category, propertyType, seed }) {
   const hasPhotos = photos && photos.length > 0;
   const imgs = hasPhotos ? photos : [getPlaceholderPhotoUrl({ category, propertyType, seed }) + '?auto=format&fit=crop&w=1200&q=60'];
   const [active, setActive] = useState(0);
   const [lightbox, setLightbox] = useState(false);
+  const activeIsVideo = isVideoUrl(imgs[active]);
 
   const next = useCallback(() => setActive((i) => (i + 1) % imgs.length), [imgs.length]);
   const prev = useCallback(() => setActive((i) => (i - 1 + imgs.length) % imgs.length), [imgs.length]);
@@ -26,11 +29,17 @@ export default function PropertyGallery({ photos, title, category, propertyType,
     <div>
       {/* Main image */}
       <div className={`relative rounded-2xl overflow-hidden bg-primary-50 aspect-[16/10] group shadow-float ${hasPhotos ? 'cursor-zoom-in' : ''}`} onClick={hasPhotos ? () => setLightbox(true) : undefined}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={imgs[active]} alt={`${title} photo ${active + 1}`} className={`w-full h-full object-cover ${hasPhotos ? '' : 'blur-md scale-110'}`} />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+        {/* A click on a playing video is for its own buttons, so it doesn't open the full-screen viewer. */}
+        <PropertyMedia
+          src={imgs[active]}
+          alt={`${title} photo ${active + 1}`}
+          className={`w-full h-full object-cover ${hasPhotos ? '' : 'blur-md scale-110'}`}
+          controls
+          onClick={activeIsVideo ? (e) => e.stopPropagation() : undefined}
+        />
+        {!activeIsVideo && <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />}
         {hasPhotos ? (
-          <div className="absolute bottom-4 right-4 bg-white/95 backdrop-blur text-gray-900 text-sm font-bold px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-card">
+          <div className="absolute top-4 right-4 bg-white/95 backdrop-blur text-gray-900 text-sm font-bold px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-card">
             <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
             +{imgs.length} Photos
           </div>
@@ -75,8 +84,12 @@ export default function PropertyGallery({ photos, title, category, propertyType,
               onClick={() => setActive(i)}
               className={`relative aspect-square rounded-lg overflow-hidden ring-2 transition-all ${i === active ? 'ring-primary' : 'ring-transparent opacity-80 hover:opacity-100'}`}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photo} alt={`${title} thumbnail ${i + 1}`} className="w-full h-full object-cover" />
+              <PropertyMedia src={photo} alt={`${title} thumbnail ${i + 1}`} className="w-full h-full object-cover" autoPlay={false} />
+              {isVideoUrl(photo) && (
+                <span className="absolute inset-0 flex items-center justify-center bg-black/25 text-white" aria-hidden="true">
+                  <svg className="w-6 h-6" viewBox="0 0 20 20" fill="currentColor"><path d="M6.3 3.8a1 1 0 00-1.5.9v10.6a1 1 0 001.5.9l9-5.3a1 1 0 000-1.800l-9-5.3z" /></svg>
+                </span>
+              )}
               {i === 11 && imgs.length > 12 && (
                 <span className="absolute inset-0 bg-black/60 text-white text-xs font-semibold flex items-center justify-center">
                   +{imgs.length - 12}
@@ -109,11 +122,12 @@ export default function PropertyGallery({ photos, title, category, propertyType,
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
             </button>
           )}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <PropertyMedia
             src={imgs[active]}
             alt={`${title} full size photo ${active + 1}`}
             className="max-w-[92vw] max-h-[88vh] object-contain"
+            controls
+            muted={false}
             onClick={(e) => e.stopPropagation()}
           />
           {imgs.length > 1 && (

@@ -18,7 +18,9 @@ async function importOne(item) {
   if (errors.length) {
     return { ok: false, propertyId: item && item.propertyId, error: 'validation_failed', details: errors };
   }
-  const result = await processBulkImport([item], 0);
+  // Every listing that arrives by webhook is shown as Verified, whatever the sender put in
+  // isVerified (or left out): the CRM only sends listings its team has already checked.
+  const result = await processBulkImport([{ ...item, isVerified: true }], 0);
   if (result.errors > 0) {
     return { ok: false, propertyId: item.propertyId, error: 'import_failed', details: result.error_details };
   }

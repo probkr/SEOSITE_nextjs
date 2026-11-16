@@ -112,9 +112,29 @@ function parseStatus(item) {
   return 'inactive';
 }
 
+// Senders write a yes/no flag as a boolean, a number or text ("isVerified": "true"), so all of
+// those count as yes. Anything else, including "false" and a missing value, is no.
+function isTruthyFlag(value) {
+  if (value === true || value === 1) return true;
+  return typeof value === 'string' && ['true', '1', 'yes', 'verified'].includes(value.trim().toLowerCase());
+}
+
+// Photo URLs arrive as an array, as one string of URLs joined by a comma, "|" or ";", or as an
+// array holding such a string (the CRM sends that). A new photo starts wherever "http" follows
+// one of those separators, so a comma inside a URL is left alone. Returns one clean URL per photo.
+function parsePhotos(value) {
+  const parts = Array.isArray(value) ? value : [value];
+  return parts
+    .filter((p) => typeof p === 'string')
+    .flatMap((p) => p.split(/[\s,|;]+(?=https?:\/\/)/))
+    .map((u) => u.trim().replace(/[,|;]+$/, ''))
+    .filter((u) => /^https?:\/\//.test(u));
+}
+
 function normalizeImportRecord(item) {
   const { category, transactionType } = parseType(item.type);
-  const photos = Array.isArray(item.photos) ? item.photos : Array.isArray(item.images) ? item.images : [];
+  const ownPhotos = parsePhotos(item.photos);
+  const photos = ownPhotos.length ? ownPhotos : parsePhotos(item.images);
   const rawPhone = item.contactPhone || item.number || item.phone;
   const phone = rawPhone ? normalizePhone(rawPhone) : '';
 
@@ -142,13 +162,13 @@ function normalizeImportRecord(item) {
     contactName: str(item.contactName || item.name),
     contactPhone: /^\d{10}$/.test(phone) ? phone : '',
     listingType: item.listingType || (str(item.userType).toLowerCase() === 'owner' ? 'owner' : 'broker'),
-    photos: photos.filter((u) => typeof u === 'string' && /^https?:\/\//.test(u)),
+    photos,
     status: parseStatus(item),
-    isVerified: item.isVerified === true || str(item.verifyStatus).toLowerCase() === 'verified',
+    isVerified: isTruthyFlag(item.isVerified) || str(item.verifyStatus).toLowerCase() === 'verified',
     views: toNumber(item.views),
     slug: item.slug,
     createdAt: item.createdAt && typeof item.createdAt === 'string' ? item.createdAt : parseDate(item.listedDate || item.createdOn || item.createdAt),
   };
 }
 
-module.exports = { normalizeImportRecord };
+module.exports = { normalizeImportRecord, parsePhotos };

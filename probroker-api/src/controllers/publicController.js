@@ -11,6 +11,7 @@ const { generatePropertySlug, generatePropertyId } = require('../services/slugif
 const { getCurrentUser } = require('../middleware/userAuth');
 const { normalizePhone, isValidPhone } = require('../services/otpService');
 const { hasContact } = require('../services/creditService');
+const { parsePhotos } = require('../services/importMapper');
 
 const esc = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -37,6 +38,8 @@ function publicProperty(prop) {
   const { contactPhone, ...rest } = prop;
   return {
     ...rest,
+    // Older imports stored several photo URLs joined by commas in one entry.
+    photos: parsePhotos(prop.photos),
     contactName: maskContactName(prop.contactName),
     description: cleanupDescription(prop.description),
     hasContact: hasContact(prop),
@@ -128,6 +131,25 @@ exports.getSocietyBySlug = async (req, res) => {
 };
 
 // ---------- Properties ----------
+// A listing has a photo when its first photo is a non-empty string, the same test the card uses.
+// $gt '' only matches strings, so a missing or empty first photo falls in the second group.
+const WITH_PHOTO = { 'photos.0': { $gt: '' } };
+const WITHOUT_PHOTO = { 'photos.0': { $not: { $gt: '' } } };
+
+// One page of listings with every photo listing ahead of every listing without one, each group
+// in the given sort order. Paging runs through the photo group first and then carries on into
+// the rest, so a page can hold the tail of one group and the start of the other.
+async function findPhotosFirst(query, sort, skip, limit) {
+  const withPhoto = { $and: [query, WITH_PHOTO] };
+  const find = (q, s, l) => Property.find(q, { _id: 0 }).sort(sort).skip(s).limit(l).lean();
+  const photoCount = await Property.countDocuments(withPhoto);
+  const fromPhotos = skip < photoCount ? await find(withPhoto, skip, limit) : [];
+  const remaining = limit - fromPhotos.length;
+  if (!remaining) return fromPhotos;
+  const rest = await find({ $and: [query, WITHOUT_PHOTO] }, Math.max(0, skip - photoCount), remaining);
+  return fromPhotos.concat(rest);
+}
+
 // Port of GET /api/properties filter-building logic from server.py (~line 4881)
 exports.listProperties = async (req, res) => {
   const {
@@ -274,9 +296,15 @@ exports.listProperties = async (req, res) => {
   else if (_sort === 'price_desc') { sortField = 'price'; sortDir = -1; }
 
   const skip = (page - 1) * limit;
+  const sortSpec = { [sortField]: sortDir };
+  // A visitor who asks for price order gets exactly that. Only the default "newest" order puts
+  // listings with photos first.
+  const photosFirst = sortField === 'createdAt';
   const [total, properties, priceStats] = await Promise.all([
     Property.countDocuments(query),
-    Property.find(query, { _id: 0 }).sort({ [sortField]: sortDir }).skip(skip).limit(limit).lean(),
+    photosFirst
+      ? findPhotosFirst(query, sortSpec, skip, limit)
+      : Property.find(query, { _id: 0 }).sort(sortSpec).skip(skip).limit(limit).lean(),
     Property.aggregate([
       { $match: query },
       { $group: { _id: null, minPrice: { $min: '$price' }, maxPrice: { $max: '$price' }, avgPrice: { $avg: '$price' } } },
@@ -311,8 +339,31 @@ exports.listProperties = async (req, res) => {
 
 exports.latestProperties = async (req, res) => {
   const limit = parseInt(req.query.limit, 10) || 8;
-  const properties = await Property.find({ status: 'active', isApproved: true }, { _id: 0 })
-    .sort({ createdAt: -1 }).limit(limit).lean();
+  const properties = await findPhotosFirst({ status: 'active', isApproved: true }, { createdAt: -1 }, 0, limit);
+  await addPlaceNames(properties);
+  res.json(properties.map(publicProperty));
+};
+
+// POST /api/v1/properties/saved { ids } -- the listings behind the hearts a visitor has tapped.
+// The site keeps those ids in the browser (propertyId, or slug for older saves), newest last.
+// Listings that are no longer live are left out.
+exports.savedProperties = async (req, res) => {
+  const raw = Array.isArray(req.body?.ids) ? req.body.ids : [];
+  // Strings only: an object here would reach the query below as a Mongo operator.
+  const ids = [...new Set(raw.filter((id) => typeof id === 'string' && id))].slice(-100);
+  if (!ids.length) return res.json({ properties: [] });
+  const properties = await Property.find(
+    { status: 'active', isApproved: true, $or: [{ propertyId: { $in: ids } }, { slug: { $in: ids } }] },
+    { _id: 0 },
+  ).lean();
+  await addPlaceNames(properties);
+  const savedAt = (p) => Math.max(ids.indexOf(p.propertyId), ids.indexOf(p.slug));
+  properties.sort((a, b) => savedAt(b) - savedAt(a)); // most recently saved first
+  res.json({ properties: properties.map(publicProperty) });
+};
+
+// Fills in areaName and cityName, which listing cards show and the stored documents don't carry.
+async function addPlaceNames(properties) {
   const areaIds = [...new Set(properties.map((p) => p.areaId).filter(Boolean))];
   const cityIds = [...new Set(properties.map((p) => p.cityId).filter(Boolean))];
   const [areas, cities] = await Promise.all([
@@ -325,8 +376,7 @@ exports.latestProperties = async (req, res) => {
     p.areaName = areaMap[p.areaId]?.name || '';
     p.cityName = cityMap[p.cityId]?.name || '';
   }
-  res.json(properties.map(publicProperty));
-};
+}
 
 exports.similarProperties = async (req, res) => {
   const { propertyId, limit } = req.query;

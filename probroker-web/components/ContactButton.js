@@ -15,7 +15,7 @@ function PopupBody({ contact, propertyTitle, href }) {
         <p className="text-center text-2xl font-bold font-heading tracking-wide text-gray-900 mb-4">{phone}</p>
         <ContactActions phone={phone} propertyTitle={propertyTitle} callLabel="Call" />
         <p className="text-xs text-gray-500 text-center mt-3">
-          {charged ? '1 credit used' : 'No credit used'}. {creditsLeft(freeCredits)}.
+          {charged ? '1 coin used' : 'No coin used'}. {creditsLeft(freeCredits)}.
         </p>
       </>
     );
@@ -24,7 +24,7 @@ function PopupBody({ contact, propertyTitle, href }) {
   if (status === 'login') {
     return (
       <>
-        <p className="text-sm text-gray-600 text-center mb-4">Log in to see this number. New accounts get 10 free credits.</p>
+        <p className="text-sm text-gray-600 text-center mb-4">Log in to see this number. New accounts get 10 free coins.</p>
         <div className="grid grid-cols-2 gap-2">
           <Link href={authHref('login')} className="btn-primary !py-2.5 text-sm">Log in</Link>
           <Link href={authHref('signup')} className="btn-outline !py-2.5 text-sm">Sign up</Link>

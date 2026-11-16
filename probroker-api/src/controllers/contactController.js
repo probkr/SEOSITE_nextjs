@@ -45,7 +45,7 @@ exports.getContact = async (req, res) => {
   const latest = await ensureWallet(req.user);
   if (latest.unlockedProperties.some((u) => u.propertyId === propertyId)) return send(latest, false);
 
-  res.status(402).json({ success: false, error: "You've used all your free credits.", code: 'NO_CREDITS', freeCredits: latest.freeCredits });
+  res.status(402).json({ success: false, error: "You've used all your free coins.", code: 'NO_CREDITS', freeCredits: latest.freeCredits });
 };
 
 // GET /api/v1/my-contacts -- the listings this user has taken the contact of, newest first, with

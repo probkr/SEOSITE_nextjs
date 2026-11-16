@@ -16,6 +16,7 @@ router.get('/properties/latest', pub.latestProperties);
 router.get('/properties/similar', pub.similarProperties);
 router.get('/properties', pub.listProperties);
 router.get('/properties/:slug', pub.getPropertyBySlug);
+router.post('/properties/saved', pub.savedProperties);
 router.post('/properties', pub.createProperty);
 router.patch('/properties/:id', pub.updateProperty);
 router.delete('/properties/:id', pub.deleteProperty);

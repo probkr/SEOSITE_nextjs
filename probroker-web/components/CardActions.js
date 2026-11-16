@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 
-export default function CardActions({ id, title, path }) {
+// mapQuery is optional: when given, a third button opens that search in Google Maps.
+export default function CardActions({ id, title, path, mapQuery }) {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -71,6 +72,22 @@ export default function CardActions({ id, title, path }) {
           <line x1="6.9" y1="11.2" x2="13.1" y2="14.3" />
         </svg>
       </button>
+      {mapQuery && (
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          aria-label="View on Google Maps"
+          title="View on Google Maps"
+          className="w-11 h-11 rounded-full bg-white/95 text-gray-500 hover:text-primary shadow-card flex items-center justify-center"
+        >
+          <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
+            <path d="M10 18s5.5-4.9 5.5-9.3A5.5 5.5 0 0010 3.2a5.5 5.5 0 00-5.5 5.5C4.5 13.1 10 18 10 18z" />
+            <circle cx="10" cy="8.7" r="2" />
+          </svg>
+        </a>
+      )}
     </div>
   );
 }

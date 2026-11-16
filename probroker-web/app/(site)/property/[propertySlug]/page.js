@@ -1,6 +1,7 @@
 import { getProperty, getProperties, getRedirect } from '@/lib/api';
 import { fmtPrice, buildPropertyTitle, buildPropertySlug, fmtPropDesc } from '@/lib/format';
 import { SITE_URL } from '@/lib/config';
+import { firstImageUrl } from '@/lib/media';
 import PropertyCard from '@/components/PropertyCard';
 import PropertyGallery from '@/components/PropertyGallery';
 import JsonLd from '@/components/JsonLd';
@@ -30,7 +31,7 @@ export async function generateMetadata({ params }) {
   const shortTitle = rawTitle.length > 47 ? `${rawTitle.slice(0, 47).replace(/[\s,\-]+$/, '')}…` : rawTitle;
   const title = `${shortTitle} | PRObroker`;
   const desc = prop.aiDescription || fmtPropDesc(prop);
-  const image = prop.photos?.[0];
+  const image = firstImageUrl(prop.photos); // a share preview needs a picture, not a video
   return {
     title,
     description: desc,

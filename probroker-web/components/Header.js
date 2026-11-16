@@ -41,6 +41,7 @@ const PROFILE_LINKS = [
   { href: '/my-properties/', label: 'My Properties', icon: 'M3 12l9-9 9 9M5 10v10h14V10' },
   { href: '/my-requirements/', label: 'My Requirements', icon: 'M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z' },
   { href: '/my-contacts/', label: 'My Contacts', icon: 'M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z' },
+  { href: '/my-saved/', label: 'My Saved', icon: 'M12 20.5l-.73-.66C5.72 14.83 2.5 11.83 2.5 8.28 2.5 5.4 4.78 3.12 7.66 3.12c1.63 0 3.2.76 4.34 2.06a5.9 5.9 0 014.34-2.06c2.88 0 5.16 2.28 5.16 5.16 0 3.55-3.22 6.55-8.77 11.56l-.73.66z' },
   { href: '/post-property/', label: 'Post Property', icon: 'M12 4v16m8-8H4' },
   { href: '/contact/', label: 'Help & Support', icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
 ];
@@ -55,7 +56,7 @@ const initialsOf = (name = '') =>
 // Live contact-credit balance. Get Contact pushes the new number through useWebUser, so this
 // drops as soon as a credit is spent, without a reload.
 function CreditsBadge({ credits, onDark }) {
-  const label = `${credits} free ${credits === 1 ? 'credit' : 'credits'} left`;
+  const label = `${credits} free ${credits === 1 ? 'coin' : 'coins'} left`;
   const tone = credits === 0
     ? 'border-red-200 bg-red-50 text-red-600'
     : onDark ? 'border-white/30 bg-white/10 text-white' : 'border-primary-100 bg-primary-50 text-primary';
@@ -66,9 +67,9 @@ function CreditsBadge({ credits, onDark }) {
       title={label}
       className={`inline-flex items-center gap-1.5 h-10 px-2.5 sm:px-3 rounded-full border whitespace-nowrap shrink-0 text-sm font-bold ${tone}`}
     >
-      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 7.5v9M9.5 9.75c0-1 1.1-1.75 2.5-1.75s2.5.75 2.5 1.75-1.1 1.75-2.5 2.25-2.5 1.25-2.5 2.25S10.6 16 12 16s2.5-.75 2.5-1.75" /></svg>
+      <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#F59E0B" /><circle cx="12" cy="12" r="7" fill="#FCD34D" stroke="#D97706" strokeWidth="1" /><path fill="#B45309" d="M12 7.2l1.4 3 3.3.4-2.4 2.2.6 3.2-2.9-1.6-2.9 1.6.6-3.2-2.4-2.2 3.3-.4z" /></svg>
       {credits}
-      <span className="hidden sm:inline">{credits === 1 ? 'credit' : 'credits'}</span>
+      <span className="hidden sm:inline">{credits === 1 ? 'Coin' : 'Coins'}</span>
     </span>
   );
 }
@@ -187,25 +188,72 @@ function ProfileMenu({ onDark }) {
   );
 }
 
+const CATEGORY_SEG_RE = /^(residential|commercial)-property-for-(sale|rent)$/;
+const isCitySlug = (s) => CITIES.some((c) => c.slug === s);
+
+// Where the city sits in a URL, or null on pages that belong to no city (home, a property, ...).
+// The three shapes are /{city}/..., /residential|commercial/{trans}/{city}/... and /societies/{city}/.
+function cityRoute(pathname) {
+  const segs = pathname.split('/').filter(Boolean);
+  if (isCitySlug(segs[0])) return { segs, city: segs[0], kind: 'city' };
+  if ((segs[0] === 'residential' || segs[0] === 'commercial') && isCitySlug(segs[2])) return { segs, city: segs[2], kind: 'category' };
+  if (segs[0] === 'societies' && isCitySlug(segs[1])) return { segs, city: segs[1], kind: 'societies' };
+  return null;
+}
+
+// The same kind of page for another city. Area and society parts are dropped: they belong to the
+// old city. Returns null when the current page isn't about a city.
+function pathForCity(pathname, slug) {
+  const route = cityRoute(pathname);
+  if (!route) return null;
+  const { segs, kind } = route;
+  if (kind === 'category') return `/${segs[0]}/${segs[1]}/${slug}/`;
+  if (kind === 'societies') return `/societies/${slug}/`;
+  const listing = segs.slice(1).find((s) => CATEGORY_SEG_RE.test(s));
+  return listing ? `/${slug}/${listing}/` : `/${slug}/`;
+}
+
 function CityPicker({ onDark }) {
+  const pathname = usePathname();
+  const router = useRouter();
   const [city, setCity] = useState(CITIES[0].slug);
   const [open, setOpen] = useState(false);
   const boxRef = useRef(null);
   const close = useCallback(() => setOpen(false), []);
   useDismiss(boxRef, open, close);
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(CITY_STORAGE_KEY);
-      if (saved && CITIES.some((c) => c.slug === saved)) setCity(saved);
-    } catch {}
-  }, []);
-
-  function choose(slug) {
+  const remember = useCallback((slug) => {
     setCity(slug);
-    setOpen(false);
     try { localStorage.setItem(CITY_STORAGE_KEY, slug); } catch {}
     window.dispatchEvent(new CustomEvent(CITY_EVENT, { detail: slug }));
+  }, []);
+
+  // On a city page the URL decides, so the picker can never disagree with the listings below it.
+  // Everywhere else it shows the city picked last time.
+  useEffect(() => {
+    const route = cityRoute(pathname || '');
+    if (route) {
+      remember(route.city);
+      return;
+    }
+    try {
+      const saved = localStorage.getItem(CITY_STORAGE_KEY);
+      if (saved && isCitySlug(saved)) setCity(saved);
+    } catch {}
+  }, [pathname, remember]);
+
+  function choose(slug) {
+    setOpen(false);
+    remember(slug);
+    const target = pathForCity(pathname || '', slug);
+    if (!target || slug === cityRoute(pathname || '')?.city) return;
+    // Filters carry over to the new city, except the locality (it belongs to the old city) and
+    // the page number.
+    const params = new URLSearchParams(window.location.search);
+    params.delete('area');
+    params.delete('page');
+    const qs = params.toString();
+    router.push(qs ? `${target}?${qs}` : target);
   }
 
   const current = CITIES.find((c) => c.slug === city) || CITIES[0];
