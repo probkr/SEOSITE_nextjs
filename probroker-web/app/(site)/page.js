@@ -108,10 +108,68 @@ const CITY_LANDMARKS = {
   },
 };
 
+// The two "Latest" rows on the homepage: newest listings with photos, split by transaction.
+const LATEST_SECTIONS = [
+  {
+    key: 'buy',
+    eyebrow: 'For Sale',
+    title: 'Latest Properties for Sale',
+    sub: 'Freshly listed homes, plots and offices to buy',
+    href: '/ahmedabad/residential-property-for-sale/',
+    dot: 'bg-primary',
+    eyebrowCls: 'bg-primary-50 text-primary',
+  },
+  {
+    key: 'rent',
+    eyebrow: 'For Rent',
+    title: 'Latest Properties for Rent',
+    sub: 'New rentals for families, bachelors and businesses',
+    href: '/ahmedabad/residential-property-for-rent/',
+    dot: 'bg-emerald-600',
+    eyebrowCls: 'bg-emerald-50 text-emerald-700',
+  },
+];
+
+function LatestSection({ s, properties }) {
+  return (
+    <div>
+      <div className="flex items-end justify-between gap-4 mb-5">
+        <div className="min-w-0">
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${s.eyebrowCls}`}>
+            <span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+            {s.eyebrow}
+          </span>
+          <h2 className="mt-2 text-2xl md:text-3xl font-bold font-heading text-gray-900">{s.title}</h2>
+          <p className="mt-1 text-sm text-gray-500">{s.sub}</p>
+        </div>
+        <Link
+          href={s.href}
+          className="shrink-0 inline-flex items-center gap-1 px-4 py-2 rounded-full border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:border-primary hover:text-primary transition-colors"
+        >
+          View all
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+        </Link>
+      </div>
+      {properties.length === 0 ? (
+        <p className="text-gray-500">No properties available right now. Please check back soon.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {properties.map((p) => (
+            <PropertyCard key={p.propertyId || p.slug} p={p} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default async function HomePage() {
-  const [cities, latest, totalStats, allAreas, topSocietiesRaw, topAreasRaw] = await Promise.all([
+  const latestQuery = (transactionType) =>
+    getProperties({ status: 'active', isApproved: true, hasPhotos: true, transactionType, limit: 4, sort: '-createdAt' }, { revalidate: 300 });
+  const [cities, latestSale, latestRent, totalStats, allAreas, topSocietiesRaw, topAreasRaw] = await Promise.all([
     getCities({ revalidate: 3600 }),
-    getProperties({ status: 'active', isApproved: true, hasPhotos: true, limit: 8, sort: '-createdAt' }, { revalidate: 300 }),
+    latestQuery('buy'),
+    latestQuery('rent'),
     getProperties({ status: 'active', isApproved: true, limit: 1 }, { revalidate: 300 }),
     getAreas({}, { revalidate: 3600 }),
     getTopSocieties({ limit: 8 }, { revalidate: 3600 }).catch(() => []),
@@ -119,7 +177,7 @@ export default async function HomePage() {
   ]);
   const topSocieties = Array.isArray(topSocietiesRaw) ? topSocietiesRaw : [];
   const topAreas = Array.isArray(topAreasRaw) ? topAreasRaw : [];
-  const properties = latest?.data || [];
+  const latestByTrans = { buy: latestSale?.data || [], rent: latestRent?.data || [] };
   const totalListings = totalStats?.total || 0;
   const cityNames = (cities || []).map((c) => c.name);
   const whyStats = [
@@ -293,20 +351,10 @@ export default async function HomePage() {
       </section>
 
       {/* Latest properties */}
-      <section className="container-px section-py">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl md:text-3xl font-bold font-heading text-gray-900">Latest Properties</h2>
-          <Link href="/ahmedabad/residential-property-for-sale/" className="text-primary font-semibold text-sm hover:underline">View all &rarr;</Link>
-        </div>
-        {properties.length === 0 ? (
-          <p className="text-gray-500">No properties available right now. Please check back soon.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
-            {properties.map((p) => (
-              <PropertyCard key={p.propertyId || p.slug} p={p} />
-            ))}
-          </div>
-        )}
+      <section className="container-px section-py space-y-14">
+        {LATEST_SECTIONS.map((s) => (
+          <LatestSection key={s.key} s={s} properties={latestByTrans[s.key]} />
+        ))}
       </section>
 
       {/* Why PRObroker */}

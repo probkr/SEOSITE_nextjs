@@ -17,7 +17,7 @@ export async function generateMetadata({ searchParams }) {
   };
 }
 
-const SORT_MAP = { newest: '-createdAt', price_asc: 'price_asc', price_desc: 'price_desc' };
+const SORT_MAP = { newest: '-listedDate', oldest: 'listedDate', price_asc: 'price_asc', price_desc: 'price_desc' };
 
 export default async function SearchPage({ searchParams }) {
   const q = searchParams?.q || '';
@@ -36,6 +36,7 @@ export default async function SearchPage({ searchParams }) {
         isApproved: true,
         search: q,
         city: searchParams?.city || undefined,
+        transactionType: filters.transactionType || undefined,
         bhk: filters.bhk || undefined,
         minPrice: filters.minPrice || undefined,
         maxPrice: filters.maxPrice || undefined,
@@ -50,7 +51,7 @@ export default async function SearchPage({ searchParams }) {
         amenities: filters.amenities || undefined,
         hasPhotos: filters.hasPhotos || undefined,
         verified: filters.verified || undefined,
-        sort: SORT_MAP[filters.sort] || '-createdAt',
+        sort: SORT_MAP[filters.sort] || '-listedDate',
         page,
         limit: perPage,
       },

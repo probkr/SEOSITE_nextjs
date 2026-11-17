@@ -21,7 +21,7 @@ const COPY = {
   },
   signup: {
     title: 'Create your free account',
-    sub: 'Three quick details, then a code on your phone. No password needed.',
+    sub: 'Just your mobile number, then a code on your phone. Name and email are optional.',
     cta: 'Continue',
   },
 };
@@ -108,9 +108,10 @@ export default function AuthForm({ mode = 'login', next: rawNext }) {
 
   function validate() {
     const errs = {};
-    if (mode === 'signup' && form.name.trim().length < 2) errs.name = 'Please enter your full name.';
+    // Sign up needs only the mobile number; name and email are checked only when filled in.
+    if (mode === 'signup' && form.name.trim() && form.name.trim().length < 2) errs.name = 'Name looks too short.';
     if (!MOBILE_RE.test(form.phone)) errs.phone = 'Enter a valid 10-digit mobile number.';
-    if (mode === 'signup' && !EMAIL_RE.test(form.email.trim())) errs.email = 'Enter a valid email address.';
+    if (mode === 'signup' && form.email.trim() && !EMAIL_RE.test(form.email.trim())) errs.email = 'Enter a valid email address.';
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -120,7 +121,7 @@ export default function AuthForm({ mode = 'login', next: rawNext }) {
     setBusy(true);
     try {
       const body = mode === 'signup'
-        ? { name: form.name.trim(), phone: form.phone, email: form.email.trim() }
+        ? { phone: form.phone, ...(form.name.trim() ? { name: form.name.trim() } : {}), ...(form.email.trim() ? { email: form.email.trim() } : {}) }
         : { phone: form.phone };
       const res = await clientFetchJson(`/auth/${mode}/send-otp`, { method: 'POST', body });
       setDevOtp(res?.dev_otp || '');
@@ -193,7 +194,7 @@ export default function AuthForm({ mode = 'login', next: rawNext }) {
             }}
           >
             {mode === 'signup' && (
-              <Field id="auth-name" label="Full name" error={fieldErrors.name}>
+              <Field id="auth-name" label={<>Full name <span className="font-normal text-gray-400">(optional)</span></>} error={fieldErrors.name}>
                 <input
                   id="auth-name"
                   autoComplete="name"
@@ -228,7 +229,7 @@ export default function AuthForm({ mode = 'login', next: rawNext }) {
             </Field>
 
             {mode === 'signup' && (
-              <Field id="auth-email" label="Email address" error={fieldErrors.email}>
+              <Field id="auth-email" label={<>Email address <span className="font-normal text-gray-400">(optional)</span></>} error={fieldErrors.email}>
                 <input
                   id="auth-email"
                   type="email"

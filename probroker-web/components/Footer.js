@@ -46,6 +46,7 @@ const COLS = [
       ['Submit Requirement', '/submit-requirement/'],
       ['Privacy Policy', '/privacy-policy/'],
       ['Terms & Conditions', '/terms/'],
+      ['Sitemap', '/sitemap/'],
     ],
   },
 ];

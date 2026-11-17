@@ -167,7 +167,9 @@ function normalizeImportRecord(item) {
     isVerified: isTruthyFlag(item.isVerified) || str(item.verifyStatus).toLowerCase() === 'verified',
     views: toNumber(item.views),
     slug: item.slug,
-    createdAt: item.createdAt && typeof item.createdAt === 'string' ? item.createdAt : parseDate(item.listedDate || item.createdOn || item.createdAt),
+    // The sender's listing date. createdAt is not taken from the sender: it is set to the time
+    // the row is added here (see processBulkImport).
+    listedDate: parseDate(item.listedDate || item.createdOn || item.createdAt),
   };
 }
 

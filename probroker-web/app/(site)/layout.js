@@ -2,6 +2,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import LeadPopup from '@/components/LeadPopup';
 import SessionEndedNotice from '@/components/auth/SessionEndedNotice';
+import LoginModalHost from '@/components/auth/LoginModalHost';
 import NavigationProgress from '@/components/NavigationProgress';
 import { getSiteSettings } from '@/lib/api';
 import Script from 'next/script';
@@ -30,6 +31,7 @@ export default async function SiteLayout({ children }) {
       <Footer settings={settings} />
       <LeadPopup />
       <SessionEndedNotice />
+      <LoginModalHost />
     </>
   );
 }

@@ -27,18 +27,20 @@ export function parseListingFilters(searchParams = {}) {
   const hasPhotos = searchParams.hasPhotos === 'true' ? 'true' : '';
   const parking = searchParams.parking === 'true' ? 'true' : '';
   const verified = searchParams.verified === 'true' ? 'true' : '';
+  // Only used by /search; SEO listing pages take buy/rent from their path.
+  const transactionType = ['buy', 'rent'].includes(searchParams.transactionType) ? searchParams.transactionType : '';
   // Any of these present means the URL is a filter permutation: it must NOT be indexed
   // (unbounded combinations) but should still be crawled so listings are discovered.
   const FILTER_KEYS = [
     'bhk', 'minPrice', 'maxPrice', 'furnishing', 'propertyType', 'minSqft', 'maxSqft',
     'postedBy', 'postedSince', 'familyOrBachelors', 'area', 'q', 'sort',
-    'amenities', 'hasPhotos', 'parking', 'verified',
+    'amenities', 'hasPhotos', 'parking', 'verified', 'transactionType',
   ];
   const hasFilters = FILTER_KEYS.some((k) => searchParams[k]);
   return {
     bhk, minPrice, maxPrice, furnishing, sort, q,
     propertyType, minSqft, maxSqft, postedBy, postedSince, familyOrBachelors, area,
-    amenities, hasPhotos, parking, verified,
+    amenities, hasPhotos, parking, verified, transactionType,
     hasFilters,
   };
 }
@@ -59,8 +61,8 @@ export async function fetchListingData({ citySlug, category, trans, areaSlug, pa
     areaName = area?.name || toTitle(areaSlug);
   }
 
-  const sortMap = { newest: '-createdAt', price_asc: 'price_asc', price_desc: 'price_desc' };
-  const sort = sortMap[extraFilters.sort] || '-createdAt';
+  const sortMap = { newest: '-listedDate', oldest: 'listedDate', price_asc: 'price_asc', price_desc: 'price_desc' };
+  const sort = sortMap[extraFilters.sort] || '-listedDate';
 
   const filters = {
     status: 'active',

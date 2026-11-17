@@ -32,7 +32,6 @@ a { @apply no-underline; }
 }
 
 body:has(.filter-strip) .site-header { background-color: #fff; border-bottom-color: #e5e7eb; box-shadow: none; backdrop-filter: none; }
-
 /* Horizontal scrollers (filter bar) that still scroll by touch/trackpad but show no bar. */
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }

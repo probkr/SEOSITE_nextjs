@@ -47,18 +47,22 @@ function readOtpBody(body = {}) {
   return { phone: normalizePhone(body.phone), otp: String(body.otp || '').trim() };
 }
 
-// ---------- Sign up: name + mobile + email -> OTP -> WebUser ----------
+// ---------- Sign up: mobile (+ optional name, email) -> OTP -> WebUser ----------
 exports.signupSendOtp = async (req, res) => {
   const body = req.body || {};
   const name = String(body.name || '').trim().replace(/\s+/g, ' ');
   const email = String(body.email || '').trim().toLowerCase();
   const phone = normalizePhone(body.phone);
 
-  if (!NAME_RE.test(name)) return fail(res, 400, 'Please enter your full name.', 'INVALID_NAME');
+  // Only the mobile number is required. Name and email are checked only when given.
   if (!MOBILE_RE.test(phone)) return fail(res, 400, 'Enter a valid 10-digit mobile number.', 'INVALID_PHONE');
-  if (!EMAIL_RE.test(email)) return fail(res, 400, 'Enter a valid email address.', 'INVALID_EMAIL');
+  if (name && !NAME_RE.test(name)) return fail(res, 400, 'Please enter a valid name (letters only).', 'INVALID_NAME');
+  if (email && !EMAIL_RE.test(email)) return fail(res, 400, 'Enter a valid email address.', 'INVALID_EMAIL');
 
-  const [phoneTaken, emailTaken] = await Promise.all([WebUser.exists({ phone }), WebUser.exists({ email })]);
+  const [phoneTaken, emailTaken] = await Promise.all([
+    WebUser.exists({ phone }),
+    email ? WebUser.exists({ email }) : null,
+  ]);
   if (phoneTaken) return fail(res, 409, 'This mobile number is already registered. Please log in.', 'PHONE_EXISTS');
   if (emailTaken) return fail(res, 409, 'This email is already linked to another account.', 'EMAIL_EXISTS');
 
@@ -80,7 +84,12 @@ exports.signupVerify = async (req, res) => {
   const session = newSessionFields(req);
   let user;
   try {
-    user = await WebUser.create({ id: uuidv4(), name, phone, email, createdAt: nowIso, updatedAt: nowIso, lastLogin: nowIso, ...session });
+    user = await WebUser.create({
+      id: uuidv4(), name: name || '', phone,
+      // No email: leave the field out, so the partial unique index ignores this account.
+      ...(email ? { email } : {}),
+      createdAt: nowIso, updatedAt: nowIso, lastLogin: nowIso, ...session,
+    });
   } catch (e) {
     if (e.code === 11000) return fail(res, 409, 'An account with this mobile or email already exists. Please log in.', 'ACCOUNT_EXISTS');
     throw e;

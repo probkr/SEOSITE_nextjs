@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { postJson } from '@/lib/api';
 import { useWebUser } from '@/lib/webUser';
-import { authHref, creditsLeft, useContact } from '@/lib/useContact';
+import { creditsLeft, useContact } from '@/lib/useContact';
+import { openLogin } from '@/lib/loginModal';
 import ContactActions, { PhoneIcon } from './ContactActions';
 
 export default function InquiryForm({ propertyId, propertyTitle, contactName, hasContact, listingType }) {
@@ -13,7 +14,8 @@ export default function InquiryForm({ propertyId, propertyTitle, contactName, ha
   const showContact = hasContact;
 
   async function getContact() {
-    if ((await contact.fetchContact()) === 'login') window.location.href = authHref('login');
+    // Guests log in through the popup and stay on this page; the number loads right after.
+    if ((await contact.fetchContact()) === 'login') openLogin({ onSuccess: () => contact.fetchContact() });
   }
 
   async function handleSubmit(e) {

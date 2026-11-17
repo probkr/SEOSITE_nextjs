@@ -5,7 +5,7 @@ import { SITE_URL } from '@/lib/config';
 export const revalidate = 3600;
 
 export async function GET() {
-  const urls = ['/', '/post-property/', '/about/', '/contact/', '/privacy-policy/', '/terms/', '/blog/', '/societies/'].map(
+  const urls = ['/', '/post-property/', '/about/', '/contact/', '/privacy-policy/', '/terms/', '/blog/', '/societies/', '/sitemap/'].map(
     (p) => `${SITE_URL}${p}`
   );
   const cities = (await getCities({ revalidate: 3600 })) || [];

@@ -8,7 +8,7 @@ import { itemListSchema, breadcrumbSchema } from '@/lib/schema';
 import { SITE_URL } from '@/lib/config';
 
 export default function ListingView({ data, basePath }) {
-  const { h1, properties, total, page, totalPages, popularAreas, societies, area, city, activeFilters } = data;
+  const { h1, properties, total, page, totalPages, popularAreas, societies, area, city, activeFilters, transactionType } = data;
 
   const itemListLd = itemListSchema(properties, SITE_URL);
   const breadcrumbItems = [{ name: 'Home', url: `${SITE_URL}/` }];
@@ -28,6 +28,7 @@ export default function ListingView({ data, basePath }) {
         resultCount={total}
         areas={popularAreas || []}
         showAreaFilter={!area}
+        transactionType={transactionType}
       />
 
     <div className="container-px pt-3 pb-6">
@@ -47,11 +48,11 @@ export default function ListingView({ data, basePath }) {
         <p className="text-sm text-gray-600 mt-1 max-w-3xl leading-relaxed">{area.description}</p>
       )}
 
-      <ListingResultsBar activeFilters={activeFilters} resultCount={total} areas={popularAreas || []} />
+      <ListingResultsBar activeFilters={activeFilters} resultCount={total} areas={popularAreas || []} transactionType={transactionType} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-8">
         {/* Main column: property cards */}
-        <div>
+        <div className="min-w-0">
           {properties.length === 0 ? (
             <div className="card p-10 text-center">
               <div className="text-gray-400 mb-2">

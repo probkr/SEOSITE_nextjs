@@ -39,11 +39,31 @@ const PropertySchema = new mongoose.Schema({
   aiDescription: { type: String, default: '' },
   custom_schema: { type: String, default: '' },
   views: { type: Number, default: 0 },
+  // listedDate: when the listing was first listed (the CRM's listedDate when it sends one).
+  // The site's "Posted X ago", "newest first" and "Added in last N days" all use it.
+  // createdAt: when the row was added to this collection (webhook, import or owner approval).
+  listedDate: { type: String },
   createdAt: { type: String },
   updatedAt: { type: String },
 }, { collection: 'properties', strict: false, versionKey: false, timestamps: false });
 
+// Safety net for every create path: a new row always gets createdAt, and listedDate falls back
+// to it. Runs on Property.create() / doc.save(), not on updateOne().
+PropertySchema.pre('validate', function setListingDates() {
+  if (!this.createdAt) this.createdAt = new Date().toISOString();
+  if (!this.listedDate) this.listedDate = this.createdAt;
+});
+
 PropertySchema.index({ category: 1, transactionType: 1, cityId: 1, status: 1, isApproved: 1 });
 PropertySchema.index({ category: 1, transactionType: 1, cityId: 1, areaId: 1, status: 1 });
+
+// "Newest first" (the default order everywhere) sorts on listedDate. These let MongoDB walk an
+// index already in that order instead of sorting every match in memory: filter fields first,
+// listedDate last. Mongoose creates them when the API starts.
+PropertySchema.index({ listedDate: -1 });
+PropertySchema.index({ status: 1, isApproved: 1, listedDate: -1 }); // homepage, /search
+PropertySchema.index({ status: 1, isApproved: 1, transactionType: 1, listedDate: -1 }); // homepage Sale / Rent rows
+PropertySchema.index({ category: 1, transactionType: 1, cityId: 1, status: 1, isApproved: 1, listedDate: -1 }); // city listing pages
+PropertySchema.index({ category: 1, transactionType: 1, cityId: 1, areaId: 1, status: 1, listedDate: -1 }); // area listing pages
 
 module.exports = mongoose.model('Property', PropertySchema);

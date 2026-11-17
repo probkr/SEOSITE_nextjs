@@ -27,6 +27,21 @@ const PRICE_OPTIONS = [
   { label: 'Above ₹2Cr', min: '20000000', max: '' },
 ];
 
+// Monthly rent ranges, used when the page/filter is for rentals.
+const RENT_PRICE_OPTIONS = [
+  { label: 'Under ₹10K', min: '', max: '10000' },
+  { label: '₹10K - ₹20K', min: '10000', max: '20000' },
+  { label: '₹20K - ₹35K', min: '20000', max: '35000' },
+  { label: '₹35K - ₹50K', min: '35000', max: '50000' },
+  { label: '₹50K - ₹1L', min: '50000', max: '100000' },
+  { label: 'Above ₹1L', min: '100000', max: '' },
+];
+
+const TRANS_OPTIONS = [
+  { value: 'buy', label: 'Buy' },
+  { value: 'rent', label: 'Rent' },
+];
+
 const SQFT_OPTIONS = [
   { label: 'Under 500 sq.ft', min: '', max: '500' },
   { label: '500 - 1000 sq.ft', min: '500', max: '1000' },
@@ -46,11 +61,14 @@ const POSTED_BY_OPTIONS = [
   { value: 'broker', label: 'Broker' },
 ];
 
+// Days back from today, matched against each listing's listedDate.
 const POSTED_SINCE_OPTIONS = [
-  { value: '1', label: 'Last 24 hours' },
-  { value: '7', label: 'Last 7 days' },
-  { value: '30', label: 'Last 30 days' },
-  { value: '90', label: 'Last 3 months' },
+  { value: '1', label: 'Yesterday' },
+  { value: '7', label: 'Last Week' },
+  { value: '14', label: 'Last 2 Weeks' },
+  { value: '30', label: 'Last Month' },
+  { value: '60', label: 'Last 2 Months' },
+  { value: '120', label: 'Last 4 Months' },
 ];
 
 const TENANT_OPTIONS = [
@@ -60,6 +78,7 @@ const TENANT_OPTIONS = [
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest First' },
+  { value: 'oldest', label: 'Oldest First' },
   { value: 'price_asc', label: 'Price: Low to High' },
   { value: 'price_desc', label: 'Price: High to Low' },
 ];
@@ -75,15 +94,15 @@ const AMENITY_OPTIONS = [
 const MORE_KEYS = ['verified', 'postedSince', 'familyOrBachelors', 'amenities', 'hasPhotos', 'parking'];
 
 const MORE_SECTIONS = [
-  { id: 'verified', label: 'Verified' },
-  { id: 'added', label: 'Added' },
-  { id: 'tenant', label: 'Preferred Tenant' },
+  { id: 'verified', label: 'Verified Properties' },
+  { id: 'added', label: 'Posted Since' },
+  { id: 'tenant', label: 'Tenants Preferred' },
   { id: 'amenities', label: 'Amenities' },
   { id: 'photos', label: 'Photos' },
   { id: 'parking', label: 'Parking' },
 ];
 
-const MORE_WIDTH = 680;
+const MORE_WIDTH = 900;
 
 const listOf = (csv) => String(csv || '').split(',').map((v) => v.trim()).filter(Boolean);
 
@@ -145,6 +164,13 @@ function useFixedPanel(open, wrapRef, btnRef, panelRef, { width = PANEL_WIDTH, a
       if (!r) return;
       const vw = window.innerWidth;
       const w = Math.min(panelRef.current?.offsetWidth || width, vw - 16);
+      if (align === 'center') {
+        // Big panels (More Filters) hang centred under the whole filter strip, not the button.
+        const strip = btnRef.current.closest('.filter-strip');
+        const top = (strip ? strip.getBoundingClientRect().bottom : r.bottom) + 8;
+        setPos({ top, left: Math.max(8, (vw - w) / 2) });
+        return;
+      }
       const left = align === 'right' ? r.right - w : r.left;
       setPos({ top: r.bottom + 6, left: Math.max(8, Math.min(left, vw - w - 8)) });
     }
@@ -206,7 +232,7 @@ function Dropdown({ id, label, active, openId, setOpenId, children, width, align
 }
 
 /** URL-driven filter state + actions shared by the bar, the results row and the card. */
-function useListingFilters(activeFilters, areas) {
+function useListingFilters(activeFilters, areas, pathTrans) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -214,6 +240,10 @@ function useListingFilters(activeFilters, areas) {
   const [moreOpen, setMoreOpen] = useState(false);
   const f = activeFilters;
   const amenities = listOf(f.amenities);
+  // Buy/Rent comes from the URL path on SEO listing pages (…-for-sale / …-for-rent) and
+  // from the `transactionType` query param on /search.
+  const trans = pathTrans || f.transactionType || '';
+  const priceOptions = trans === 'rent' ? RENT_PRICE_OPTIONS : PRICE_OPTIONS;
 
   function push(mutate) {
     const params = new URLSearchParams(searchParams.toString());
@@ -247,6 +277,37 @@ function useListingFilters(activeFilters, areas) {
 
   const clearMore = () => push((p) => MORE_KEYS.forEach((k) => p.delete(k)));
 
+  // Switch Buy <-> Rent. Budget ranges differ between sale and rent, so the price filter is dropped.
+  const setTrans = (t) => {
+    if (t === trans) {
+      setOpenId(null);
+      return;
+    }
+    if (!pathTrans) {
+      push((p) => {
+        if (t) p.set('transactionType', t); else p.delete('transactionType');
+        p.delete('minPrice');
+        p.delete('maxPrice');
+      });
+      return;
+    }
+    const word = t === 'rent' ? 'rent' : 'sale';
+    const m = pathname.match(/^(.*\/)([^/]+)(\/?)$/);
+    if (!m) return;
+    const [, head, last, tail] = m;
+    let nextLast;
+    if (/-for-(sale|rent)$/.test(last)) nextLast = last.replace(/-for-(sale|rent)$/, `-for-${word}`);
+    else if (/^(flats-under-|rent-under-)/.test(last)) nextLast = `residential-property-for-${word}`;
+    else return;
+    const params = new URLSearchParams(searchParams.toString());
+    ['page', 'minPrice', 'maxPrice'].forEach((k) => params.delete(k));
+    const qs = params.toString();
+    const nextPath = `${head}${nextLast}${tail}`;
+    startNavigationProgress();
+    router.push(qs ? `${nextPath}?${qs}` : nextPath, { scroll: false });
+    setOpenId(null);
+  };
+
   const clearAll = () => {
     startNavigationProgress();
     router.push(pathname, { scroll: false });
@@ -254,7 +315,8 @@ function useListingFilters(activeFilters, areas) {
   };
 
   const labels = {
-    price: PRICE_OPTIONS.find((o) => o.min === (f.minPrice || '') && o.max === (f.maxPrice || ''))?.label || 'Budget',
+    trans: TRANS_OPTIONS.find((o) => o.value === trans)?.label || 'Buy / Rent',
+    price: priceOptions.find((o) => o.min === (f.minPrice || '') && o.max === (f.maxPrice || ''))?.label || 'Budget',
     sqft: SQFT_OPTIONS.find((o) => o.min === (f.minSqft || '') && o.max === (f.maxSqft || ''))?.label || 'Area (sq.ft)',
     type: PROPERTY_TYPES.find((o) => o.value === f.propertyType)?.label || 'Property Type',
     furn: FURNISHING_OPTIONS.find((o) => o.value === f.furnishing)?.label || 'Furnishing',
@@ -265,6 +327,8 @@ function useListingFilters(activeFilters, areas) {
 
   // Chips for every applied filter, each individually removable.
   const chips = [];
+  // On listing pages Buy/Rent is the page itself (path), so it only gets a chip on /search.
+  if (!pathTrans && f.transactionType) chips.push({ k: 'trans', label: labels.trans, clear: () => setTrans('') });
   if (f.propertyType) chips.push({ k: 'propertyType', label: labels.type, clear: () => setParam('propertyType', '') });
   if (f.bhk) chips.push({ k: 'bhk', label: `${f.bhk} BHK`, clear: () => setParam('bhk', '') });
   if (f.minPrice || f.maxPrice) chips.push({ k: 'price', label: labels.price, clear: () => setRange('minPrice', 'maxPrice', null) });
@@ -297,7 +361,7 @@ function useListingFilters(activeFilters, areas) {
   const moreCount = Object.values(sectionCounts).reduce((a, b) => a + b, 0);
 
   return {
-    f, amenities, openId, setOpenId, moreOpen, setMoreOpen,
+    f, amenities, openId, setOpenId, moreOpen, setMoreOpen, trans, pathTrans, setTrans, priceOptions,
     setParam, setRange, toggleAmenity, clearMore, clearAll, labels, chips, sectionCounts, moreCount,
   };
 }
@@ -310,7 +374,7 @@ function MoreFilters({ s, resultCount }) {
   const panelRef = useRef(null);
   const bodyRef = useRef(null);
   const [active, setActive] = useState(MORE_SECTIONS[0].id);
-  const pos = useFixedPanel(moreOpen, wrapRef, btnRef, panelRef, { width: MORE_WIDTH, onClose: () => setMoreOpen(false) });
+  const pos = useFixedPanel(moreOpen, wrapRef, btnRef, panelRef, { width: MORE_WIDTH, align: 'center', onClose: () => setMoreOpen(false) });
 
   const sectionEl = (id) => bodyRef.current?.querySelector(`[data-section="${id}"]`);
 
@@ -334,8 +398,8 @@ function MoreFilters({ s, resultCount }) {
   }
 
   const section = (id, title, children, note) => (
-    <section data-section={id} className="pb-5 mb-5 border-b border-gray-100 last:border-0 last:mb-0 last:pb-0">
-      <h4 className="text-sm font-semibold text-gray-900 mb-3">{title}</h4>
+    <section data-section={id} className="pb-6 mb-6 border-b border-gray-100 last:border-0 last:mb-0 last:pb-0">
+      <h4 className="text-[15px] font-semibold text-gray-900 mb-3">{title}</h4>
       <div className="flex flex-wrap gap-2">{children}</div>
       {note && <p className="text-xs text-gray-400 mt-2">{note}</p>}
     </section>
@@ -360,33 +424,42 @@ function MoreFilters({ s, resultCount }) {
       </button>
 
       {moreOpen && (
+        <>
+        {/* Dims the page below the filter strip, like Magicbricks. It sits inside wrapRef, so the
+            outside-click handler ignores it; it closes the panel itself. */}
+        <div
+          aria-hidden="true"
+          onClick={() => setMoreOpen(false)}
+          className="fixed inset-x-0 bottom-0 z-40 bg-black/40"
+          style={{ top: pos ? pos.top - 8 : 0, visibility: pos ? 'visible' : 'hidden' }}
+        />
         <div
           ref={panelRef}
           role="dialog"
           aria-label="More filters"
-          className="fixed z-50 flex flex-col bg-white border border-gray-200 rounded-xl shadow-float overflow-hidden"
+          className="fixed z-50 flex flex-col bg-white rounded-xl shadow-2xl overflow-hidden"
           style={{
             top: pos?.top ?? 0,
             left: pos?.left ?? 0,
             width: `min(${MORE_WIDTH}px, calc(100vw - 16px))`,
-            height: `min(440px, calc(100vh - ${(pos?.top ?? 0) + 16}px))`,
+            height: `min(560px, calc(100vh - ${(pos?.top ?? 0) + 16}px))`,
             visibility: pos ? 'visible' : 'hidden',
           }}
         >
           <div className="flex flex-1 min-h-0">
-            <nav className="w-32 sm:w-44 shrink-0 border-r border-gray-100 overflow-y-auto bg-gray-50/60" aria-label="Filter sections">
+            <nav className="w-36 sm:w-60 shrink-0 border-r border-gray-100 overflow-y-auto" aria-label="Filter sections">
               {MORE_SECTIONS.map((sec) => (
                 <button
                   key={sec.id}
                   type="button"
                   onClick={() => jumpTo(sec.id)}
-                  className={`w-full flex items-center justify-between gap-2 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide border-b border-gray-100 border-l-2 transition-colors ${
-                    active === sec.id ? 'border-l-primary bg-white text-primary' : 'border-l-transparent text-gray-500 hover:text-gray-800'
+                  className={`w-full flex items-center justify-between gap-2 px-4 sm:px-6 py-4 text-left text-sm border-b border-gray-100 border-l-[3px] transition-colors ${
+                    active === sec.id ? 'border-l-primary bg-primary-50/60 text-primary font-semibold' : 'border-l-transparent text-gray-700 font-medium hover:bg-gray-50'
                   }`}
                 >
                   {sec.label}
                   {sectionCounts[sec.id] > 0 && (
-                    <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-white text-[10px] normal-case">
+                    <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-white text-[10px]">
                       {sectionCounts[sec.id]}
                     </span>
                   )}
@@ -394,7 +467,7 @@ function MoreFilters({ s, resultCount }) {
               ))}
             </nav>
 
-            <div ref={bodyRef} onScroll={onBodyScroll} className="relative flex-1 min-w-0 overflow-y-auto px-5 py-4">
+            <div ref={bodyRef} onScroll={onBodyScroll} className="relative flex-1 min-w-0 overflow-y-auto px-5 sm:px-7 py-5">
               {section('verified', 'Verified', (
                 <button type="button" onClick={() => setParam('verified', f.verified ? '' : 'true')} className={pill(!!f.verified)} aria-pressed={!!f.verified}>
                   {f.verified && <Check />}
@@ -402,13 +475,18 @@ function MoreFilters({ s, resultCount }) {
                 </button>
               ), 'Listings checked by the PRObroker team.')}
 
-              {section('added', 'Added', POSTED_SINCE_OPTIONS.map((o) => (
-                <button key={o.value} type="button" onClick={() => setParam('postedSince', f.postedSince === o.value ? '' : o.value)} className={pill(f.postedSince === o.value)}>
-                  {o.label}
-                </button>
-              )))}
+              {section('added', 'Posted Since', [
+                <button key="all" type="button" onClick={() => setParam('postedSince', '')} className={pill(!f.postedSince)}>
+                  All
+                </button>,
+                ...POSTED_SINCE_OPTIONS.map((o) => (
+                  <button key={o.value} type="button" onClick={() => setParam('postedSince', f.postedSince === o.value ? '' : o.value)} className={pill(f.postedSince === o.value)}>
+                    {o.label}
+                  </button>
+                )),
+              ], 'Based on the date each property was listed.')}
 
-              {section('tenant', 'Preferred Tenant', TENANT_OPTIONS.map((o) => (
+              {section('tenant', 'Tenants Preferred', TENANT_OPTIONS.map((o) => (
                 <button key={o.value} type="button" onClick={() => setParam('familyOrBachelors', f.familyOrBachelors === o.value ? '' : o.value)} className={pill(f.familyOrBachelors === o.value)}>
                   {o.label}
                 </button>
@@ -449,26 +527,40 @@ function MoreFilters({ s, resultCount }) {
             </button>
           </div>
 
-          <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-gray-100 bg-white">
-            <button type="button" onClick={clearMore} disabled={moreCount === 0} className="text-sm font-semibold text-gray-500 hover:text-primary disabled:opacity-40">
-              Clear
+          <div className="flex items-center justify-end gap-5 px-5 py-3.5 border-t border-gray-100 bg-white">
+            <button type="button" onClick={clearMore} disabled={moreCount === 0} className="text-sm font-semibold text-primary hover:underline disabled:text-gray-400 disabled:no-underline">
+              Clear All
             </button>
-            <button type="button" onClick={() => setMoreOpen(false)} className="btn-primary !py-2 !px-5 text-sm">
-              Show {typeof resultCount === 'number' ? `${resultCount.toLocaleString('en-IN')} ` : ''}Results
+            <button type="button" onClick={() => setMoreOpen(false)} className="btn-primary !py-2.5 !px-6 text-sm">
+              View {typeof resultCount === 'number' ? `${resultCount.toLocaleString('en-IN')} ` : ''}Properties
             </button>
           </div>
         </div>
+        </>
       )}
     </div>
   );
 }
 
 function FilterButtons({ s, areas: rawAreas, showAreaFilter, resultCount }) {
-  const { f, openId, setOpenId, setParam, setRange, labels } = s;
+  const { f, openId, setOpenId, setParam, setRange, labels, trans, pathTrans, setTrans, priceOptions } = s;
   // Duplicate area rows (same slug) open the same page; show each once.
   const areas = rawAreas.filter((a, i) => a.slug && rawAreas.findIndex((b) => b.slug === a.slug) === i);
   return (
     <>
+      <Dropdown id="trans" label={labels.trans} active={!!trans} openId={openId} setOpenId={setOpenId}>
+        {!pathTrans && (
+          <button type="button" onClick={() => setTrans('')} className={optBtn(!trans)}>
+            Buy &amp; Rent
+          </button>
+        )}
+        {TRANS_OPTIONS.map((o) => (
+          <button key={o.value} type="button" onClick={() => setTrans(o.value)} className={optBtn(trans === o.value)}>
+            {o.label}
+          </button>
+        ))}
+      </Dropdown>
+
       <Dropdown id="type" label={labels.type} active={!!f.propertyType} openId={openId} setOpenId={setOpenId}>
         <button type="button" onClick={() => setParam('propertyType', '')} className={optBtn(!f.propertyType)}>
           All Types
@@ -508,7 +600,7 @@ function FilterButtons({ s, areas: rawAreas, showAreaFilter, resultCount }) {
         <button type="button" onClick={() => setRange('minPrice', 'maxPrice', null)} className={optBtn(!f.minPrice && !f.maxPrice)}>
           Any Budget
         </button>
-        {PRICE_OPTIONS.map((o) => (
+        {priceOptions.map((o) => (
           <button key={o.label} type="button" onClick={() => setRange('minPrice', 'maxPrice', o)} className={optBtn(o.min === (f.minPrice || '') && o.max === (f.maxPrice || ''))}>
             {o.label}
           </button>
@@ -539,7 +631,7 @@ function FilterButtons({ s, areas: rawAreas, showAreaFilter, resultCount }) {
 
       <Dropdown id="postedBy" label={labels.postedBy} active={!!f.postedBy} openId={openId} setOpenId={setOpenId}>
         <button type="button" onClick={() => setParam('postedBy', '')} className={optBtn(!f.postedBy)}>
-          Anyone
+          All
         </button>
         {POSTED_BY_OPTIONS.map((o) => (
           <button key={o.value} type="button" onClick={() => setParam('postedBy', o.value)} className={optBtn(f.postedBy === o.value)}>
@@ -557,11 +649,11 @@ function SortDropdown({ s, withPrefix = false }) {
   const { f, openId, setOpenId, setParam, labels } = s;
   const label = withPrefix ? (
     <>
-      <span className="text-gray-500 font-normal">Sort by:</span> {labels.sort}
+      <span className="hidden sm:inline text-gray-500 font-normal">Sort by:</span> {labels.sort}
     </>
   ) : labels.sort;
   return (
-    <Dropdown id="sort" label={label} active={!withPrefix && !!f.sort && f.sort !== 'newest'} openId={openId} setOpenId={setOpenId} align="right">
+    <Dropdown id="sort" label={label} active={!!f.sort && f.sort !== 'newest'} openId={openId} setOpenId={setOpenId} align="right">
       {SORT_OPTIONS.map((o) => (
         <button key={o.value} type="button" onClick={() => setParam('sort', o.value === 'newest' ? '' : o.value)} className={optBtn((f.sort || 'newest') === o.value)}>
           {o.label}
@@ -605,36 +697,40 @@ function Chips({ s, resultCount }) {
  * Full-width filter strip stuck under the site header (Housing.com style). One row; it scrolls
  * sideways on narrow screens instead of wrapping.
  */
-export function ListingFilterBar({ activeFilters = {}, resultCount, areas = [], showAreaFilter = false }) {
-  const s = useListingFilters(activeFilters, areas);
+export function ListingFilterBar({ activeFilters = {}, resultCount, areas = [], showAreaFilter = false, transactionType }) {
+  const s = useListingFilters(activeFilters, areas, transactionType);
   return (
     <div className="filter-strip sticky top-[var(--header-h)] z-30 bg-white border-b border-gray-200">
-      <div className="container-px flex items-center gap-2 py-3 overflow-x-auto no-scrollbar">
-        <FilterButtons s={s} areas={areas} showAreaFilter={showAreaFilter} resultCount={resultCount} />
-        {s.chips.length > 0 && (
-          <button
-            type="button"
-            onClick={s.clearAll}
-            className="shrink-0 ml-1 px-2 text-sm font-semibold text-gray-700 underline underline-offset-2 hover:text-primary whitespace-nowrap"
-          >
-            Reset filters
-          </button>
-        )}
+      {/* Filters scroll sideways on narrow screens; Sort stays pinned on the right. */}
+      <div className="container-px flex items-center gap-2 py-3">
+        <div className="flex items-center gap-2 flex-1 min-w-0 overflow-x-auto no-scrollbar">
+          <FilterButtons s={s} areas={areas} showAreaFilter={showAreaFilter} resultCount={resultCount} />
+          {/* Shown only while a filter is applied; the active dropdowns themselves show what's set. */}
+          {s.chips.length > 0 && (
+            <button
+              type="button"
+              onClick={s.clearAll}
+              className="shrink-0 ml-1 px-2 text-sm font-semibold text-primary underline underline-offset-2 whitespace-nowrap hover:text-primary-700"
+            >
+              Clear All
+            </button>
+          )}
+        </div>
+        <div className="shrink-0 pl-2 sm:pl-3 border-l border-gray-200">
+          <SortDropdown s={s} withPrefix />
+        </div>
       </div>
     </div>
   );
 }
 
-/** Result count, removable applied-filter chips and "Sort by", shown above the results. */
-export function ListingResultsBar({ activeFilters = {}, resultCount, areas = [] }) {
-  const s = useListingFilters(activeFilters, areas);
+/** Result count shown under the page heading. Filters, chips and Sort live in the filter strip. */
+export function ListingResultsBar({ resultCount }) {
+  if (typeof resultCount !== 'number') return <div className="mb-4" />;
   return (
-    <div className="flex flex-wrap items-center gap-2 mt-3 mb-4">
-      <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
-        <Chips s={s} resultCount={resultCount} />
-      </div>
-      <SortDropdown s={s} withPrefix />
-    </div>
+    <p className="mt-2 mb-4 text-sm font-medium text-gray-600">
+      {resultCount.toLocaleString('en-IN')} {resultCount === 1 ? 'property' : 'properties'} found
+    </p>
   );
 }
 

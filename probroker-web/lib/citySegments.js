@@ -2,7 +2,7 @@ import { getCity, getArea, getAreas, getProperties, getSociety, getSocieties } f
 import { fetchListingData, toTitle } from './listing';
 import { SITE_URL } from './config';
 
-const SORT_MAP = { newest: '-createdAt', price_asc: 'price_asc', price_desc: 'price_desc' };
+const SORT_MAP = { newest: '-listedDate', oldest: 'listedDate', price_asc: 'price_asc', price_desc: 'price_desc' };
 
 const CATEGORY_TRANS_RE = /^(residential|commercial)-property-for-(sale|rent)$/;
 
@@ -135,7 +135,7 @@ async function resolveCatchAll(citySlug, city, catchAll, page, extraFilters = {}
   const perPage = 12;
   filters.page = page;
   filters.limit = perPage;
-  filters.sort = SORT_MAP[extraFilters.sort] || '-createdAt';
+  filters.sort = SORT_MAP[extraFilters.sort] || '-listedDate';
   const result = await getProperties(filters, { revalidate: 900 });
   const properties = result?.data || [];
   const total = result?.total ?? properties.length;

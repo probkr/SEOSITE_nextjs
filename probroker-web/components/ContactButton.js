@@ -4,10 +4,14 @@ import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import ContactActions, { PhoneIcon } from './ContactActions';
-import { authHref, creditsLeft, useContact } from '@/lib/useContact';
+import QuickAuthForm from './auth/QuickAuthForm';
+import { creditsLeft, useContact } from '@/lib/useContact';
 
 function PopupBody({ contact, propertyTitle, href }) {
   const { status, phone, charged, freeCredits, message, fetchContact } = contact;
+  // Guest picked Log in / Sign up: the OTP form opens right here in the popup, and the number
+  // is fetched as soon as they're signed in.
+  const [authMode, setAuthMode] = useState(null);
 
   if (status === 'done') {
     return (
@@ -22,12 +26,19 @@ function PopupBody({ contact, propertyTitle, href }) {
   }
 
   if (status === 'login') {
+    if (authMode) {
+      return <QuickAuthForm initialMode={authMode} onSuccess={() => { setAuthMode(null); fetchContact(); }} />;
+    }
     return (
       <>
-        <p className="text-sm text-gray-600 text-center mb-4">Log in to see this number. New accounts get 10 free coins.</p>
+        <div className="flex flex-col items-center text-center mb-4">
+          <span className="w-12 h-12 rounded-full bg-primary-50 text-primary flex items-center justify-center mb-2"><PhoneIcon /></span>
+          <p className="text-sm text-gray-600">Log in with your mobile number to see this number.</p>
+          <p className="text-xs text-gray-400 mt-0.5">New accounts get 10 free coins.</p>
+        </div>
         <div className="grid grid-cols-2 gap-2">
-          <Link href={authHref('login')} className="btn-primary !py-2.5 text-sm">Log in</Link>
-          <Link href={authHref('signup')} className="btn-outline !py-2.5 text-sm">Sign up</Link>
+          <button type="button" onClick={() => setAuthMode('login')} className="btn-primary !py-2.5 text-sm">Log in</button>
+          <button type="button" onClick={() => setAuthMode('signup')} className="btn-outline !py-2.5 text-sm">Sign up</button>
         </div>
       </>
     );

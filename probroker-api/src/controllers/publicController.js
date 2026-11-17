@@ -258,7 +258,7 @@ exports.listProperties = async (req, res) => {
     const days = parseInt(postedSince, 10);
     if (!Number.isNaN(days) && days > 0) {
       const cutoff = new Date(Date.now() - days * 86400000).toISOString();
-      query.createdAt = { $gte: cutoff };
+      query.listedDate = { $gte: cutoff };
     }
   }
 
@@ -290,16 +290,18 @@ exports.listProperties = async (req, res) => {
 
   if (and.length) query.$and = and;
 
-  let sortField = 'createdAt';
+  // Newest first (the default) and oldest first both order by the listing date.
+  let sortField = 'listedDate';
   let sortDir = -1;
-  if (_sort === 'price_asc') { sortField = 'price'; sortDir = 1; }
+  if (_sort === 'oldest' || _sort === 'listedDate') sortDir = 1;
+  else if (_sort === 'price_asc') { sortField = 'price'; sortDir = 1; }
   else if (_sort === 'price_desc') { sortField = 'price'; sortDir = -1; }
 
   const skip = (page - 1) * limit;
   const sortSpec = { [sortField]: sortDir };
   // A visitor who asks for price order gets exactly that. Only the default "newest" order puts
   // listings with photos first.
-  const photosFirst = sortField === 'createdAt';
+  const photosFirst = sortField === 'listedDate';
   const [total, properties, priceStats] = await Promise.all([
     Property.countDocuments(query),
     photosFirst
@@ -339,7 +341,7 @@ exports.listProperties = async (req, res) => {
 
 exports.latestProperties = async (req, res) => {
   const limit = parseInt(req.query.limit, 10) || 8;
-  const properties = await findPhotosFirst({ status: 'active', isApproved: true }, { createdAt: -1 }, 0, limit);
+  const properties = await findPhotosFirst({ status: 'active', isApproved: true }, { listedDate: -1 }, 0, limit);
   await addPlaceNames(properties);
   res.json(properties.map(publicProperty));
 };

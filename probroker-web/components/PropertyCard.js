@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import Link from 'next/link';
 import { fmtPrice, buildPropertyTitle, buildPropertySlug } from '@/lib/format';
 import { firstImageUrl } from '@/lib/media';
@@ -35,6 +36,51 @@ function postedAgo(createdAt) {
   return `Posted ${years} year${years === 1 ? '' : 's'} ago`;
 }
 
+const PIN_PATH = 'M12 1.5c-4.14 0-7.5 3.36-7.5 7.5 0 5.62 7.5 13.5 7.5 13.5s7.5-7.88 7.5-13.5c0-4.14-3.36-7.5-7.5-7.5z';
+
+// Four-colour map pin in Google Maps' colours: red top-left, blue top-right, yellow band,
+// green stem, white centre. Bands are polygons clipped to the pin outline. useId keeps the
+// clipPath id unique when a page renders many cards.
+function MapsPin() {
+  const clip = `pin-${useId().replace(/:/g, '')}`;
+  return (
+    <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+      <defs>
+        <clipPath id={clip}><path d={PIN_PATH} /></clipPath>
+      </defs>
+      <g clipPath={`url(#${clip})`}>
+        <rect width="24" height="24" fill="#34A853" />
+        <polygon points="0,0 21,0 0,21" fill="#FBBC04" />
+        <polygon points="0,0 16.5,0 0,16.5" fill="#EA4335" />
+        <polygon points="9.5,0 24,0 24,21 12,9" fill="#4285F4" />
+      </g>
+      <circle cx="12" cy="9" r="2.6" fill="#fff" />
+    </svg>
+  );
+}
+
+// Outline icons (24x24, stroke) for the listing facts.
+const ICONS = {
+  bed: 'M3 18v-6a2 2 0 012-2h14a2 2 0 012 2v6M3 18h18M3 18v2m18-2v2M6 10V7.5A1.5 1.5 0 017.5 6h3A1.5 1.5 0 0112 7.5V10m0 0V7.5A1.5 1.5 0 0113.5 6h3A1.5 1.5 0 0118 7.5V10',
+  area: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5M9 9l-5-5m11 5l5-5M9 15l-5 5m11-5l5 5',
+  rate: 'M7 4h10M7 8.5h10M7 4c3.5 0 6 1.4 6 4.5S10.5 13 7 13l7 7',
+  sofa: 'M5 11V8a3 3 0 013-3h8a3 3 0 013 3v3M3 12.5a2 2 0 014 0V15h10v-2.5a2 2 0 014 0V18a1 1 0 01-1 1H4a1 1 0 01-1-1v-5.5zM6 19v2m12-2v2',
+  floor: 'M4 21V5a1 1 0 011-1h9a1 1 0 011 1v16m0-12h4a1 1 0 011 1v11M3 21h18M8 8h3m-3 4h3m-3 4h3',
+  car: 'M5 13l1.6-4.6A2 2 0 018.5 7h7a2 2 0 011.9 1.4L19 13M5 13h14v4a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H8v1a1 1 0 01-1 1H6a1 1 0 01-1-1v-4zm2.5 2h.01m9 0h.01',
+  age: 'M8 3v3m8-3v3M4 9h16M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z',
+  tenant: 'M9 11a3 3 0 100-6 3 3 0 000 6zM3 20a6 6 0 0112 0m1-14.5a3 3 0 010 5.5m2 3a5 5 0 013 6',
+  user: 'M12 12a4 4 0 100-8 4 4 0 000 8zM4.5 21a7.5 7.5 0 0115 0',
+  type: 'M3 10.5L12 4l9 6.5M5 9v11h14V9M10 20v-5h4v5',
+};
+
+function FactIcon({ name, className = 'w-3.5 h-3.5' }) {
+  return (
+    <svg className={`${className} shrink-0`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={ICONS[name]} />
+    </svg>
+  );
+}
+
 export default function PropertyCard({ p, variant = 'grid' }) {
   const title = buildPropertyTitle(p);
   const slug = p.slug || buildPropertySlug(p);
@@ -46,14 +92,21 @@ export default function PropertyCard({ p, variant = 'grid' }) {
   const area = p.areaName || p.area || '';
   const city = p.cityName || '';
   const loc = [area, city].filter(Boolean).join(', ');
-  const trans = INACTIVE_LABEL[p.status] || (p.transactionType === 'rent' ? 'For Rent' : 'For Sale');
+  const isRent = p.transactionType === 'rent';
+  const trans = INACTIVE_LABEL[p.status] || (isRent ? 'For Rent' : 'For Sale');
+  // Sale = brand purple, rent = green, inactive (My Contacts only) = grey.
+  const transCls = INACTIVE_LABEL[p.status] ? 'bg-gray-700 text-white' : isRent ? 'bg-emerald-600 text-white' : 'bg-primary text-white';
+  const posted = postedAgo(p.listedDate || p.createdAt);
   const societyName = p.premiseName || p.societyName || '';
   // Google Maps search text: society name, then "Area, City", e.g. "Arjun Elegance Naranpura, Ahmedabad".
   const mapQuery = [societyName, loc].filter(Boolean).join(' ');
   const ownerName = p.contactName || '';
   const isVerified = p.isVerified === true;
   const cardId = p.propertyId || p.slug || slug;
-  const pricePerSqft = p.sqft && p.price ? Math.round(p.price / p.sqft) : null;
+  // Price per square foot = price / sqft (for rentals: monthly rent per sqft). Shown as its own
+  // detail on every card that has both numbers.
+  const pricePerSqft = Number(p.sqft) > 0 && Number(p.price) > 0 ? Math.round(Number(p.price) / Number(p.sqft)) : null;
+  const rateText = pricePerSqft ? `₹${pricePerSqft.toLocaleString('en-IN')}/sqft` : '';
 
   const imageInner = hasPhoto ? (
     <PropertyMedia
@@ -66,69 +119,103 @@ export default function PropertyCard({ p, variant = 'grid' }) {
     <PropertyImagePlaceholder category={p.category} propertyType={p.propertyType} seed={cardId} />
   );
 
+  const checkIcon = (
+    <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+      <path fillRule="evenodd" d="M16.704 5.29a1 1 0 010 1.415l-7.5 7.5a1 1 0 01-1.415 0l-3.5-3.5a1 1 0 111.415-1.414L8.5 12.086l6.79-6.796a1 1 0 011.414 0z" clipRule="evenodd" />
+    </svg>
+  );
+
+  // Grid card: status + verified sit on the photo so the title gets the full width below.
   const badges = (
     <>
-      <span className="badge absolute top-2 left-2 bg-primary text-white shadow-card">{trans}</span>
+      <div className="absolute top-2 left-2 flex flex-wrap items-center gap-1.5">
+        <span className={`badge shadow-card ${transCls}`}>{trans}</span>
+        {isVerified && (
+          <span className="badge bg-white/95 text-green-700 shadow-card">
+            {checkIcon}
+            Verified
+          </span>
+        )}
+      </div>
       {p.bhk ? (
         <span className="badge absolute top-2 right-2 bg-white/95 text-gray-800 shadow-card">{parseInt(p.bhk)} BHK</span>
       ) : null}
     </>
   );
 
+  // Row card: the Verified mark is the green corner tag, so the title gets the full width.
   const titleRow = (
-    <div className="flex items-start gap-1.5">
-      <h3 className="text-[15px] font-semibold text-gray-900 line-clamp-1 flex-1">{title}</h3>
-      {isVerified && (
-        <span className="badge bg-green-50 text-green-700 border border-green-200 shrink-0 !py-0.5">
-          <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M16.704 5.29a1 1 0 010 1.415l-7.5 7.5a1 1 0 01-1.415 0l-3.5-3.5a1 1 0 111.415-1.414L8.5 12.086l6.79-6.796a1 1 0 011.414 0z" clipRule="evenodd" />
-          </svg>
-          Verified
-        </span>
-      )}
-    </div>
+    <h3 className="text-[17px] font-semibold text-gray-900 line-clamp-1 group-hover:text-primary transition-colors">{title}</h3>
   );
 
-  const societyRow = societyName ? <div className="text-sm text-gray-600 line-clamp-1">{societyName}</div> : null;
-
-  const locationRow = loc ? (
-    <div className="text-sm text-gray-500 flex items-center gap-1">
-      <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M9.69 18.933a.75.75 0 00.62.058c.058-.026.128-.061.207-.108a17.5 17.5 0 001.907-1.311c.653-.51 1.32-1.144 1.94-1.9C16.104 13.727 17 11.9 17 9.75 17 5.856 13.866 2.75 10 2.75S3 5.856 3 9.75c0 2.146.895 3.977 2.646 6.144.62.756 1.287 1.39 1.94 1.9a17.5 17.5 0 002.114 1.4191.001.001zM10 11.75a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+  // Green tag in the card's top-right corner for listings the PRObroker team has verified.
+  const verifiedTag = isVerified ? (
+    <span className="absolute top-0 right-0 z-10 inline-flex items-center gap-1.5 pl-3 pr-3.5 py-1.5 rounded-bl-xl bg-emerald-600 text-white text-xs font-semibold shadow-sm pointer-events-none">
+      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z" />
+        <path d="M9 12l2 2 4-4" />
       </svg>
-      <span className="line-clamp-1">{loc}</span>
-    </div>
+      Verified
+    </span>
+  ) : null;
+
+  const place = [societyName, loc].filter(Boolean).join(' · ');
+
+  // Address line with a Google-Maps-style red pin. Pin and text open the place in Google Maps.
+  // It sits above the card-wide link (z-10, pointer-events-auto), so it doesn't open the listing.
+  const placeRow = place ? (
+    <a
+      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      title="View on Google Maps"
+      className="group/map relative z-10 pointer-events-auto inline-flex items-center gap-1 max-w-full min-w-0 text-[15px] text-gray-500 hover:text-primary transition-colors"
+    >
+      <MapsPin />
+
+      <span className="truncate group-hover/map:underline underline-offset-2">{place}</span>
+      <span className="sr-only">(opens Google Maps)</span>
+    </a>
   ) : null;
 
   const priceRow = (
-    <div className="flex items-baseline gap-2 flex-wrap">
-      <div className="text-xl font-bold text-primary font-heading">{fmtPrice(p.price)}</div>
-      {pricePerSqft ? <div className="text-xs text-gray-400">&#8377;{pricePerSqft.toLocaleString('en-IN')}/sqft</div> : null}
+    <div className="text-2xl font-bold text-primary font-heading">
+      {fmtPrice(p.price)}
+      {isRent && <span className="text-sm font-medium text-gray-500">/month</span>}
     </div>
   );
 
-  const factItems = [
-    p.sqft ? { label: 'Area', value: `${p.sqft} sqft` } : null,
-    p.propertyType ? { label: 'Type', value: p.propertyType, capitalize: true } : null,
-    p.furnishing ? { label: 'Furnishing', value: p.furnishing, capitalize: true } : null,
-    p.floorNumber ? { label: 'Floor', value: `${p.floorNumber}${p.totalFloors ? `/${p.totalFloors}` : ''}` } : null,
-    p.listingType ? { label: 'Posted by', value: p.listingType, capitalize: true } : null,
-  ].filter(Boolean);
+  // Grid card: a 2x2 block of icon + label + value, always four slots so cards in a row line up.
+  // Price/sqft is always one of them when it can be worked out; the rest fill in by usefulness.
+  const gridFacts = [
+    p.sqft ? { icon: 'area', label: 'Area', value: `${p.sqft} sqft` } : null,
+    rateText ? { icon: 'rate', label: isRent ? 'Rent/sqft' : 'Price/sqft', value: rateText } : null,
+    p.furnishing ? { icon: 'sofa', label: 'Furnishing', value: p.furnishing, capitalize: true } : null,
+    p.listingType ? { icon: 'user', label: 'Posted by', value: p.listingType, capitalize: true } : null,
+    p.propertyType ? { icon: 'type', label: 'Type', value: p.propertyType, capitalize: true } : null,
+    p.floorNumber ? { icon: 'floor', label: 'Floor', value: `${p.floorNumber}${p.totalFloors ? `/${p.totalFloors}` : ''}` } : null,
+  ].filter(Boolean).slice(0, 4);
 
-  const factsRow = factItems.length > 0 ? (
-    <div className="flex flex-wrap gap-x-4 gap-y-1.5 pt-2 border-t border-gray-100">
-      {factItems.map((f) => (
-        <div key={f.label} className="flex flex-col leading-tight">
-          <span className="text-[10px] uppercase tracking-wide text-gray-400">{f.label}</span>
-          <span className={`text-xs font-medium text-gray-800 ${f.capitalize ? 'capitalize' : ''}`}>{f.value}</span>
+  const factsRow = gridFacts.length > 0 ? (
+    <div className="grid grid-cols-2 gap-x-3 gap-y-2.5 py-3 border-y border-gray-100">
+      {gridFacts.map((f) => (
+        <div key={f.label} className="flex items-center gap-2 min-w-0">
+          <span className="w-8 h-8 rounded-lg bg-primary-50 text-primary flex items-center justify-center shrink-0">
+            <FactIcon name={f.icon} className="w-4 h-4" />
+          </span>
+          <span className="flex flex-col leading-tight min-w-0">
+            <span className="text-[11px] uppercase tracking-wide text-gray-400">{f.label}</span>
+            <span title={f.value} className={`text-sm font-semibold text-gray-800 truncate ${f.capitalize ? 'capitalize' : ''}`}>{f.value}</span>
+          </span>
         </div>
       ))}
     </div>
   ) : null;
 
-  const ownerRow = ownerName ? (
-    <div className="text-xs text-gray-500 truncate">
-      Owner: <span className="text-gray-700 font-medium">{ownerName}</span>
+  const footerRow = ownerName || posted ? (
+    <div className="flex items-center justify-between gap-2 text-[13px] text-gray-500">
+      <span className="truncate">{ownerName && <>Owner: <span className="text-gray-700 font-medium">{ownerName}</span></>}</span>
+      {posted && <span className="shrink-0">{posted}</span>}
     </div>
   ) : null;
 
@@ -158,26 +245,34 @@ export default function PropertyCard({ p, variant = 'grid' }) {
   if (variant === 'row') {
     const photoCount = hasPhoto ? p.photos.filter(Boolean).length : 0;
     const hasParking = p.parking === true || (Array.isArray(p.amenities) && p.amenities.includes('Parking'));
-    const chips = [
-      p.bhk ? `${parseInt(p.bhk)} BHK` : null,
-      p.sqft ? `${p.sqft} sqft` : null,
-      p.furnishing ? cap(p.furnishing) : null,
-      p.floorNumber ? `Floor ${p.floorNumber}${p.totalFloors ? `/${p.totalFloors}` : ''}` : null,
-      hasParking ? 'Parking' : null,
-      ageLabel(p.ageOfProperty),
-      p.transactionType === 'rent' && p.familyOrBachelors ? cap(p.familyOrBachelors) : null,
-      p.listingType ? `By ${cap(p.listingType)}` : null,
-    ].filter(Boolean);
-    const posted = postedAgo(p.createdAt);
-    const place = [societyName, loc].filter(Boolean).join(' · ');
+    const age = ageLabel(p.ageOfProperty);
+    // Owner-written text first, the generated copy as a fallback; newlines folded into one line.
+    const description = String(p.description || p.aiDescription || '').replace(/\s+/g, ' ').trim();
+    // Each fact: icon + its name + value. Price/sqft is highlighted so it reads with the price.
+    // At most eight, i.e. two rows of four on desktop.
+    const facts = [
+      p.bhk ? { icon: 'bed', label: 'Bedrooms', value: `${parseInt(p.bhk)} BHK` } : null,
+      p.sqft ? { icon: 'area', label: 'Area', value: `${p.sqft} sqft` } : null,
+      rateText ? { icon: 'rate', label: isRent ? 'Rent/sqft' : 'Price/sqft', value: rateText, highlight: true } : null,
+      p.furnishing ? { icon: 'sofa', label: 'Furnishing', value: cap(p.furnishing) } : null,
+      p.floorNumber ? { icon: 'floor', label: 'Floor', value: `${p.floorNumber}${p.totalFloors ? ` of ${p.totalFloors}` : ''}` } : null,
+      hasParking ? { icon: 'car', label: 'Parking', value: 'Available' } : null,
+      age ? { icon: 'age', label: 'Age', value: age } : null,
+      isRent && p.familyOrBachelors ? { icon: 'tenant', label: 'Tenants', value: cap(p.familyOrBachelors) } : null,
+      p.listingType ? { icon: 'user', label: 'Posted by', value: cap(p.listingType) } : null,
+    ].filter(Boolean).slice(0, 8);
 
     return (
-      <div className="group card overflow-hidden flex flex-col sm:flex-row relative">
+      <div className="group card overflow-hidden flex flex-col sm:flex-row relative w-full min-w-0">
         <Link href={href} className="absolute inset-0 z-0" aria-label={title} />
         {/* The photo fills this box instead of sizing it, so a tall photo can't stretch the card. */}
-        <div className="relative w-full sm:w-60 shrink-0 aspect-[16/9] sm:aspect-auto sm:min-h-[184px] overflow-hidden bg-gray-100 pointer-events-none">
+        <div className="relative w-full sm:w-72 shrink-0 aspect-[16/9] sm:aspect-auto sm:min-h-[220px] overflow-hidden bg-gray-100 pointer-events-none">
           <div className="absolute inset-0">{imageInner}</div>
-          <span className="badge absolute top-2 left-2 bg-primary text-white shadow-card">{trans}</span>
+          <span className={`badge absolute top-2 left-2 shadow-card ${transCls}`}>{trans}</span>
+          {/* Save / share sit on the photo so the price can take the top-right of the details. */}
+          <div className="absolute top-2 right-2 pointer-events-auto">
+            <CardActions id={cardId} title={title} path={href} />
+          </div>
           {photoCount > 1 && (
             <span className="badge absolute bottom-2 right-2 bg-black/65 text-white">
               <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -187,24 +282,44 @@ export default function PropertyCard({ p, variant = 'grid' }) {
             </span>
           )}
         </div>
-        <div className="p-3.5 sm:px-4 flex-1 flex flex-col gap-2 min-w-0 relative pointer-events-none">
-          <div className="flex items-start justify-between gap-2">
+        <div className="p-4 sm:px-5 flex-1 flex flex-col gap-2.5 min-w-0 relative pointer-events-none">
+          {verifiedTag}
+          {/* Title + address on the left, price on the right (pushed below the verified tag). */}
+          <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               {titleRow}
-              {place && <div className="text-sm text-gray-500 line-clamp-1 mt-0.5">{place}</div>}
+              {placeRow && <div className="mt-0.5 flex min-w-0">{placeRow}</div>}
             </div>
-            <CardActions id={cardId} title={title} path={href} mapQuery={mapQuery} />
+            <div className={`shrink-0 text-right ${isVerified ? 'mt-5' : ''}`}>
+              <div className="text-2xl font-bold text-primary font-heading leading-tight whitespace-nowrap">{fmtPrice(p.price)}</div>
+              {isRent && <div className="text-xs font-medium text-gray-500">per month</div>}
+            </div>
           </div>
-          {priceRow}
-          {chips.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {chips.map((c) => (
-                <span key={c} className="px-2 py-0.5 rounded-md bg-gray-50 border border-gray-100 text-xs font-medium text-gray-700">{c}</span>
+          {facts.length > 0 && (
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-x-4 gap-y-3 py-3 border-y border-gray-100">
+              {facts.map((f) => (
+                <div key={f.label} className="flex items-center gap-2 min-w-0">
+                  <span
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                      f.highlight ? 'bg-primary text-white' : 'bg-primary-50 text-primary'
+                    }`}
+                  >
+                    <FactIcon name={f.icon} className="w-4 h-4" />
+                  </span>
+                  <span className="flex flex-col leading-tight min-w-0">
+                    <span className="text-[11px] uppercase tracking-wide text-gray-400">{f.label}</span>
+                    <span title={f.value} className={`text-sm font-semibold truncate ${f.highlight ? 'text-primary' : 'text-gray-800'}`}>{f.value}</span>
+                  </span>
+                </div>
               ))}
             </div>
           )}
+          {/* One line of the listing's description; the rest is cut off with "...". */}
+          {description && (
+            <p title={description} className="text-sm text-gray-600 truncate">{description}</p>
+          )}
           <div className="flex items-center justify-between gap-3 mt-auto">
-            <div className="min-w-0 text-xs text-gray-500 truncate">
+            <div className="min-w-0 text-[13px] text-gray-500 truncate">
               {ownerName && <>Owner: <span className="text-gray-700 font-medium">{ownerName}</span></>}
               {ownerName && posted && ' · '}
               {posted}
@@ -217,23 +332,26 @@ export default function PropertyCard({ p, variant = 'grid' }) {
   }
 
   return (
-    <div className="group card overflow-hidden flex flex-col relative">
+    <div className="group card overflow-hidden flex flex-col relative h-full hover:shadow-float transition-shadow duration-300">
       <Link href={href} className="absolute inset-0 z-0" aria-label={title} />
       <div className="relative w-full aspect-[4/3] overflow-hidden bg-gray-100 pointer-events-none">
         {imageInner}
         {badges}
         <div className="absolute bottom-2 right-2 pointer-events-auto">
-          <CardActions id={cardId} title={title} path={href} mapQuery={mapQuery} />
+          <CardActions id={cardId} title={title} path={href} />
         </div>
       </div>
-      <div className="p-4 flex-1 flex flex-col gap-1.5 pointer-events-none">
-        {titleRow}
-        {societyRow}
+      <div className="p-4 flex-1 flex flex-col gap-2 pointer-events-none">
         {priceRow}
-        {locationRow}
-        <div className="mt-2">{factsRow}</div>
-        {ownerRow}
-        {contactButton('w-full mt-auto')}
+        <div className="min-w-0">
+          <h3 className="text-[17px] font-semibold text-gray-900 line-clamp-1 group-hover:text-primary transition-colors">{title}</h3>
+          {placeRow && <div className="mt-0.5 flex min-w-0">{placeRow}</div>}
+        </div>
+        {factsRow}
+        <div className="mt-auto flex flex-col gap-2.5">
+          {footerRow}
+          {contactButton('w-full')}
+        </div>
       </div>
     </div>
   );

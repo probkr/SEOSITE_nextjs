@@ -280,9 +280,13 @@ exports.listOwnerListings = async (req, res) => {
 exports.approveOwnerListing = async (req, res) => {
   const listing = await OwnerListing.findOne({ id: req.params.listingId }, { _id: 0 }).lean();
   if (!listing) return res.status(404).json({ error: 'Listing not found' });
+  const now = nowIso();
   listing.isApproved = true;
   listing.status = 'active';
-  listing.updatedAt = nowIso();
+  // Listed on the day the owner submitted it; added to the properties collection now.
+  listing.listedDate = listing.listedDate || listing.submittedAt || listing.createdAt || now;
+  listing.createdAt = now;
+  listing.updatedAt = now;
   await Property.create(listing);
   await OwnerListing.deleteOne({ id: req.params.listingId });
   res.json({ success: true });
@@ -663,7 +667,7 @@ exports.exportInquiries = async (req, res) => {
 // views, the original listing date, admin verification or contact details.
 const KEEP_UNLESS_SENT = {
   views: ['views'],
-  createdAt: ['createdAt', 'listedDate', 'createdOn'],
+  listedDate: ['listedDate', 'createdOn', 'createdAt'],
   isVerified: ['isVerified', 'verifyStatus'],
   amenities: ['amenities'],
   contactName: ['contactName', 'name'],
@@ -761,6 +765,7 @@ async function processBulkImport(body, startIdx = 0) {
         citySlug: resolvedCitySlug, propertyId, transactionType: item.transactionType || 'buy', societyName: premiseName,
       });
 
+      const now = nowIso();
       const doc = {
         id: uuidv4(), propertyId, category: item.category || 'residential',
         transactionType: item.transactionType || 'buy', propertyType: item.propertyType || 'flat',
@@ -773,7 +778,9 @@ async function processBulkImport(body, startIdx = 0) {
         additionalDetails: item.additionalDetails || '', contactName: item.contactName || 'PRObroker',
         contactPhone: item.contactPhone || '0000000000', listingType: item.listingType || 'broker',
         photos: item.photos || [], status: item.status || 'active', source: 'probroker', isApproved: true, isVerified: !!item.isVerified,
-        views: item.views || 0, slug, createdAt: item.createdAt || nowIso(), updatedAt: nowIso(),
+        views: item.views || 0, slug,
+        // createdAt = when it was added here; listedDate = the sender's listing date, or now.
+        listedDate: item.listedDate || now, createdAt: now, updatedAt: now,
       };
       // Same derived fields the admin edit screen writes: SEO title, image objects with alt text, AI copy.
       const names = { areaName: areaDoc ? areaDoc.name : '', cityName: cityDoc.name };

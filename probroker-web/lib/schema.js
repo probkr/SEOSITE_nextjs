@@ -83,7 +83,7 @@ export function realEstateListingSchema(property, desc, canonicalUrl) {
     ...(property.sqft
       ? { floorSize: { '@type': 'QuantitativeValue', value: property.sqft, unitCode: 'FTK' } }
       : {}),
-    ...(property.createdAt ? { datePosted: property.createdAt } : {}),
+    ...(property.listedDate || property.createdAt ? { datePosted: property.listedDate || property.createdAt } : {}),
   };
 }
 

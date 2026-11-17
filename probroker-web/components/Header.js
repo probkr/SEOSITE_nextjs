@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import LogoMark from './LogoMark';
 import HeaderSearch from './HeaderSearch';
 import { useWebUser, logoutWebUser } from '@/lib/webUser';
+import { openLogin } from '@/lib/loginModal';
 import { CITIES, CITY_EVENT, CITY_STORAGE_KEY } from '@/lib/config';
 
 const postBtnCls = (onDark) =>
@@ -131,7 +132,7 @@ function ProfileMenu({ onDark }) {
                   {initialsOf(user.name)}
                 </span>
                 <div className="min-w-0">
-                  <div className="text-sm font-bold text-gray-900 truncate">Hello, {user.name.split(' ')[0]}</div>
+                  <div className="text-sm font-bold text-gray-900 truncate">Hello, {(user.name || '').split(' ')[0] || 'there'}</div>
                   <div className="text-xs text-gray-500 truncate">+91 {user.phone}</div>
                 </div>
               </div>
@@ -144,13 +145,14 @@ function ProfileMenu({ onDark }) {
                     <div className="text-xs text-gray-500">Manage your listings</div>
                   </div>
                 </div>
+                {/* Opens the login popup in place; the full /auth pages stay for direct links. */}
                 <div className="grid grid-cols-2 gap-2 mt-3">
-                  <Link href={`/auth/login/${nextQs}`} role="menuitem" className="flex items-center justify-center h-10 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-600 transition-colors">
+                  <button type="button" onClick={() => { close(); openLogin({ mode: 'login' }); }} role="menuitem" className="flex items-center justify-center h-10 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-600 transition-colors">
                     Log in
-                  </Link>
-                  <Link href={`/auth/signup/${nextQs}`} role="menuitem" className="flex items-center justify-center h-10 rounded-lg border border-primary/30 text-primary text-sm font-semibold hover:bg-primary-50 transition-colors">
+                  </button>
+                  <button type="button" onClick={() => { close(); openLogin({ mode: 'signup' }); }} role="menuitem" className="flex items-center justify-center h-10 rounded-lg border border-primary/30 text-primary text-sm font-semibold hover:bg-primary-50 transition-colors">
                     Sign up
-                  </Link>
+                  </button>
                 </div>
               </>
             )}

@@ -86,6 +86,9 @@ const PORT = process.env.PORT || 8000;
 async function start() {
   try {
     await connectDB();
+    // One-time index change that makes email optional on website accounts (see WebUser.js).
+    await require('./models/WebUser').migrateEmailIndex()
+      .catch((e) => console.error('[db] web_users email index migration failed:', e.message));
   } catch (e) {
     console.error('[db] failed to connect to MongoDB. Server will still start, but requests that hit the DB will fail until MONGO_URL/DB_NAME are configured correctly.');
     console.error(e.message);
