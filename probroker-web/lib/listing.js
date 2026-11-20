@@ -1,49 +1,12 @@
 import { getCity, getArea, getAreas, getProperties, getSocieties } from './api';
 import { fmtPrice } from './format';
 import { SITE_URL } from './config';
+import { parseListingFilters, buildPropertyQuery, normalizePropertyResult } from './listingQuery';
 
 // Port of backend/server.py `_listing_data` — builds listing page context for
 // category_city.html (city-level) and area.html (area-level) equivalents.
-// Reads BHK/price/furnishing/parking/sort/search filter params from a Next.js
-// searchParams object (used by every listing route entry point) into a plain
-// filters object that fetchListingData/resolveCitySegments understand.
-// Purely additive query-string filters — never touches the canonical path,
-// so SEO canonicals stay stable regardless of which filters are applied.
-export function parseListingFilters(searchParams = {}) {
-  const bhk = searchParams.bhk || '';
-  const minPrice = searchParams.minPrice || '';
-  const maxPrice = searchParams.maxPrice || '';
-  const furnishing = searchParams.furnishing || '';
-  const sort = searchParams.sort || 'newest';
-  const q = searchParams.q || '';
-  const propertyType = searchParams.propertyType || '';
-  const minSqft = searchParams.minSqft || '';
-  const maxSqft = searchParams.maxSqft || '';
-  const postedBy = searchParams.postedBy || '';
-  const postedSince = searchParams.postedSince || '';
-  const familyOrBachelors = searchParams.familyOrBachelors || '';
-  const area = searchParams.area || '';
-  const amenities = searchParams.amenities || '';
-  const hasPhotos = searchParams.hasPhotos === 'true' ? 'true' : '';
-  const parking = searchParams.parking === 'true' ? 'true' : '';
-  const verified = searchParams.verified === 'true' ? 'true' : '';
-  // Only used by /search; SEO listing pages take buy/rent from their path.
-  const transactionType = ['buy', 'rent'].includes(searchParams.transactionType) ? searchParams.transactionType : '';
-  // Any of these present means the URL is a filter permutation: it must NOT be indexed
-  // (unbounded combinations) but should still be crawled so listings are discovered.
-  const FILTER_KEYS = [
-    'bhk', 'minPrice', 'maxPrice', 'furnishing', 'propertyType', 'minSqft', 'maxSqft',
-    'postedBy', 'postedSince', 'familyOrBachelors', 'area', 'q', 'sort',
-    'amenities', 'hasPhotos', 'parking', 'verified', 'transactionType',
-  ];
-  const hasFilters = FILTER_KEYS.some((k) => searchParams[k]);
-  return {
-    bhk, minPrice, maxPrice, furnishing, sort, q,
-    propertyType, minSqft, maxSqft, postedBy, postedSince, familyOrBachelors, area,
-    amenities, hasPhotos, parking, verified, transactionType,
-    hasFilters,
-  };
-}
+// parseListingFilters lives in listingQuery.js so the browser can use it too.
+export { parseListingFilters };
 
 export async function fetchListingData({ citySlug, category, trans, areaSlug, page = 1, perPage = 12, filters: extraFilters = {} }) {
   const city = await getCity(citySlug, { revalidate: 3600 });
@@ -61,42 +24,20 @@ export async function fetchListingData({ citySlug, category, trans, areaSlug, pa
     areaName = area?.name || toTitle(areaSlug);
   }
 
-  const sortMap = { newest: '-listedDate', oldest: 'listedDate', price_asc: 'price_asc', price_desc: 'price_desc' };
-  const sort = sortMap[extraFilters.sort] || '-listedDate';
-
-  const filters = {
-    status: 'active',
-    isApproved: true,
-    category: ['residential', 'commercial'].includes(category) ? category : undefined,
-    transactionType: transDb,
-    cityId: city?.id || city?._id,
-    areaId: area?.id || area?._id,
-    page,
-    limit: perPage,
-    sort,
-    bhk: extraFilters.bhk || undefined,
-    minPrice: extraFilters.minPrice || undefined,
-    maxPrice: extraFilters.maxPrice || undefined,
-    furnishing: extraFilters.furnishing || undefined,
-    search: extraFilters.q || undefined,
-    propertyType: extraFilters.propertyType || undefined,
-    minSqft: extraFilters.minSqft || undefined,
-    maxSqft: extraFilters.maxSqft || undefined,
-    postedBy: extraFilters.postedBy || undefined,
-    postedSince: extraFilters.postedSince || undefined,
-    familyOrBachelors: extraFilters.familyOrBachelors || undefined,
-    amenities: extraFilters.amenities || undefined,
-    hasPhotos: extraFilters.hasPhotos || undefined,
-    parking: extraFilters.parking || undefined,
-    verified: extraFilters.verified || undefined,
-    // A locality picked from the filter bar narrows within the current path.
-    area: !areaSlug && extraFilters.area ? extraFilters.area : undefined,
+  // What this page pins; the browser reuses it to fetch the same listing as JSON.
+  const scope = {
+    fixed: {
+      category: ['residential', 'commercial'].includes(category) ? category : undefined,
+      transactionType: transDb,
+      cityId: city?.id || city?._id,
+      areaId: area?.id || area?._id,
+    },
+    // A locality picked from the filter bar narrows within the current path (city pages only).
+    omit: areaSlug ? ['area'] : [],
   };
 
-  const result = await getProperties(filters, { revalidate: 900 });
-  const properties = result?.data || [];
-  const total = result?.total ?? properties.length;
-  const totalPages = result?.totalPages || Math.max(1, Math.ceil(total / perPage));
+  const result = await getProperties(buildPropertyQuery(scope, extraFilters, page, perPage), { revalidate: 900 });
+  const { properties, total, totalPages } = normalizePropertyResult(result, perPage);
 
   const location = areaName ? `${areaName}, ${cityName}` : cityName;
   const minPrice = result?.minPrice || 0;
@@ -135,7 +76,7 @@ export async function fetchListingData({ citySlug, category, trans, areaSlug, pa
     nextUrl: page < totalPages ? `${cleanPath}?page=${page + 1}` : null,
     city: city || { name: cityName, slug: citySlug },
     area, category, transactionType: transDb,
-    properties, total, page, totalPages,
+    properties, total, page, totalPages, scope,
     minPrice, maxPrice,
     popularAreas, societies,
     activeFilters: extraFilters,

@@ -29,11 +29,12 @@ const HERO_POINTS = (total) => [
   'Ahmedabad & Gandhinagar',
 ];
 
+// Heroicons (outline) paths: check badge, rupee, bolt, map pin.
 const TRUST_BADGES = [
-  { label: 'Verified Listings', sub: 'Every property checked', icon: 'M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-  { label: 'Free to List', sub: 'No listing fees', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 10v2m0-18v6m0 12v6m0-4c-1.11 0-2.08-.402-2.599-1' },
-  { label: 'Quick Responses', sub: 'Hear back fast', icon: 'M16 12a4 4 0 10-8 0 4 4 0 008 0zM12 14v7m-7-7 7 7 7-7M5 21h14' },
-  { label: 'Ahmedabad & Gandhinagar', sub: 'Local expertise', icon: 'M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z' },
+  { label: 'Verified Listings', sub: 'Every property checked', icon: ['M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.746 3.746 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z'] },
+  { label: 'Free to List', sub: 'No listing fees', icon: ['M15 8.25H9m6 3H9m3 6-3-3h1.5a3 3 0 1 0 0-6M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z'] },
+  { label: 'Quick Responses', sub: 'Hear back fast', icon: ['m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z'] },
+  { label: 'Ahmedabad & Gandhinagar', sub: 'Local expertise', icon: ['M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z', 'M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z'] },
 ];
 
 const unsplash = (id) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=600&h=450&q=70`;
@@ -224,19 +225,26 @@ export default async function HomePage() {
       </section>
 
       {/* Trust badges */}
-      <section className="border-b border-gray-100 bg-white">
-        <div className="container-px py-8 grid grid-cols-2 md:grid-cols-4 gap-5">
-          {TRUST_BADGES.map((b) => (
-            <div key={b.label} className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-primary-50 text-primary flex items-center justify-center shrink-0">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d={b.icon} /></svg>
-              </div>
-              <div>
-                <div className="font-bold text-sm text-gray-900">{b.label}</div>
-                <div className="text-xs text-gray-500">{b.sub}</div>
-              </div>
-            </div>
-          ))}
+      {/* One card split into cells by 1px gaps over a gray backing, so the dividers stay
+          right in both the 2-column (mobile) and 4-column layouts. */}
+      <section className="bg-white">
+        <div className="container-px py-6 md:py-8">
+          <ul className="grid grid-cols-2 lg:grid-cols-4 gap-px overflow-hidden rounded-2xl border border-gray-100 bg-gray-100 shadow-card">
+            {TRUST_BADGES.map((b) => (
+              // Icon above the text on phones (half-width cells are too narrow for side by side).
+              <li key={b.label} className="group flex flex-col items-start gap-3 sm:flex-row sm:items-center md:gap-4 bg-white p-4 md:p-5 transition-colors hover:bg-primary-50/50">
+                <span className="flex h-10 w-10 sm:h-11 sm:w-11 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary ring-1 ring-primary-100 transition-colors group-hover:bg-primary group-hover:text-white group-hover:ring-primary">
+                  <svg className="h-5 w-5 md:h-6 md:w-6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                    {b.icon.map((d) => <path key={d} d={d} />)}
+                  </svg>
+                </span>
+                <div className="min-w-0">
+                  <div className="font-heading text-sm md:text-[15px] font-bold leading-snug text-gray-900">{b.label}</div>
+                  <div className="mt-0.5 text-xs md:text-sm text-gray-500">{b.sub}</div>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 

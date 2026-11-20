@@ -9,11 +9,15 @@ import { useWebUser, logoutWebUser } from '@/lib/webUser';
 import { openLogin } from '@/lib/loginModal';
 import { CITIES, CITY_EVENT, CITY_STORAGE_KEY } from '@/lib/config';
 
+// Solid call-to-action: the main thing an owner comes to do. White on the dark hero header.
 const postBtnCls = (onDark) =>
-  `hidden md:inline-flex items-center gap-2 h-10 px-4 rounded-lg border-2 whitespace-nowrap shrink-0 text-sm font-bold transition-colors ${
-    onDark ? 'border-white text-white hover:bg-white/10' : 'border-primary text-primary hover:bg-primary-50'
+  `hidden md:inline-flex items-center gap-1.5 h-10 pl-3 pr-1.5 rounded-full whitespace-nowrap shrink-0 text-sm font-bold shadow-sm transition-all hover:shadow-md hover:-translate-y-px active:translate-y-0 ${
+    onDark ? 'bg-white text-primary hover:bg-primary-50' : 'bg-primary text-white hover:bg-primary-600'
   }`;
-const freeBadgeCls = 'text-[10px] font-extrabold uppercase tracking-wider bg-accent text-gray-900 px-1.5 py-0.5 rounded';
+const freeBadgeCls = 'ml-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-accent text-gray-900 px-2 py-1 rounded-full leading-none';
+const plusIcon = (
+  <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+);
 
 const chevron = (
   <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0l-4.25-4.65a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
@@ -58,19 +62,27 @@ const initialsOf = (name = '') =>
 // drops as soon as a credit is spent, without a reload.
 function CreditsBadge({ credits, onDark }) {
   const label = `${credits} free ${credits === 1 ? 'coin' : 'coins'} left`;
-  const tone = credits === 0
-    ? 'border-red-200 bg-red-50 text-red-600'
-    : onDark ? 'border-white/30 bg-white/10 text-white' : 'border-primary-100 bg-primary-50 text-primary';
+  const empty = credits === 0;
+  // Coin + "5 Credits" (only the number on phones). Gold while there are credits, grey coin and
+  // red number once they run out.
+  const tone = onDark
+    ? 'border-white/30 bg-white/10 text-white'
+    : empty ? 'border-gray-200 bg-gray-50 text-gray-600' : 'border-amber-200 bg-amber-50 text-amber-900';
   return (
     <span
       role="status"
       aria-label={label}
       title={label}
-      className={`inline-flex items-center gap-1.5 h-10 px-2.5 sm:px-3 rounded-full border whitespace-nowrap shrink-0 text-sm font-bold ${tone}`}
+      className={`inline-flex items-center gap-1.5 h-10 pl-1.5 pr-3 sm:pr-3.5 rounded-full border whitespace-nowrap shrink-0 text-sm ${tone}`}
     >
-      <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#F59E0B" /><circle cx="12" cy="12" r="7" fill="#FCD34D" stroke="#D97706" strokeWidth="1" /><path fill="#B45309" d="M12 7.2l1.4 3 3.3.4-2.4 2.2.6 3.2-2.9-1.6-2.9 1.6.6-3.2-2.4-2.2 3.3-.4z" /></svg>
-      {credits}
-      <span className="hidden sm:inline">{credits === 1 ? 'Coin' : 'Coins'}</span>
+      <svg className={`w-7 h-7 shrink-0 drop-shadow-sm ${empty ? 'grayscale opacity-60' : ''}`} viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="10.5" fill="#F59E0B" />
+        <circle cx="12" cy="12" r="8" fill="#FCD34D" />
+        <circle cx="12" cy="12" r="8" fill="none" stroke="#D97706" strokeWidth="0.75" />
+        <path fill="#B45309" d="M12 6.8l1.5 3.2 3.5.4-2.6 2.4.7 3.4-3.1-1.7-3.1 1.7.7-3.4-2.6-2.4 3.5-.4z" />
+      </svg>
+      <span className={`font-extrabold tabular-nums ${empty ? (onDark ? 'text-red-300' : 'text-red-600') : ''}`}>{credits}</span>
+      <span className={`hidden sm:inline font-semibold ${onDark ? 'text-white/80' : 'opacity-80'}`}>{credits === 1 ? 'Credit' : 'Credits'}</span>
     </span>
   );
 }
@@ -411,7 +423,7 @@ export default function Header({ settings } = {}) {
 
         <div className="flex items-center gap-2">
           <Link href="/post-property/" className={postBtnCls(onDark)}>
-            Post Property <span className={freeBadgeCls}>Free</span>
+            {plusIcon}Post Property <span className={freeBadgeCls}>Free</span>
           </Link>
           <ProfileMenu onDark={onDark} />
           <button
@@ -454,7 +466,7 @@ export default function Header({ settings } = {}) {
           </div>
           {/* The header shows this button from md up, so the menu only needs it on phones. */}
           <Link href="/post-property/" className={`${postBtnCls(false)} !flex md:!hidden w-full justify-center mt-2`}>
-            Post Property <span className={freeBadgeCls}>Free</span>
+            {plusIcon}Post Property <span className={freeBadgeCls}>Free</span>
           </Link>
         </div>
       )}

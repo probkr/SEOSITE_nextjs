@@ -259,8 +259,10 @@ export default function PropertyCard({ p, variant = 'grid' }) {
       hasParking ? { icon: 'car', label: 'Parking', value: 'Available' } : null,
       age ? { icon: 'age', label: 'Age', value: age } : null,
       isRent && p.familyOrBachelors ? { icon: 'tenant', label: 'Tenants', value: cap(p.familyOrBachelors) } : null,
-      p.listingType ? { icon: 'user', label: 'Posted by', value: cap(p.listingType) } : null,
     ].filter(Boolean).slice(0, 8);
+    // Who posted it goes in the contact row: "Posted by Broker yesterday".
+    const postedBy = p.listingType ? cap(p.listingType) : '';
+    const postedWhen = posted.replace(/^Posted /, '');
 
     return (
       <div className="group card overflow-hidden flex flex-col sm:flex-row relative w-full min-w-0">
@@ -320,9 +322,11 @@ export default function PropertyCard({ p, variant = 'grid' }) {
           )}
           <div className="flex items-center justify-between gap-3 mt-auto">
             <div className="min-w-0 text-[13px] text-gray-500 truncate">
+              {postedBy ? (
+                <>Posted by <span className="text-gray-700 font-medium">{postedBy}</span>{postedWhen && ` ${postedWhen}`}</>
+              ) : posted}
+              {ownerName && (postedBy || posted) && ' · '}
               {ownerName && <>Owner: <span className="text-gray-700 font-medium">{ownerName}</span></>}
-              {ownerName && posted && ' · '}
-              {posted}
             </div>
             {contactButton('shrink-0 !h-10')}
           </div>

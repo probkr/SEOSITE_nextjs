@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { startNavigationProgress } from '@/components/NavigationProgress';
+import { useListingResults } from '@/components/ListingResultsProvider';
+import { parseListingFilters } from '@/lib/listingQuery';
 
 const BHK_OPTIONS = ['1', '2', '3', '4'];
 
@@ -231,6 +233,12 @@ function Dropdown({ id, label, active, openId, setOpenId, children, width, align
   );
 }
 
+/** Result count from the in-place JSON load when there is one, else the server's. */
+function useLiveCount(serverCount) {
+  const live = useListingResults();
+  return live && live.hasQuery ? live.total : serverCount;
+}
+
 /** URL-driven filter state + actions shared by the bar, the results row and the card. */
 function useListingFilters(activeFilters, areas, pathTrans) {
   const router = useRouter();
@@ -238,7 +246,10 @@ function useListingFilters(activeFilters, areas, pathTrans) {
   const searchParams = useSearchParams();
   const [openId, setOpenId] = useState(null);
   const [moreOpen, setMoreOpen] = useState(false);
-  const f = activeFilters;
+  // Inside a listing page, filter changes load JSON in place instead of re-rendering the page.
+  const live = useListingResults();
+  // The URL is the source of truth: after an in-place change the server's activeFilters are stale.
+  const f = live ? parseListingFilters(searchParams) : activeFilters;
   const amenities = listOf(f.amenities);
   // Buy/Rent comes from the URL path on SEO listing pages (…-for-sale / …-for-rent) and
   // from the `transactionType` query param on /search.
@@ -250,9 +261,18 @@ function useListingFilters(activeFilters, areas, pathTrans) {
     mutate(params);
     params.delete('page');
     const qs = params.toString();
-    startNavigationProgress();
-    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    goTo(qs ? `${pathname}?${qs}` : pathname);
     setOpenId(null);
+  }
+
+  // Same path, new query string: JSON in place on listing pages, a normal navigation elsewhere.
+  function goTo(url) {
+    if (live) {
+      live.navigate(url);
+      return;
+    }
+    startNavigationProgress();
+    router.push(url, { scroll: false });
   }
 
   const setParam = (key, value) =>
@@ -309,8 +329,7 @@ function useListingFilters(activeFilters, areas, pathTrans) {
   };
 
   const clearAll = () => {
-    startNavigationProgress();
-    router.push(pathname, { scroll: false });
+    goTo(pathname);
     setMoreOpen(false);
   };
 
@@ -697,8 +716,9 @@ function Chips({ s, resultCount }) {
  * Full-width filter strip stuck under the site header (Housing.com style). One row; it scrolls
  * sideways on narrow screens instead of wrapping.
  */
-export function ListingFilterBar({ activeFilters = {}, resultCount, areas = [], showAreaFilter = false, transactionType }) {
+export function ListingFilterBar({ activeFilters = {}, resultCount: serverCount, areas = [], showAreaFilter = false, transactionType }) {
   const s = useListingFilters(activeFilters, areas, transactionType);
+  const resultCount = useLiveCount(serverCount);
   return (
     <div className="filter-strip sticky top-[var(--header-h)] z-30 bg-white border-b border-gray-200">
       {/* Filters scroll sideways on narrow screens; Sort stays pinned on the right. */}
@@ -725,7 +745,8 @@ export function ListingFilterBar({ activeFilters = {}, resultCount, areas = [], 
 }
 
 /** Result count shown under the page heading. Filters, chips and Sort live in the filter strip. */
-export function ListingResultsBar({ resultCount }) {
+export function ListingResultsBar({ resultCount: serverCount }) {
+  const resultCount = useLiveCount(serverCount);
   if (typeof resultCount !== 'number') return <div className="mb-4" />;
   return (
     <p className="mt-2 mb-4 text-sm font-medium text-gray-600">
@@ -735,8 +756,9 @@ export function ListingResultsBar({ resultCount }) {
 }
 
 /** Self-contained filter card (used in the /search sidebar). */
-export default function ListingFilters({ activeFilters = {}, resultCount, areas = [], showAreaFilter = false }) {
+export default function ListingFilters({ activeFilters = {}, resultCount: serverCount, areas = [], showAreaFilter = false }) {
   const s = useListingFilters(activeFilters, areas);
+  const resultCount = useLiveCount(serverCount);
   return (
     <div className="bg-white border border-gray-100 rounded-xl shadow-card px-3 py-2">
       <div className="flex flex-wrap items-center gap-2">

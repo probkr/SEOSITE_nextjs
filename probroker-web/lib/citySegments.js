@@ -1,8 +1,7 @@
 import { getCity, getArea, getAreas, getProperties, getSociety, getSocieties } from './api';
 import { fetchListingData, toTitle } from './listing';
 import { SITE_URL } from './config';
-
-const SORT_MAP = { newest: '-listedDate', oldest: 'listedDate', price_asc: 'price_asc', price_desc: 'price_desc' };
+import { buildPropertyQuery, normalizePropertyResult, PER_PAGE } from './listingQuery';
 
 const CATEGORY_TRANS_RE = /^(residential|commercial)-property-for-(sale|rent)$/;
 
@@ -59,25 +58,10 @@ async function resolveOneSegment(citySlug, seg, page, filters) {
 async function resolveCatchAll(citySlug, city, catchAll, page, extraFilters = {}, areaSlug = null, area = null) {
   const cityName = city?.name || toTitle(citySlug);
   const placeName = area?.name ? `${area.name}, ${cityName}` : cityName;
+  // What the path pins. The URL's own property-type and locality filters don't apply here.
   const filters = {
-    status: 'active',
-    isApproved: true,
     cityId: city?.id || city?._id,
     areaId: area?.id || area?._id || undefined,
-    bhk: extraFilters.bhk || undefined,
-    minPrice: extraFilters.minPrice || undefined,
-    maxPrice: extraFilters.maxPrice || undefined,
-    furnishing: extraFilters.furnishing || undefined,
-    search: extraFilters.q || undefined,
-    minSqft: extraFilters.minSqft || undefined,
-    maxSqft: extraFilters.maxSqft || undefined,
-    postedBy: extraFilters.postedBy || undefined,
-    postedSince: extraFilters.postedSince || undefined,
-    familyOrBachelors: extraFilters.familyOrBachelors || undefined,
-    amenities: extraFilters.amenities || undefined,
-    hasPhotos: extraFilters.hasPhotos || undefined,
-    parking: extraFilters.parking || undefined,
-    verified: extraFilters.verified || undefined,
   };
 
   let propTypeLabel = '';
@@ -132,14 +116,11 @@ async function resolveCatchAll(citySlug, city, catchAll, page, extraFilters = {}
     return { type: 'notfound' };
   }
 
-  const perPage = 12;
-  filters.page = page;
-  filters.limit = perPage;
-  filters.sort = SORT_MAP[extraFilters.sort] || '-listedDate';
-  const result = await getProperties(filters, { revalidate: 900 });
-  const properties = result?.data || [];
-  const total = result?.total ?? properties.length;
-  const totalPages = result?.totalPages || Math.max(1, Math.ceil(total / perPage));
+  const perPage = PER_PAGE;
+  // The browser reuses this scope to fetch the same listing as JSON.
+  const scope = { fixed: filters, omit: ['propertyType', 'area', 'transactionType'] };
+  const result = await getProperties(buildPropertyQuery(scope, extraFilters, page, perPage), { revalidate: 900 });
+  const { properties, total, totalPages } = normalizePropertyResult(result, perPage);
 
   const pageSuffix = page > 1 ? ` – Page ${page}` : '';
   const title = `${propTypeLabel} for ${tn} in ${placeName}${pageSuffix} | PRObroker`;
@@ -158,7 +139,7 @@ async function resolveCatchAll(citySlug, city, catchAll, page, extraFilters = {}
     data: {
       title, metaDescription: desc, canonical, h1,
       city: city || { name: cityName, slug: citySlug },
-      category, transactionType, properties, total, page, totalPages,
+      category, transactionType, properties, total, page, totalPages, scope,
       noindex: !!extraFilters.hasFilters,
       prevUrl: page > 2 ? `${cleanPath}?page=${page - 1}` : page === 2 ? cleanPath : null,
       nextUrl: page < totalPages ? `${cleanPath}?page=${page + 1}` : null,
