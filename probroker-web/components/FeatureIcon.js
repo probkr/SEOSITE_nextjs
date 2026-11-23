@@ -40,6 +40,10 @@ const ICONS = {
   users: <><circle cx="9" cy="8" r="3" /><path d="M3 20a6 6 0 0112 0" /><path d="M16 5.5a3 3 0 010 5M18 14a5 5 0 013 6" /></>,
   key: <><circle cx="8" cy="15" r="4" /><path d="M11 12l9-9M17 6l3 3M14 9l2 2" /></>,
   user: <><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0116 0" /></>,
+  bath: <><path d="M4 12h16v3a5 5 0 01-5 5H9a5 5 0 01-5-5v-3zM6 12V5a2 2 0 014 0M7 20l-1 2M17 20l1 2" /></>,
+  compass: <><circle cx="12" cy="12" r="9" /><path d="M15.5 8.5l-2 5-5 2 2-5z" /></>,
+  balcony: <><path d="M3 12h18M5 12v8M9 12v8M13 12v8M17 12v8M3 20h18M7 12V4h10v8" /></>,
+  rupee: <><path d="M7 4h10M7 8h10M13 4c3 0 3 8 0 8H8l7 8" /></>,
 };
 
 // First match wins, so specific names come before generic ones.

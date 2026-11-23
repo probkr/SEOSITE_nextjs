@@ -35,7 +35,9 @@ function cleanupDescription(text) {
 // Every listing response goes through this, so owner details never reach the public site:
 // the phone number is removed and the name is masked.
 function publicProperty(prop) {
-  const { contactPhone, ...rest } = prop;
+  // alternatePhones are contact numbers like contactPhone; missingFields, dataIssues and
+  // descriptionSource are the cleaner's data-quality notes, not for the site.
+  const { contactPhone, alternatePhones, missingFields, dataIssues, descriptionSource, ...rest } = prop;
   return {
     ...rest,
     // Older imports stored several photo URLs joined by commas in one entry.
@@ -399,7 +401,10 @@ exports.similarProperties = async (req, res) => {
 
 exports.getPropertyBySlug = async (req, res) => {
   const slug = req.params.slug.replace(/\/$/, '');
-  const prop = await Property.findOne({ slug }, { _id: 0 }).lean();
+  // A listing whose slug was rebuilt keeps the old one in oldSlug. Returning it here lets the
+  // property page redirect the old URL to the current slug instead of showing a 404.
+  const prop = await Property.findOne({ slug }, { _id: 0 }).lean()
+    || await Property.findOne({ oldSlug: slug }, { _id: 0 }).lean();
   if (!prop) return res.status(404).json({ error: 'Property not found' });
   const [area, city, society] = await Promise.all([
     Area.findOne({ id: prop.areaId }, { _id: 0 }).lean(),

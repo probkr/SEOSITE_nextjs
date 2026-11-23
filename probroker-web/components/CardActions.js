@@ -2,7 +2,9 @@
 import { useEffect, useState } from 'react';
 
 // mapQuery is optional: when given, a third button opens that search in Google Maps.
-export default function CardActions({ id, title, path, mapQuery }) {
+// bordered: for a white background (the row card's details), where the shadow alone is too faint.
+export default function CardActions({ id, title, path, mapQuery, bordered = false }) {
+  const edge = bordered ? 'border border-gray-200' : '';
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -51,7 +53,7 @@ export default function CardActions({ id, title, path, mapQuery }) {
         onClick={toggleSave}
         aria-label={saved ? 'Remove from saved' : 'Save property'}
         className={`w-11 h-11 rounded-full flex items-center justify-center shadow-card transition-colors ${
-          saved ? 'bg-primary text-white' : 'bg-white/95 text-gray-500 hover:text-primary'
+          saved ? 'bg-primary text-white' : `bg-white/95 text-gray-500 hover:text-primary ${edge}`
         }`}
       >
         <svg className="w-4 h-4" viewBox="0 0 20 20" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.7">
@@ -62,7 +64,7 @@ export default function CardActions({ id, title, path, mapQuery }) {
         type="button"
         onClick={share}
         aria-label="Share property"
-        className="w-11 h-11 rounded-full bg-white/95 text-gray-500 hover:text-primary shadow-card flex items-center justify-center"
+        className={`w-11 h-11 rounded-full bg-white/95 text-gray-500 hover:text-primary shadow-card flex items-center justify-center ${edge}`}
       >
         <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
           <circle cx="15" cy="4.5" r="2.2" />

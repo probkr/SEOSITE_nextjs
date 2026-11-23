@@ -10,7 +10,7 @@ import InquiryForm from '@/components/InquiryForm';
 import FeatureIcon from '@/components/FeatureIcon';
 import PropertySectionTabs from '@/components/PropertySectionTabs';
 import Link from 'next/link';
-import { redirect, notFound, permanentRedirect } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 
 export const revalidate = 900;
 export const dynamic = 'force-dynamic';
@@ -60,6 +60,32 @@ function ageLabel(age) {
   return AGE_LABELS[age] || `${age}+ years`;
 }
 
+// Optional listing fields are null when unknown; show only real values.
+const has = (v) => v !== null && v !== undefined && v !== '' && !(Array.isArray(v) && !v.length);
+const yesNo = (v) => (typeof v === 'boolean' ? (v ? 'Yes' : 'No') : titleCase(v));
+const POSSESSION_LABELS = { ready_to_move: 'Ready to Move', under_construction: 'Under Construction' };
+const SALE_LABELS = { resale: 'Resale', new: 'New Booking' };
+
+// floorNumber: 0 = ground, -1 = basement, null = unknown.
+function floorLabel(floor, total) {
+  if (floor === null || floor === undefined || floor === '' || Number.isNaN(Number(floor))) return null;
+  const n = Number(floor);
+  const name = n === 0 ? 'Ground' : n < 0 ? 'Basement' : ordinal(n);
+  if (total) return `${name} of ${total}`;
+  return n > 0 ? `${name} floor` : name;
+}
+
+function maintenanceLabel(amount, included) {
+  if (has(amount) && Number(amount) > 0) return `₹${Number(amount).toLocaleString('en-IN')} / month`;
+  if (included === true) return 'Included';
+  return null;
+}
+
+function parkingLabel(type, count) {
+  const parts = [has(count) && Number(count) > 0 ? `${count}` : null, has(type) ? titleCase(type) : null].filter(Boolean);
+  return parts.length ? parts.join(' × ') : null;
+}
+
 export default async function PropertyPage({ params }) {
   const prop = await loadProperty(params.propertySlug);
   if (!prop) {
@@ -70,8 +96,10 @@ export default async function PropertyPage({ params }) {
   }
 
   const correctSlug = prop.slug || buildPropertySlug(prop);
+  // Also catches an old slug (the API finds listings by oldSlug): a permanent redirect moves
+  // search engines to the current URL.
   if (correctSlug && correctSlug !== params.propertySlug) {
-    redirect(`/property/${correctSlug}/`);
+    permanentRedirect(`/property/${correctSlug}/`);
   }
 
   const title = buildPropertyTitle(prop);
@@ -110,27 +138,51 @@ export default async function PropertyPage({ params }) {
   const photos = prop.photos || [];
   const pricePerSqft = prop.price && prop.sqft ? Math.round(prop.price / prop.sqft) : null;
   const trans = prop.transactionType === 'rent' ? 'For Rent' : 'For Sale';
-  // floorNumber 0 is the import default for "unknown", not the ground floor, so it is not shown.
-  const floor = Number(prop.floorNumber) || 0;
-  const totalFloors = Number(prop.totalFloors) || 0;
+  const floor = floorLabel(prop.floorNumber, Number(prop.totalFloors) || 0);
   const tenantKey = String(prop.familyOrBachelors || '').toLowerCase();
+  // ageRange ("5-10 years", "New") is the display text; ageOfProperty is the number behind it.
+  const age = has(prop.ageRange) ? String(prop.ageRange) : ageLabel(prop.ageOfProperty);
+  const maintenance = maintenanceLabel(prop.maintenanceAmount, prop.maintenanceIncluded);
+  const parkingInfo = parkingLabel(prop.parkingType, prop.parkingCount);
+  const isCommercial = prop.category === 'commercial';
   const facts = [
     prop.bhk ? { label: 'Configuration', icon: 'bed', value: `${parseInt(prop.bhk)} BHK` } : null,
+    has(prop.bedrooms) && Number(prop.bedrooms) !== Number(prop.bhk) ? { label: 'Bedrooms', icon: 'bed', value: prop.bedrooms } : null,
+    has(prop.bathrooms) ? { label: isCommercial ? 'Washrooms' : 'Bathrooms', icon: 'bath', value: prop.bathrooms } : null,
+    has(prop.balconies) ? { label: 'Balconies', icon: 'balcony', value: prop.balconies } : null,
     prop.sqft ? { label: 'Built-up Area', icon: 'area', value: `${Number(prop.sqft).toLocaleString('en-IN')} sq.ft` } : null,
     pricePerSqft ? { label: 'Price / sq.ft', icon: 'tag', value: `₹${pricePerSqft.toLocaleString('en-IN')}` } : null,
     prop.propertyType ? { label: 'Property Type', icon: 'building', value: TYPE_LABELS[prop.propertyType.toLowerCase()] || titleCase(prop.propertyType) } : null,
     prop.furnishing ? { label: 'Furnishing', icon: 'sofa', value: titleCase(prop.furnishing) } : null,
-    floor > 0 ? { label: 'Floor', icon: 'stairs', value: totalFloors ? `${ordinal(floor)} of ${totalFloors}` : `${ordinal(floor)} floor` } : null,
-    ageLabel(prop.ageOfProperty) ? { label: 'Age of Property', icon: 'calendar', value: ageLabel(prop.ageOfProperty) } : null,
+    floor ? { label: 'Floor', icon: 'stairs', value: floor } : null,
+    has(prop.facing) ? { label: 'Facing', icon: 'compass', value: prop.facing } : null,
+    age ? { label: 'Age of Property', icon: 'calendar', value: age } : null,
+    has(prop.workstations) ? { label: 'Workstations', icon: 'users', value: prop.workstations } : null,
+    has(prop.cabins) ? { label: 'Cabins', icon: 'building', value: prop.cabins } : null,
+    has(prop.washroomType) ? { label: 'Washroom', icon: 'bath', value: titleCase(prop.washroomType) } : null,
+    parkingInfo ? { label: 'Parking', icon: 'parking', value: parkingInfo } : null,
+    maintenance ? { label: 'Maintenance', icon: 'rupee', value: maintenance } : null,
+    has(prop.possessionStatus) ? { label: 'Possession', icon: 'key', value: POSSESSION_LABELS[prop.possessionStatus] || titleCase(prop.possessionStatus) } : null,
+    has(prop.possessionDate) ? { label: 'Possession By', icon: 'calendar', value: prop.possessionDate } : null,
+    has(prop.availableFrom) ? { label: 'Available From', icon: 'calendar', value: prop.availableFrom } : null,
+    has(prop.saleType) ? { label: 'Sale Type', icon: 'tag', value: SALE_LABELS[prop.saleType] || titleCase(prop.saleType) } : null,
+    has(prop.ownership) ? { label: 'Ownership', icon: 'key', value: titleCase(prop.ownership) } : null,
+    has(prop.reraApproved) ? { label: 'RERA Approved', icon: 'security', value: yesNo(prop.reraApproved) } : null,
+    has(prop.boundaryWall) ? { label: 'Boundary Wall', icon: 'area', value: yesNo(prop.boundaryWall) } : null,
     tenantKey ? { label: 'Preferred Tenant', icon: 'users', value: TENANT_LABELS[tenantKey] || titleCase(prop.familyOrBachelors) } : null,
     { label: 'Transaction', icon: 'key', value: trans },
     { label: 'Listed By', icon: 'user', value: prop.listingType === 'owner' ? 'Owner' : 'Broker' },
   ].filter(Boolean);
 
-  const allFeatures = [...new Set((Array.isArray(prop.amenities) ? prop.amenities : []).map((a) => String(a).trim()).filter(Boolean))];
-  if (prop.parking && !allFeatures.some((a) => /parking/i.test(a))) allFeatures.push('Parking');
-  const furnishings = allFeatures.filter((a) => FURNISHING_RE.test(a));
-  const amenities = allFeatures.filter((a) => !FURNISHING_RE.test(a));
+  // Cleaned listings keep household items in furnishingItems; older ones mix them into amenities,
+  // so amenities that look like furniture still go under Furnishings.
+  const clean = (list) => (Array.isArray(list) ? list : []).map((a) => String(a).trim()).filter(Boolean);
+  const furnishingItems = clean(prop.furnishingItems);
+  const allFeatures = [...new Set([...furnishingItems, ...clean(prop.amenities)])];
+  if ((prop.parking || has(prop.parkingType)) && !allFeatures.some((a) => /parking/i.test(a))) allFeatures.push('Parking');
+  const isFurnishing = (a) => furnishingItems.includes(a) || FURNISHING_RE.test(a);
+  const furnishings = allFeatures.filter(isFurnishing);
+  const amenities = allFeatures.filter((a) => !isFurnishing(a));
 
   const nearbyList = (prop.nearby || '').split(/[,;\n]/).map((s) => s.trim()).filter(Boolean);
 

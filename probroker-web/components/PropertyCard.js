@@ -13,13 +13,6 @@ const INACTIVE_LABEL = { sold: 'Sold', rented: 'Rented', pending: 'Not live' };
 
 const cap = (s) => String(s).charAt(0).toUpperCase() + String(s).slice(1);
 
-function ageLabel(years) {
-  if (years === null || years === undefined || years === '') return null;
-  const n = Number(years);
-  if (Number.isNaN(n) || n < 0) return null;
-  return n === 0 ? 'New' : `${n} yr${n === 1 ? '' : 's'} old`;
-}
-
 // "Posted today", "Posted 3 days ago", "Posted 2 months ago". Empty when the date is missing.
 // Imported listings carry the date as { $date: '...' } instead of a plain string.
 function postedAgo(createdAt) {
@@ -145,17 +138,21 @@ export default function PropertyCard({ p, variant = 'grid' }) {
 
   // Row card: the Verified mark is the green corner tag, so the title gets the full width.
   const titleRow = (
-    <h3 className="text-[17px] font-semibold text-gray-900 line-clamp-1 group-hover:text-primary transition-colors">{title}</h3>
+    <h3 className="text-[19px] font-semibold text-gray-900 line-clamp-1 group-hover:text-primary transition-colors">{title}</h3>
   );
 
-  // Green tag in the card's top-right corner for listings the PRObroker team has verified.
+  // Row card: a green shield on the photo's top-right for listings the PRObroker team has
+  // verified. Icon only; the word stays for screen readers and as the hover tooltip.
   const verifiedTag = isVerified ? (
-    <span className="absolute top-0 right-0 z-10 inline-flex items-center gap-1.5 pl-3 pr-3.5 py-1.5 rounded-bl-xl bg-emerald-600 text-white text-xs font-semibold shadow-sm pointer-events-none">
-      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <span
+      title="Verified"
+      className="absolute top-2 right-2 w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-card"
+    >
+      <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z" />
         <path d="M9 12l2 2 4-4" />
       </svg>
-      Verified
+      <span className="sr-only">Verified</span>
     </span>
   ) : null;
 
@@ -163,13 +160,14 @@ export default function PropertyCard({ p, variant = 'grid' }) {
 
   // Address line with a Google-Maps-style red pin. Pin and text open the place in Google Maps.
   // It sits above the card-wide link (z-10, pointer-events-auto), so it doesn't open the listing.
-  const placeRow = place ? (
+  // textCls: the grid card uses 15px, the row card ~10% larger to match its bigger title.
+  const placeLink = (textCls = 'text-[15px]') => place ? (
     <a
       href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`}
       target="_blank"
       rel="noopener noreferrer"
       title="View on Google Maps"
-      className="group/map relative z-10 pointer-events-auto inline-flex items-center gap-1 max-w-full min-w-0 text-[15px] text-gray-500 hover:text-primary transition-colors"
+      className={`group/map relative z-10 pointer-events-auto inline-flex items-center gap-1 max-w-full min-w-0 ${textCls} text-gray-500 hover:text-primary transition-colors`}
     >
       <MapsPin />
 
@@ -177,6 +175,7 @@ export default function PropertyCard({ p, variant = 'grid' }) {
       <span className="sr-only">(opens Google Maps)</span>
     </a>
   ) : null;
+  const placeRow = placeLink();
 
   const priceRow = (
     <div className="text-2xl font-bold text-primary font-heading">
@@ -244,22 +243,19 @@ export default function PropertyCard({ p, variant = 'grid' }) {
   // listings fit on a screen. Facts that a listing doesn't have are simply left out.
   if (variant === 'row') {
     const photoCount = hasPhoto ? p.photos.filter(Boolean).length : 0;
-    const hasParking = p.parking === true || (Array.isArray(p.amenities) && p.amenities.includes('Parking'));
-    const age = ageLabel(p.ageOfProperty);
+    const hasParking = p.parking === true || !!p.parkingType || (Array.isArray(p.amenities) && p.amenities.includes('Parking'));
     // Owner-written text first, the generated copy as a fallback; newlines folded into one line.
     const description = String(p.description || p.aiDescription || '').replace(/\s+/g, ' ').trim();
     // Each fact: icon + its name + value. Price/sqft is highlighted so it reads with the price.
-    // At most eight, i.e. two rows of four on desktop.
+    // Floor and age are left to the property page; the card keeps the deciding facts.
     const facts = [
       p.bhk ? { icon: 'bed', label: 'Bedrooms', value: `${parseInt(p.bhk)} BHK` } : null,
       p.sqft ? { icon: 'area', label: 'Area', value: `${p.sqft} sqft` } : null,
       rateText ? { icon: 'rate', label: isRent ? 'Rent/sqft' : 'Price/sqft', value: rateText, highlight: true } : null,
       p.furnishing ? { icon: 'sofa', label: 'Furnishing', value: cap(p.furnishing) } : null,
-      p.floorNumber ? { icon: 'floor', label: 'Floor', value: `${p.floorNumber}${p.totalFloors ? ` of ${p.totalFloors}` : ''}` } : null,
       hasParking ? { icon: 'car', label: 'Parking', value: 'Available' } : null,
-      age ? { icon: 'age', label: 'Age', value: age } : null,
       isRent && p.familyOrBachelors ? { icon: 'tenant', label: 'Tenants', value: cap(p.familyOrBachelors) } : null,
-    ].filter(Boolean).slice(0, 8);
+    ].filter(Boolean).slice(0, 6);
     // Who posted it goes in the contact row: "Posted by Broker yesterday".
     const postedBy = p.listingType ? cap(p.listingType) : '';
     const postedWhen = posted.replace(/^Posted /, '');
@@ -271,10 +267,7 @@ export default function PropertyCard({ p, variant = 'grid' }) {
         <div className="relative w-full sm:w-72 shrink-0 aspect-[16/9] sm:aspect-auto sm:min-h-[220px] overflow-hidden bg-gray-100 pointer-events-none">
           <div className="absolute inset-0">{imageInner}</div>
           <span className={`badge absolute top-2 left-2 shadow-card ${transCls}`}>{trans}</span>
-          {/* Save / share sit on the photo so the price can take the top-right of the details. */}
-          <div className="absolute top-2 right-2 pointer-events-auto">
-            <CardActions id={cardId} title={title} path={href} />
-          </div>
+          {verifiedTag}
           {photoCount > 1 && (
             <span className="badge absolute bottom-2 right-2 bg-black/65 text-white">
               <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -285,37 +278,42 @@ export default function PropertyCard({ p, variant = 'grid' }) {
           )}
         </div>
         <div className="p-4 sm:px-5 flex-1 flex flex-col gap-2.5 min-w-0 relative pointer-events-none">
-          {verifiedTag}
-          {/* Title + address on the left, price on the right (pushed below the verified tag). */}
+          {/* Title + address on the left, save / share on the right. */}
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               {titleRow}
-              {placeRow && <div className="mt-0.5 flex min-w-0">{placeRow}</div>}
+              {placeRow && <div className="mt-0.5 flex min-w-0">{placeLink('text-[16.5px]')}</div>}
             </div>
-            <div className={`shrink-0 text-right ${isVerified ? 'mt-5' : ''}`}>
-              <div className="text-2xl font-bold text-primary font-heading leading-tight whitespace-nowrap">{fmtPrice(p.price)}</div>
+            <div className="shrink-0">
+              <CardActions id={cardId} title={title} path={href} bordered />
+            </div>
+          </div>
+          {/* Facts on the left, the price large on the right of the same band. */}
+          <div className="flex items-center gap-4 py-3 border-y border-gray-100">
+            {facts.length > 0 && (
+              <div className="flex-1 min-w-0 grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-x-4 gap-y-3">
+                {facts.map((f) => (
+                  <div key={f.label} className="flex items-center gap-2 min-w-0">
+                    <span
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                        f.highlight ? 'bg-primary text-white' : 'bg-primary-50 text-primary'
+                      }`}
+                    >
+                      <FactIcon name={f.icon} className="w-4 h-4" />
+                    </span>
+                    <span className="flex flex-col leading-tight min-w-0">
+                      <span className="text-[11px] uppercase tracking-wide text-gray-400">{f.label}</span>
+                      <span title={f.value} className={`text-sm font-semibold truncate ${f.highlight ? 'text-primary' : 'text-gray-800'}`}>{f.value}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="shrink-0 ml-auto text-right pl-4 sm:border-l sm:border-gray-100">
+              <div className="text-2xl sm:text-3xl font-bold text-primary font-heading leading-tight whitespace-nowrap">{fmtPrice(p.price)}</div>
               {isRent && <div className="text-xs font-medium text-gray-500">per month</div>}
             </div>
           </div>
-          {facts.length > 0 && (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-x-4 gap-y-3 py-3 border-y border-gray-100">
-              {facts.map((f) => (
-                <div key={f.label} className="flex items-center gap-2 min-w-0">
-                  <span
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                      f.highlight ? 'bg-primary text-white' : 'bg-primary-50 text-primary'
-                    }`}
-                  >
-                    <FactIcon name={f.icon} className="w-4 h-4" />
-                  </span>
-                  <span className="flex flex-col leading-tight min-w-0">
-                    <span className="text-[11px] uppercase tracking-wide text-gray-400">{f.label}</span>
-                    <span title={f.value} className={`text-sm font-semibold truncate ${f.highlight ? 'text-primary' : 'text-gray-800'}`}>{f.value}</span>
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
           {/* One line of the listing's description; the rest is cut off with "...". */}
           {description && (
             <p title={description} className="text-sm text-gray-600 truncate">{description}</p>

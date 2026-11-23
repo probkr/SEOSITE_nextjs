@@ -161,7 +161,7 @@ exports.saveListingEdit = async (req, res) => {
   if (form.propertyType) update.propertyType = form.propertyType;
   if (form.transactionType) update.transactionType = form.transactionType;
 
-  update.bhk = parseInt(form.bhk, 10) || 0;
+  update.bhk = parseInt(form.bhk, 10) || null; // null = no BHK (commercial / unknown)
 
   for (const field of ['price', 'sqft', 'floorNumber', 'totalFloors']) {
     if (form[field] !== undefined && form[field] !== '') {
@@ -670,10 +670,15 @@ const KEEP_UNLESS_SENT = {
   listedDate: ['listedDate', 'createdOn', 'createdAt'],
   isVerified: ['isVerified', 'verifyStatus'],
   amenities: ['amenities'],
+  description: ['description'],
   contactName: ['contactName', 'name'],
   contactPhone: ['contactPhone', 'number', 'phone'],
   listingType: ['listingType', 'userType'],
   floorNumber: ['floorNumber', 'floor', 'floors'],
+  totalFloors: ['totalFloors', 'totalFloor'],
+  bhk: ['bhk'],
+  furnishing: ['furnishing', 'furnishedType'],
+  familyOrBachelors: ['familyOrBachelors', 'tenant'],
   ageOfProperty: ['ageOfProperty', 'age'],
   photos: ['photos', 'images'],
   images: ['photos', 'images'],
@@ -769,12 +774,15 @@ async function processBulkImport(body, startIdx = 0) {
       const doc = {
         id: uuidv4(), propertyId, category: item.category || 'residential',
         transactionType: item.transactionType || 'buy', propertyType: item.propertyType || 'flat',
-        bhk: item.bhk || 0, sqft: item.sqft || 0, price, premiseName,
+        // Unknown values are null, not 0 (floorNumber 0 means ground floor), and the tenant
+        // preference only applies to residential rentals -- same rules as the Property schema.
+        bhk: item.bhk || null, sqft: item.sqft || 0, price, premiseName,
         societyId: resolvedSocietyId, areaId: resolvedAreaId, cityId: resolvedCityId,
         nearby: item.nearby || '', description: item.description || '', amenities: item.amenities || [],
-        furnishing: item.furnishing || 'unfurnished', familyOrBachelors: item.familyOrBachelors || 'both',
-        ageOfProperty: item.ageOfProperty || null,
-        floorNumber: item.floorNumber || 0, totalFloors: item.totalFloors || 0, parking: !!item.parking,
+        furnishing: item.furnishing || 'unfurnished',
+        familyOrBachelors: item.category === 'residential' && item.transactionType === 'rent' ? (item.familyOrBachelors || 'both') : null,
+        ageOfProperty: item.ageOfProperty ?? null,
+        floorNumber: item.floorNumber ?? null, totalFloors: item.totalFloors || null, parking: !!item.parking,
         additionalDetails: item.additionalDetails || '', contactName: item.contactName || 'PRObroker',
         contactPhone: item.contactPhone || '0000000000', listingType: item.listingType || 'broker',
         photos: item.photos || [], status: item.status || 'active', source: 'probroker', isApproved: true, isVerified: !!item.isVerified,
@@ -797,6 +805,9 @@ async function processBulkImport(body, startIdx = 0) {
         }
         // Keep the old URL resolvable when area/society/BHK changes produce a new slug.
         if (rest.slug && existing.slug && rest.slug !== existing.slug) rest.oldSlug = existing.slug;
+        // A raw CRM description replaced the cleaned one: clear the flag so propertyCleaner
+        // parses this text again instead of trusting the old extracted fields.
+        if (rest.description) rest.descriptionSource = null;
         await Property.updateOne({ propertyId }, { $set: rest });
         updated++;
         results.push({ row: startIdx + idx + 1, propertyId, action: 'updated', slug: rest.slug || existing.slug });

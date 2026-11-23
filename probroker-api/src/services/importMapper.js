@@ -30,6 +30,17 @@ function firstInt(v) {
   return m ? parseInt(m[0], 10) : 0;
 }
 
+// Floor text -> number: 0 = ground, -1 = basement, null = not given (the Property schema's meaning).
+function parseFloor(v) {
+  if (typeof v === 'number') return v;
+  const t = str(v).toLowerCase();
+  if (!t) return null;
+  if (/basement|lower ground/.test(t)) return -1;
+  if (/ground|^g$/.test(t)) return 0;
+  const m = t.match(/-?\d+/);
+  return m ? parseInt(m[0], 10) : null;
+}
+
 function toNumber(v) {
   if (typeof v === 'number') return v;
   const n = Number(str(v).replace(/[,₹\s]/g, ''));
@@ -143,7 +154,8 @@ function normalizeImportRecord(item) {
     category: parseCategory(item.category) || category || 'residential',
     transactionType: parseTransaction(item.transactionType) || transactionType || 'buy',
     propertyType: parsePropertyType(item.propertyType || item.unitType) || 'flat',
-    bhk: typeof item.bhk === 'number' ? item.bhk : firstInt(item.bhk),
+    // null, not 0, when unknown (commercial, or the row has no BHK).
+    bhk: (typeof item.bhk === 'number' ? item.bhk : firstInt(item.bhk)) || null,
     sqft: toNumber(item.sqft) || toNumber(item.sqFt) || toNumber(item.builtUpArea) || toNumber(item.carpetArea) || toNumber(item.area_sqft),
     price: toNumber(item.price) || toNumber(item.rentValue) || toNumber(item.sellValue),
     premiseName: str(item.premiseName || item.society || item.title),
@@ -154,8 +166,8 @@ function normalizeImportRecord(item) {
     amenities: Array.isArray(item.amenities) ? item.amenities : [],
     furnishing: parseFurnishing(item.furnishing || item.furnishedType) || 'unfurnished',
     familyOrBachelors: item.familyOrBachelors ? parseTenant(item.familyOrBachelors) : parseTenant(item.tenant),
-    floorNumber: firstInt(item.floorNumber ?? item.floor ?? item.floors),
-    totalFloors: firstInt(item.totalFloors ?? item.totalFloor),
+    floorNumber: parseFloor(item.floorNumber ?? item.floor ?? item.floors),
+    totalFloors: firstInt(item.totalFloors ?? item.totalFloor) || null,
     ageOfProperty: item.ageOfProperty ?? (firstInt(item.age) || null),
     parking: parseParking(item.parking),
     additionalDetails: str(item.additionalDetails),
