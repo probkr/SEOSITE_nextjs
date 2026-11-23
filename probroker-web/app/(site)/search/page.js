@@ -44,6 +44,7 @@ export default async function SearchPage({ searchParams }) {
             <ListingResults
               layout="grid"
               basePath="/search/"
+              adCity={searchParams?.city || undefined}
               empty={
                 <div className="card p-10 text-center">
                   <p className="text-gray-600 font-medium mb-1">No properties found for &quot;{q}&quot;</p>

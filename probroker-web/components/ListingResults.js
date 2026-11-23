@@ -1,16 +1,19 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { Fragment, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import PropertyCard from './PropertyCard';
 import PaginationLinks from './PaginationLinks';
+import AdSlot from './AdSlot';
 import { useListingResults } from './ListingResultsProvider';
+import { AD_EVERY, adSlotAfter } from '@/lib/ads';
 
 /**
  * Property list for a listing page, kept in sync with the URL by ListingResultsProvider.
  * empty: shown when nothing matches. prompt: shown on /search before anything is searched.
+ * adCity: city slug for the in-feed ads (lib/ads.js); without it only all-city ads show.
  */
-export default function ListingResults({ layout = 'row', basePath, empty, prompt = null }) {
+export default function ListingResults({ layout = 'row', basePath, empty, prompt = null, adCity }) {
   const r = useListingResults();
   if (!r) return null;
 
@@ -25,6 +28,10 @@ export default function ListingResults({ layout = 'row', basePath, empty, prompt
     );
   }
 
+  // Page 2 carries on from the ads page 1 showed instead of starting again from the first one.
+  const adsPerPage = Math.max(1, Math.floor(r.properties.length / AD_EVERY));
+  const adOffset = (Math.max(1, r.page || 1) - 1) * adsPerPage;
+
   const listClass = layout === 'grid'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
     ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 mb-8'
     : 'flex flex-col gap-4 mb-8';
@@ -35,9 +42,17 @@ export default function ListingResults({ layout = 'row', basePath, empty, prompt
         r.loading ? <div className="card p-10" /> : empty
       ) : (
         <div className={listClass}>
-          {r.properties.map((p) => (
-            <PropertyCard key={p.propertyId || p.slug} p={p} variant={layout === 'row' ? 'row' : undefined} />
-          ))}
+          {r.properties.map((p, i) => {
+            const slot = adSlotAfter(i, r.properties.length);
+            return (
+              <Fragment key={p.propertyId || p.slug}>
+                <PropertyCard p={p} variant={layout === 'row' ? 'row' : undefined} />
+                {slot >= 0 && (
+                  <AdSlot placement="listing" city={adCity} slot={slot + adOffset} variant={layout === 'row' ? 'row' : 'grid'} />
+                )}
+              </Fragment>
+            );
+          })}
         </div>
       )}
       {r.totalPages > 1 && <PaginationLinks basePath={basePath} page={r.page} totalPages={r.totalPages} />}

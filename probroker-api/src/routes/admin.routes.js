@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const router = express.Router();
 const admin = require('../controllers/adminController');
+const ads = require('../controllers/adsController');
 const { requireAdmin } = require('../middleware/adminAuth');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -80,6 +81,13 @@ router.get('/redirects', admin.listRedirects);
 router.post('/redirects/add', admin.addRedirect);
 router.post('/redirects/:redirectId/toggle', admin.toggleRedirect);
 router.post('/redirects/:redirectId/delete', admin.deleteRedirect);
+
+// In-feed ads
+router.get('/ads', ads.listAds);
+router.post('/ads/save', ads.saveAd);
+router.post('/ads/upload-image', ads.uploadAdImage);
+router.post('/ads/:adId/toggle', ads.toggleAd);
+router.post('/ads/:adId/delete', ads.deleteAd);
 
 // Blog
 router.get('/blog', admin.listBlogAdmin);

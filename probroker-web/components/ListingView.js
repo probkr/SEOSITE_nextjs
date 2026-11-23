@@ -58,6 +58,7 @@ export default function ListingView({ data, basePath }) {
           <ListingResults
             layout="row"
             basePath={basePath}
+            adCity={city?.slug}
             empty={
               <div className="card p-10 text-center">
                 <div className="text-gray-400 mb-2">

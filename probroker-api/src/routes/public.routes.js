@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const pub = require('../controllers/publicController');
+const ads = require('../controllers/adsController');
+
+router.get('/ads', ads.publicAds);
+router.post('/ads/:adId/click', ads.countAdClick);
 
 router.get('/cities', pub.listCities);
 router.get('/site-settings', pub.getSiteSettings);

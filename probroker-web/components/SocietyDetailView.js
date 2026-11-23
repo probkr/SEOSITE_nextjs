@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import { fmtPrice } from '@/lib/format';
 import { SITE_URL } from '@/lib/config';
+import { Fragment } from 'react';
 import PropertyCard from './PropertyCard';
+import AdSlot from './AdSlot';
+import { adSlotAfter } from '@/lib/ads';
 import JsonLd from './JsonLd';
 import { residenceSchema, faqPageSchema, breadcrumbSchema } from '@/lib/schema';
 
@@ -53,8 +56,13 @@ export default function SocietyDetailView({ citySlug, areaSlug, society, area, c
         <p className="text-gray-500 mb-8">No active listings in this society right now.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 mb-10">
-          {properties.map((p) => (
-            <PropertyCard key={p.propertyId || p.slug} p={p} />
+          {properties.map((p, i) => (
+            <Fragment key={p.propertyId || p.slug}>
+              <PropertyCard p={p} />
+              {adSlotAfter(i, properties.length) >= 0 && (
+                <AdSlot placement="society" city={city?.slug || citySlug} slot={adSlotAfter(i, properties.length)} />
+              )}
+            </Fragment>
           ))}
         </div>
       )}

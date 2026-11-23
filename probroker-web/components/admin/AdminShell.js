@@ -18,6 +18,7 @@ const NAV = [
   { href: '/admin/inquiries', label: 'Inquiries', icon: '📨' },
   { href: '/admin/pages', label: 'Pages', icon: '📄' },
   { href: '/admin/redirects', label: 'Redirects', icon: '🔀' },
+  { href: '/admin/ads', label: 'Ads', icon: '📢' },
   { href: '/admin/settings', label: 'Settings', icon: '⚙️' }
 ];
 
