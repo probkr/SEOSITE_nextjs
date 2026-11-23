@@ -185,6 +185,14 @@ export default async function PropertyPage({ params }) {
   const amenities = allFeatures.filter((a) => !isFurnishing(a));
 
   const nearbyList = (prop.nearby || '').split(/[,;\n]/).map((s) => s.trim()).filter(Boolean);
+  // Listings have no coordinates, so the map searches the address text, same as the card's map button:
+  // "Pious Sky Chandkheda, Ahmedabad". The embed URL needs no API key.
+  const mapQuery = prop.areaName || prop.cityName
+    ? [prop.premiseName || prop.societyName, [prop.areaName, prop.cityName].filter(Boolean).join(', ')].filter(Boolean).join(' ')
+    : '';
+  const mapEmbedUrl = mapQuery ? `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=15&output=embed` : '';
+  const mapOpenUrl = mapQuery ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}` : '';
+  const showNeighbourhood = nearbyList.length > 0 || Boolean(mapQuery);
 
   // In-page tabs: only for sections this listing actually has.
   const sectionTabs = [
@@ -192,7 +200,7 @@ export default async function PropertyPage({ params }) {
     { id: 'description', label: 'Description' },
     furnishings.length ? { id: 'furnishings', label: 'Furnishings' } : null,
     amenities.length ? { id: 'amenities', label: 'Amenities' } : null,
-    nearbyList.length ? { id: 'neighbourhood', label: 'Neighbourhood' } : null,
+    showNeighbourhood ? { id: 'neighbourhood', label: 'Neighbourhood' } : null,
     similar.length ? { id: 'similar', label: 'Similar Properties' } : null,
   ].filter(Boolean);
 
@@ -283,11 +291,34 @@ export default async function PropertyPage({ params }) {
               </div>
             ))}
 
-            {/* Nearby landmarks */}
-            {nearbyList.length > 0 && (
+            {/* Nearby landmarks + location map */}
+            {showNeighbourhood && (
               <div id="neighbourhood" className="mb-8">
                 <h2 className="text-lg font-bold font-heading mb-3 text-gray-900">Nearby Landmarks</h2>
-                <p className="text-gray-700">{nearbyList.join(', ')}</p>
+                {nearbyList.length > 0 && <p className="text-gray-700 mb-4">{nearbyList.join(', ')}</p>}
+                {mapEmbedUrl && (
+                  <div className="bg-white border border-gray-100 rounded-xl shadow-card p-3 sm:p-4">
+                    <div className="relative w-full overflow-hidden rounded-lg bg-gray-100 h-[200px] sm:h-[260px]">
+                      <iframe
+                        src={mapEmbedUrl}
+                        title={`Map of ${mapQuery}`}
+                        className="absolute inset-0 w-full h-full border-0"
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        allowFullScreen
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-3 mt-3 flex-wrap">
+                      <span className="flex items-center gap-1.5 text-sm text-gray-600 min-w-0">
+                        <svg className="w-4 h-4 shrink-0 text-primary" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.69 18.933a.75.75 0 00.62.062l.058-.026.128-.061.207-.108a17.5 17.5 0 001.907-1.311c.653-.51 1.32-1.144 1.94-1.9C16.104 13.727 17 11.9 17 9.75 17 5.856 13.866 2.75 10 2.75S3 5.856 3 9.75c0 2.146.896 3.977 2.646 6.144.62.756 1.287 1.39 1.94 1.9a17.5 17.5 0 002.114 1.419l.001.001zM10 11.75a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
+                        <span className="truncate">{mapQuery}</span>
+                      </span>
+                      <a href={mapOpenUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline shrink-0">
+                        Open in Google Maps &rarr;
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
