@@ -3,8 +3,11 @@ import { useEffect, useState } from 'react';
 
 // mapQuery is optional: when given, a third button opens that search in Google Maps.
 // bordered: for a white background (the row card's details), where the shadow alone is too faint.
-export default function CardActions({ id, title, path, mapQuery, bordered = false }) {
+// small: 32px buttons instead of 44px (the row card's price line on phones).
+export default function CardActions({ id, title, path, mapQuery, bordered = false, small = false }) {
   const edge = bordered ? 'border border-gray-200' : '';
+  const box = small ? 'w-8 h-8' : 'w-11 h-11';
+  const icon = small ? 'w-3.5 h-3.5' : 'w-4 h-4';
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -52,11 +55,11 @@ export default function CardActions({ id, title, path, mapQuery, bordered = fals
         type="button"
         onClick={toggleSave}
         aria-label={saved ? 'Remove from saved' : 'Save property'}
-        className={`w-11 h-11 rounded-full flex items-center justify-center shadow-card transition-colors ${
+        className={`${box} rounded-full flex items-center justify-center shadow-card transition-colors ${
           saved ? 'bg-primary text-white' : `bg-white/95 text-gray-500 hover:text-primary ${edge}`
         }`}
       >
-        <svg className="w-4 h-4" viewBox="0 0 20 20" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.7">
+        <svg className={icon} viewBox="0 0 20 20" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.7">
           <path d="M10 17.25l-.61-.55C4.77 12.36 2 9.86 2 6.9 2 4.5 3.9 2.6 6.3 2.6c1.36 0 2.67.63 3.7 1.72A5.02 5.02 0 0113.7 2.6C16.1 2.6 18 4.5 18 6.9c0 2.96-2.77 5.46-7.39 9.8l-.61.55z" />
         </svg>
       </button>
@@ -64,9 +67,9 @@ export default function CardActions({ id, title, path, mapQuery, bordered = fals
         type="button"
         onClick={share}
         aria-label="Share property"
-        className={`w-11 h-11 rounded-full bg-white/95 text-gray-500 hover:text-primary shadow-card flex items-center justify-center ${edge}`}
+        className={`${box} rounded-full bg-white/95 text-gray-500 hover:text-primary shadow-card flex items-center justify-center ${edge}`}
       >
-        <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <svg className={icon} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
           <circle cx="15" cy="4.5" r="2.2" />
           <circle cx="15" cy="15.5" r="2.2" />
           <circle cx="5" cy="10" r="2.2" />

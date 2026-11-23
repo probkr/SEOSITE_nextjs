@@ -15,10 +15,17 @@ const { parsePhotos } = require('../services/importMapper');
 
 const esc = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+// Words the CRM puts in contactName when it has no real name. Showing "O***" or "b***" for
+// them looks broken, so the site shows no name instead.
+const PLACEHOLDER_NAMES = new Set(['owner', 'broker', 'dealer', 'agent', 'probroker', 'prbroker', 'na', 'n/a', 'none', 'null', 'unknown', 'test']);
+
+// The site shows the first name and the surname's initial ("Kunal M."); the full name and the
+// number come with Get Contact. A one-word name is just a first name, so it is shown as it is,
+// the same as the first name of a two-word one.
 function maskContactName(name) {
   const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return '';
-  if (parts.length === 1) return parts[0].length <= 2 ? parts[0] : `${parts[0][0]}***`;
+  if (parts.length === 1) return PLACEHOLDER_NAMES.has(parts[0].toLowerCase()) ? '' : parts[0];
   return `${parts[0]} ${parts[parts.length - 1][0]}.`;
 }
 

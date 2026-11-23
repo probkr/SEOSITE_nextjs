@@ -721,9 +721,10 @@ export function ListingFilterBar({ activeFilters = {}, resultCount: serverCount,
   const resultCount = useLiveCount(serverCount);
   return (
     <div className="filter-strip sticky top-[var(--header-h)] z-30 bg-white border-b border-gray-200">
-      {/* Filters scroll sideways on narrow screens; Sort stays pinned on the right. */}
-      <div className="container-px flex items-center gap-2 py-3">
-        <div className="flex items-center gap-2 flex-1 min-w-0 overflow-x-auto no-scrollbar">
+      {/* Phones: the whole row (every filter, then Sort) scrolls sideways, fading out on the
+          right as a hint that there is more. sm and up: filters scroll, Sort stays pinned right. */}
+      <div className="container-px flex items-center gap-2 py-3 overflow-x-auto no-scrollbar sm:overflow-visible [mask-image:linear-gradient(to_right,black_88%,transparent)] sm:[mask-image:none]">
+        <div className="flex items-center gap-2 shrink-0 sm:shrink sm:flex-1 sm:min-w-0 sm:overflow-x-auto no-scrollbar">
           <FilterButtons s={s} areas={areas} showAreaFilter={showAreaFilter} resultCount={resultCount} />
           {/* Shown only while a filter is applied; the active dropdowns themselves show what's set. */}
           {s.chips.length > 0 && (
@@ -736,7 +737,7 @@ export function ListingFilterBar({ activeFilters = {}, resultCount: serverCount,
             </button>
           )}
         </div>
-        <div className="shrink-0 pl-2 sm:pl-3 border-l border-gray-200">
+        <div className="shrink-0 pl-2 sm:pl-3 pr-4 sm:pr-0 border-l border-gray-200">
           <SortDropdown s={s} withPrefix />
         </div>
       </div>

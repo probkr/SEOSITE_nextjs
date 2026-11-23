@@ -42,9 +42,11 @@ const TRANS_OPTIONS = [
 ];
 
 // Each field is a labelled cell; focus-within highlights the whole cell instead of a ring on the bare control.
-const fieldCls = 'flex flex-col justify-center gap-0.5 px-4 py-2.5 rounded-xl hover:bg-gray-50 focus-within:bg-gray-50 transition-colors min-w-0';
-const labelCls = 'text-[11px] font-bold uppercase tracking-wider text-gray-400';
-const selectCls = 'w-full -ml-1 bg-transparent border-0 outline-none text-[15px] font-semibold text-gray-900 cursor-pointer';
+// Phones: every field is its own bordered box (Locality full width, City | Type, then BHK chips),
+// so no value is cut off. Desktop: one borderless row split by dividers.
+const fieldCls = 'flex flex-col justify-center gap-0.5 px-3 lg:px-4 py-1.5 lg:py-2.5 rounded-xl border border-gray-200 lg:border-0 hover:bg-gray-50 focus-within:bg-gray-50 focus-within:border-primary/40 transition-colors min-w-0';
+const labelCls = 'text-[10px] lg:text-[11px] font-bold uppercase tracking-wider text-gray-400 truncate';
+const selectCls = 'w-full -ml-1 bg-transparent border-0 outline-none text-sm lg:text-[15px] font-semibold text-gray-900 cursor-pointer truncate';
 
 export default function HomeSearchWidget({ cities = [], areas = [] }) {
   const router = useRouter();
@@ -137,9 +139,9 @@ export default function HomeSearchWidget({ cities = [], areas = [] }) {
 
   return (
     <div className="w-full max-w-5xl mx-auto text-left bg-white rounded-2xl border border-gray-200 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.18)]">
-      {/* Category tabs + Buy/Rent, attached to the top of the same card */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-3 md:px-5 border-b border-gray-100">
-        <div className="flex items-center" role="tablist" aria-label="Property category">
+      {/* Category tabs on the left, Buy/Rent on the right -- one line on every screen size */}
+      <div className="flex items-center justify-between gap-2 px-2 md:px-5 border-b border-gray-100">
+        <div className="flex items-center min-w-0 overflow-x-auto no-scrollbar" role="tablist" aria-label="Property category">
           {TABS.map((t) => (
             <button
               key={t.key}
@@ -147,24 +149,24 @@ export default function HomeSearchWidget({ cities = [], areas = [] }) {
               role="tab"
               aria-selected={tab === t.key}
               onClick={() => setTab(t.key)}
-              className={`relative px-3 md:px-4 py-4 text-sm md:text-[15px] font-semibold transition-colors ${
+              className={`relative shrink-0 px-2 sm:px-3 md:px-4 py-4 text-[13px] sm:text-sm md:text-[15px] font-semibold transition-colors ${
                 tab === t.key ? 'text-primary' : 'text-gray-500 hover:text-gray-900'
               }`}
             >
               {t.label}
-              {tab === t.key && <span className="absolute left-3 right-3 md:left-4 md:right-4 bottom-0 h-0.5 rounded-full bg-primary" />}
+              {tab === t.key && <span className="absolute left-2 right-2 sm:left-3 sm:right-3 md:left-4 md:right-4 bottom-0 h-0.5 rounded-full bg-primary" />}
             </button>
           ))}
         </div>
 
-        <div className="flex items-center bg-gray-100 rounded-full p-1 text-sm font-semibold" role="group" aria-label="Buy or Rent">
+        <div className="shrink-0 flex items-center bg-gray-100 rounded-full p-1 text-xs sm:text-sm font-semibold" role="group" aria-label="Buy or Rent">
           {TRANS_OPTIONS.map((o) => (
             <button
               key={o.value}
               type="button"
               aria-pressed={trans === o.value}
               onClick={() => setTrans(o.value)}
-              className={`px-4 py-1.5 rounded-full transition-colors ${
+              className={`px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full transition-colors ${
                 trans === o.value ? 'bg-white text-gray-900 shadow-card' : 'text-gray-500 hover:text-gray-900'
               }`}
             >
@@ -175,7 +177,9 @@ export default function HomeSearchWidget({ cities = [], areas = [] }) {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row lg:items-stretch p-2">
-        <div className="flex flex-col lg:flex-row flex-1 min-w-0 divide-y lg:divide-y-0 lg:divide-x divide-gray-100">
+        {/* Phones: Locality full width on top, City | Type side by side, BHK chips below.
+            Desktop: one row in DOM order (City, Locality, Type, BHK). */}
+        <div className="grid grid-cols-2 gap-2 lg:gap-0 lg:flex lg:flex-row flex-1 min-w-0 lg:divide-x divide-gray-100">
           {/* City */}
           <label className={`${fieldCls} lg:w-44`}>
             <span className={labelCls}>City</span>
@@ -197,7 +201,7 @@ export default function HomeSearchWidget({ cities = [], areas = [] }) {
           </label>
 
           {/* Locality autocomplete */}
-          <div ref={boxRef} className={`${fieldCls} relative flex-1`}>
+          <div ref={boxRef} className={`${fieldCls} relative flex-1 col-span-2 order-first lg:order-none`}>
             <label htmlFor="home-locality" className={labelCls}>Locality</label>
             <div className="flex items-center gap-2">
               <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="M20 20l-3.5-3.5" /></svg>
@@ -251,7 +255,10 @@ export default function HomeSearchWidget({ cities = [], areas = [] }) {
 
           {/* Subtype */}
           <label className={`${fieldCls} lg:w-48`}>
-            <span className={labelCls}>Property Type</span>
+            <span className={labelCls}>
+              <span className="lg:hidden">Type</span>
+              <span className="hidden lg:inline">Property Type</span>
+            </span>
             <select value={subtype} onChange={(e) => setSubtype(e.target.value)} className={selectCls}>
               {subtypeList.map((s) => (
                 <option key={s.slug || 'all'} value={s.slug}>
@@ -261,9 +268,29 @@ export default function HomeSearchWidget({ cities = [], areas = [] }) {
             </select>
           </label>
 
-          {/* BHK — only meaningful for residential dwellings */}
+          {/* BHK — only meaningful for residential dwellings. Phones: a row of chips, one tap each. */}
           {tab === 'residential' && (
-            <label className={`${fieldCls} lg:w-32`}>
+            <div className={`${fieldCls} col-span-2 lg:hidden`}>
+              <span className={labelCls}>BHK</span>
+              <div className="grid grid-cols-5 gap-1.5 mt-1" role="group" aria-label="BHK">
+                {[{ v: '', l: 'Any' }, ...BHK_OPTIONS.map((b) => ({ v: b, l: `${b} BHK` }))].map((o) => (
+                  <button
+                    key={o.v || 'any'}
+                    type="button"
+                    aria-pressed={bhk === o.v}
+                    onClick={() => setBhk(o.v)}
+                    className={`py-1.5 rounded-lg border text-[13px] font-semibold whitespace-nowrap transition-colors ${
+                      bhk === o.v ? 'bg-primary border-primary text-white' : 'bg-white border-gray-200 text-gray-700 hover:border-primary/40'
+                    }`}
+                  >
+                    {o.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {tab === 'residential' && (
+            <label className={`${fieldCls} hidden lg:flex lg:w-32`}>
               <span className={labelCls}>BHK</span>
               <select value={bhk} onChange={(e) => setBhk(e.target.value)} className={selectCls}>
                 <option value="">Any</option>
@@ -279,7 +306,7 @@ export default function HomeSearchWidget({ cities = [], areas = [] }) {
 
         <button
           type="submit"
-          className="btn-primary !rounded-xl gap-2 h-14 lg:h-auto mt-2 lg:mt-0 lg:ml-2 lg:px-8 shrink-0 text-base"
+          className="btn-primary !rounded-xl gap-2 h-11 lg:h-auto !py-0 lg:!py-3 mt-2 lg:mt-0 lg:ml-2 lg:px-8 shrink-0 text-[15px] lg:text-base"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="M20 20l-3.5-3.5" /></svg>
           Search

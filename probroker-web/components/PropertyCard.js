@@ -1,12 +1,13 @@
 import { useId } from 'react';
 import Link from 'next/link';
 import { fmtPrice, buildPropertyTitle, buildPropertySlug } from '@/lib/format';
-import { firstImageUrl } from '@/lib/media';
+import { firstImageUrl, isVideoUrl } from '@/lib/media';
 import PropertyImagePlaceholder from './PropertyImagePlaceholder';
 import PropertyMedia from './PropertyMedia';
 import CardActions from './CardActions';
 import ContactButton from './ContactButton';
 import ContactActions from './ContactActions';
+import FeatureIcon from './FeatureIcon';
 
 // Only My Contacts shows these: it keeps listings that have since left the site.
 const INACTIVE_LABEL = { sold: 'Sold', rented: 'Rented', pending: 'Not live' };
@@ -34,10 +35,10 @@ const PIN_PATH = 'M12 1.5c-4.14 0-7.5 3.36-7.5 7.5 0 5.62 7.5 13.5 7.5 13.5s7.5-
 // Four-colour map pin in Google Maps' colours: red top-left, blue top-right, yellow band,
 // green stem, white centre. Bands are polygons clipped to the pin outline. useId keeps the
 // clipPath id unique when a page renders many cards.
-function MapsPin() {
+function MapsPin({ className = 'w-[18px] h-[18px]' }) {
   const clip = `pin-${useId().replace(/:/g, '')}`;
   return (
-    <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+    <svg className={`${className} shrink-0`} viewBox="0 0 24 24" aria-hidden="true">
       <defs>
         <clipPath id={clip}><path d={PIN_PATH} /></clipPath>
       </defs>
@@ -138,7 +139,7 @@ export default function PropertyCard({ p, variant = 'grid' }) {
 
   // Row card: the Verified mark is the green corner tag, so the title gets the full width.
   const titleRow = (
-    <h3 className="text-[19px] font-semibold text-gray-900 line-clamp-1 group-hover:text-primary transition-colors">{title}</h3>
+    <h3 className="text-[13px] sm:text-[19px] font-semibold text-gray-900 line-clamp-2 sm:line-clamp-1 group-hover:text-primary transition-colors">{title}</h3>
   );
 
   // Row card: a green shield on the photo's top-right for listings the PRObroker team has
@@ -161,7 +162,8 @@ export default function PropertyCard({ p, variant = 'grid' }) {
   // Address line with a Google-Maps-style red pin. Pin and text open the place in Google Maps.
   // It sits above the card-wide link (z-10, pointer-events-auto), so it doesn't open the listing.
   // textCls: the grid card uses 15px, the row card ~10% larger to match its bigger title.
-  const placeLink = (textCls = 'text-[15px]') => place ? (
+  // wrap: let the address run onto a second line instead of cutting it with "...".
+  const placeLink = (textCls = 'text-[15px]', wrap = false, pinCls) => place ? (
     <a
       href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`}
       target="_blank"
@@ -169,9 +171,9 @@ export default function PropertyCard({ p, variant = 'grid' }) {
       title="View on Google Maps"
       className={`group/map relative z-10 pointer-events-auto inline-flex items-center gap-1 max-w-full min-w-0 ${textCls} text-gray-500 hover:text-primary transition-colors`}
     >
-      <MapsPin />
+      <MapsPin className={pinCls} />
 
-      <span className="truncate group-hover/map:underline underline-offset-2">{place}</span>
+      <span className={`${wrap ? 'line-clamp-2 sm:truncate' : 'truncate'} group-hover/map:underline underline-offset-2`}>{place}</span>
       <span className="sr-only">(opens Google Maps)</span>
     </a>
   ) : null;
@@ -190,24 +192,59 @@ export default function PropertyCard({ p, variant = 'grid' }) {
     p.sqft ? { icon: 'area', label: 'Area', value: `${p.sqft} sqft` } : null,
     rateText ? { icon: 'rate', label: isRent ? 'Rent/sqft' : 'Price/sqft', value: rateText } : null,
     p.furnishing ? { icon: 'sofa', label: 'Furnishing', value: p.furnishing, capitalize: true } : null,
-    p.listingType ? { icon: 'user', label: 'Posted by', value: p.listingType, capitalize: true } : null,
     p.propertyType ? { icon: 'type', label: 'Type', value: p.propertyType, capitalize: true } : null,
     p.floorNumber ? { icon: 'floor', label: 'Floor', value: `${p.floorNumber}${p.totalFloors ? `/${p.totalFloors}` : ''}` } : null,
   ].filter(Boolean).slice(0, 4);
 
   const factsRow = gridFacts.length > 0 ? (
-    <div className="grid grid-cols-2 gap-x-3 gap-y-2.5 py-3 border-y border-gray-100">
-      {gridFacts.map((f) => (
-        <div key={f.label} className="flex items-center gap-2 min-w-0">
-          <span className="w-8 h-8 rounded-lg bg-primary-50 text-primary flex items-center justify-center shrink-0">
-            <FactIcon name={f.icon} className="w-4 h-4" />
+    <div className="py-3 border-y border-gray-100">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
+        {gridFacts.map((f) => (
+          <div key={f.label} className="flex items-center gap-2 min-w-0">
+            <span className="w-8 h-8 rounded-lg bg-primary-50 text-primary flex items-center justify-center shrink-0">
+              <FactIcon name={f.icon} className="w-4 h-4" />
+            </span>
+            <span className="flex flex-col leading-tight min-w-0">
+              <span className="text-[11px] uppercase tracking-wide text-gray-400">{f.label}</span>
+              <span title={f.value} className={`text-sm font-semibold text-gray-800 truncate ${f.capitalize ? 'capitalize' : ''}`}>{f.value}</span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  ) : null;
+
+  // Highlights: the listing's furnishings first (furnishingItems), then its amenities. The card
+  // shows six in one line that scrolls sideways (swipe / trackpad); the rest are a link to the
+  // property page, which lists them all. The line takes pointer events so a finger can drag it,
+  // and fades out on the right as a hint that there is more.
+  const HIGHLIGHT_LIMIT = 6;
+  const highlights = [...new Set(
+    [...(Array.isArray(p.furnishingItems) ? p.furnishingItems : []), ...(Array.isArray(p.amenities) ? p.amenities : [])]
+      .map((a) => String(a).trim())
+      .filter(Boolean),
+  )];
+  const moreHighlights = highlights.length - HIGHLIGHT_LIMIT;
+  // bleed: pulls the scrolling line out to the card edges; it must match the card's side padding.
+  const highlightsBlock = (bleed = '-mx-4 px-4 scroll-px-4') => highlights.length > 0 ? (
+    <div>
+      <div className="text-[11px] uppercase tracking-wide text-gray-400 mb-1.5">Highlights</div>
+      <div className={`${bleed} flex gap-1.5 overflow-x-auto no-scrollbar snap-x pointer-events-auto [mask-image:linear-gradient(to_right,black_85%,transparent)]`}>
+        {highlights.slice(0, HIGHLIGHT_LIMIT).map((name) => (
+          <span key={name} className="snap-start shrink-0 whitespace-nowrap inline-flex items-center gap-1 rounded-md border border-gray-100 bg-gray-50 px-2 py-1 text-xs text-gray-700">
+            <span className="text-primary"><FeatureIcon name={name} className="w-3.5 h-3.5" /></span>
+            {name}
           </span>
-          <span className="flex flex-col leading-tight min-w-0">
-            <span className="text-[11px] uppercase tracking-wide text-gray-400">{f.label}</span>
-            <span title={f.value} className={`text-sm font-semibold text-gray-800 truncate ${f.capitalize ? 'capitalize' : ''}`}>{f.value}</span>
-          </span>
-        </div>
-      ))}
+        ))}
+        {moreHighlights > 0 && (
+          <Link
+            href={href}
+            className="snap-start shrink-0 whitespace-nowrap relative z-10 inline-flex items-center rounded-md px-2 py-1 pr-6 text-xs font-semibold text-primary hover:underline"
+          >
+            View more (+{moreHighlights})
+          </Link>
+        )}
+      </div>
     </div>
   ) : null;
 
@@ -259,12 +296,48 @@ export default function PropertyCard({ p, variant = 'grid' }) {
     // Who posted it goes in the contact row: "Posted by Broker yesterday".
     const postedBy = p.listingType ? cap(p.listingType) : '';
     const postedWhen = posted.replace(/^Posted /, '');
+    // Phones: up to 8 pictures in a sideways strip (videos only when there is no picture, so a
+    // page of cards doesn't start dozens of videos). A last tile links to the rest.
+    const STRIP_MAX = 8;
+    const allMedia = hasPhoto ? p.photos.filter(Boolean) : [];
+    const pictures = allMedia.filter((u) => !isVideoUrl(u));
+    const stripMedia = (pictures.length ? pictures : allMedia.slice(0, 1)).slice(0, STRIP_MAX);
+    const hiddenMedia = allMedia.length - stripMedia.length;
 
     return (
       <div className="group card overflow-hidden flex flex-col sm:flex-row relative w-full min-w-0">
         <Link href={href} className="absolute inset-0 z-0" aria-label={title} />
-        {/* The photo fills this box instead of sizing it, so a tall photo can't stretch the card. */}
-        <div className="relative w-full sm:w-72 shrink-0 aspect-[16/9] sm:aspect-auto sm:min-h-[220px] overflow-hidden bg-gray-100 pointer-events-none">
+        {/* Phones: a short photo strip that scrolls left / right, one swipe per photo, with a
+            "2/9" counter. Each photo is a link to the listing, so a tap still opens it. */}
+        {stripMedia.length > 0 && (
+          <div className="sm:hidden relative z-10 flex gap-1.5 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-px-2 px-2 pt-2">
+            {stripMedia.map((url, i) => (
+              <Link key={`${url}-${i}`} href={href} aria-label={i === 0 ? title : `${title} - photo ${i + 1}`} className={`relative snap-start shrink-0 ${stripMedia.length === 1 && hiddenMedia <= 0 ? 'w-full' : 'w-[78%]'} h-36 rounded-lg overflow-hidden bg-gray-100`}>
+                <PropertyMedia src={url} alt={i === 0 ? title : `${title} - photo ${i + 1}`} className="w-full h-full object-cover" lazy={i > 0} />
+                {i === 0 && (
+                  <>
+                    <span className={`badge absolute top-2 left-2 shadow-card ${transCls}`}>{trans}</span>
+                    {verifiedTag}
+                  </>
+                )}
+                {allMedia.length > 1 && (
+                  <span className="absolute bottom-1.5 right-1.5 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white">
+                    {i + 1}/{allMedia.length}
+                  </span>
+                )}
+              </Link>
+            ))}
+            {hiddenMedia > 0 && (
+              <Link href={href} className="snap-start shrink-0 w-28 h-36 rounded-lg bg-primary-50 text-primary flex flex-col items-center justify-center text-center text-xs font-semibold">
+                <span className="text-lg font-bold">+{hiddenMedia}</span>
+                more photos
+              </Link>
+            )}
+          </div>
+        )}
+        {/* The photo fills this box instead of sizing it, so a tall photo can't stretch the card.
+            Phones with photos use the strip above instead. */}
+        <div className={`${stripMedia.length > 0 ? 'hidden sm:block' : ''} relative w-full sm:w-72 shrink-0 h-36 sm:h-auto sm:min-h-[220px] overflow-hidden bg-gray-100 pointer-events-none`}>
           <div className="absolute inset-0">{imageInner}</div>
           <span className={`badge absolute top-2 left-2 shadow-card ${transCls}`}>{trans}</span>
           {verifiedTag}
@@ -278,53 +351,71 @@ export default function PropertyCard({ p, variant = 'grid' }) {
           )}
         </div>
         <div className="p-4 sm:px-5 flex-1 flex flex-col gap-2.5 min-w-0 relative pointer-events-none">
-          {/* Title + address on the left, save / share on the right. */}
+          {/* Title + address on the left, save / share on the right. Phones: the title takes the
+              full width and save / share sit at the right of the address line. */}
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               {titleRow}
-              {placeRow && <div className="mt-0.5 flex min-w-0">{placeLink('text-[16.5px]')}</div>}
+              <div className="mt-0.5 flex items-center justify-between gap-2 min-w-0">
+                <div className="flex-1 min-w-0 flex">
+                  {placeLink('text-[11.5px] sm:text-[16.5px]', true, 'w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]')}
+                </div>
+                <div className="sm:hidden shrink-0">
+                  <CardActions id={cardId} title={title} path={href} bordered small />
+                </div>
+              </div>
             </div>
-            <div className="shrink-0">
+            <div className="hidden sm:block shrink-0">
               <CardActions id={cardId} title={title} path={href} bordered />
             </div>
           </div>
-          {/* Facts on the left, the price large on the right of the same band. */}
-          <div className="flex items-center gap-4 py-3 border-y border-gray-100">
+          {/* Facts on the left, the price large on the right of the same band. Phones: price
+              first, then the facts in two columns. */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-3 border-y border-gray-100">
             {facts.length > 0 && (
-              <div className="flex-1 min-w-0 grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-x-4 gap-y-3">
+              <div className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-x-3 sm:gap-x-4 gap-y-1.5 sm:gap-y-3">
                 {facts.map((f) => (
-                  <div key={f.label} className="flex items-center gap-2 min-w-0">
+                  <div key={f.label} className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                     <span
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                      className={`w-5 h-5 sm:w-8 sm:h-8 rounded-md sm:rounded-lg flex items-center justify-center shrink-0 ${
                         f.highlight ? 'bg-primary text-white' : 'bg-primary-50 text-primary'
                       }`}
                     >
-                      <FactIcon name={f.icon} className="w-4 h-4" />
+                      <FactIcon name={f.icon} className="w-3 h-3 sm:w-4 sm:h-4" />
                     </span>
                     <span className="flex flex-col leading-tight min-w-0">
-                      <span className="text-[11px] uppercase tracking-wide text-gray-400">{f.label}</span>
-                      <span title={f.value} className={`text-sm font-semibold truncate ${f.highlight ? 'text-primary' : 'text-gray-800'}`}>{f.value}</span>
+                      <span className="text-[9px] sm:text-[11px] uppercase tracking-wide text-gray-400">{f.label}</span>
+                      <span title={f.value} className={`text-[11px] sm:text-sm font-semibold truncate ${f.highlight ? 'text-primary' : 'text-gray-800'}`}>{f.value}</span>
                     </span>
                   </div>
                 ))}
               </div>
             )}
-            <div className="shrink-0 ml-auto text-right pl-4 sm:border-l sm:border-gray-100">
+            <div className="order-first sm:order-none shrink-0 sm:ml-auto sm:text-right sm:pl-4 sm:border-l sm:border-gray-100">
               <div className="text-2xl sm:text-3xl font-bold text-primary font-heading leading-tight whitespace-nowrap">{fmtPrice(p.price)}</div>
               {isRent && <div className="text-xs font-medium text-gray-500">per month</div>}
             </div>
           </div>
+          {highlightsBlock('-mx-4 px-4 scroll-px-4 sm:-mx-5 sm:px-5 sm:scroll-px-5')}
           {/* One line of the listing's description; the rest is cut off with "...". */}
           {description && (
             <p title={description} className="text-sm text-gray-600 truncate">{description}</p>
           )}
           <div className="flex items-center justify-between gap-3 mt-auto">
-            <div className="min-w-0 text-[13px] text-gray-500 truncate">
-              {postedBy ? (
-                <>Posted by <span className="text-gray-700 font-medium">{postedBy}</span>{postedWhen && ` ${postedWhen}`}</>
-              ) : posted}
-              {ownerName && (postedBy || posted) && ' · '}
-              {ownerName && <>Owner: <span className="text-gray-700 font-medium">{ownerName}</span></>}
+            {/* Phones: owner name on top, "Posted by Broker 5 days ago" under it. sm and up: both
+                on one line split by a dot. Contact on the right. */}
+            <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center sm:gap-1.5 text-[13px] leading-snug text-gray-500">
+              {ownerName && (
+                <div className="truncate sm:shrink-0">Owner: <span className="text-gray-700 font-medium">{ownerName}</span></div>
+              )}
+              {ownerName && (postedBy || posted) && <span aria-hidden="true" className="hidden sm:inline text-gray-300">·</span>}
+              {(postedBy || posted) && (
+                <div className="truncate min-w-0">
+                  {postedBy ? (
+                    <>Posted by <span className="text-gray-700 font-medium">{postedBy}</span>{postedWhen && ` ${postedWhen}`}</>
+                  ) : posted}
+                </div>
+              )}
             </div>
             {contactButton('shrink-0 !h-10')}
           </div>
@@ -336,24 +427,41 @@ export default function PropertyCard({ p, variant = 'grid' }) {
   return (
     <div className="group card overflow-hidden flex flex-col relative h-full hover:shadow-float transition-shadow duration-300">
       <Link href={href} className="absolute inset-0 z-0" aria-label={title} />
-      <div className="relative w-full aspect-[4/3] overflow-hidden bg-gray-100 pointer-events-none">
+      {/* 5:3 photo (20% shorter than 4:3) so more of the card's details fit on a phone screen. */}
+      <div className="relative w-full aspect-[5/3] overflow-hidden bg-gray-100 pointer-events-none">
         {imageInner}
         {badges}
-        <div className="absolute bottom-2 right-2 pointer-events-auto">
-          <CardActions id={cardId} title={title} path={href} />
-        </div>
       </div>
       <div className="p-4 flex-1 flex flex-col gap-2 pointer-events-none">
-        {priceRow}
+        {/* Price on the left, save / share on the right of the same line. */}
+        <div className="flex items-center justify-between gap-3">
+          {priceRow}
+          <CardActions id={cardId} title={title} path={href} bordered small />
+        </div>
         <div className="min-w-0">
           <h3 className="text-[17px] font-semibold text-gray-900 line-clamp-1 group-hover:text-primary transition-colors">{title}</h3>
           {placeRow && <div className="mt-0.5 flex min-w-0">{placeRow}</div>}
         </div>
         {factsRow}
-        <div className="mt-auto flex flex-col gap-2.5">
-          {footerRow}
-          {contactButton('w-full')}
-        </div>
+        {highlightsBlock()}
+        {p.contactPhone ? (
+          // My Contacts: the number is unlocked, so Call + WhatsApp need the full width.
+          <div className="mt-auto flex flex-col gap-2.5">
+            {footerRow}
+            {contactButton('w-full')}
+          </div>
+        ) : (
+          // Owner name and posted date on the left, a half-width Contact button on the right.
+          <div className="mt-auto flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1 text-[13px] leading-snug text-gray-500">
+              {ownerName && (
+                <div className="truncate">Owner: <span className="text-gray-700 font-medium">{ownerName}</span></div>
+              )}
+              {posted && <div className="truncate">{posted}</div>}
+            </div>
+            {contactButton('w-1/2 shrink-0')}
+          </div>
+        )}
       </div>
     </div>
   );
