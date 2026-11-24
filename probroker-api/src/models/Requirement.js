@@ -13,6 +13,8 @@ const RequirementSchema = new mongoose.Schema({
   name: { type: String, default: '' },
   phone: { type: String, default: '' },
   notes: { type: String, default: '' },
+  // Set when the phone was confirmed by OTP (or is the logged-in user's own number).
+  phoneVerified: { type: Boolean, default: false },
   status: { type: String, default: 'new' },
   createdAt: { type: String },
 }, { collection: 'requirements', strict: false, versionKey: false, timestamps: false });

@@ -18,7 +18,9 @@ const cookieOpts = () => ({ ...sessionCookieOpts(), maxAge: 7 * 24 * 60 * 60 * 1
 // ---------- OTP ----------
 // The only purposes a caller may name on /otp/*. Admin and WebUser flows set their own purpose
 // server-side, so accepting them here would let this route create OTPs for those logins.
-const PUBLIC_OTP_PURPOSES = new Set(['login', 'post-property']);
+// 'inquiry' only proves the phone for a lead form: it returns a short-lived token and logs no one in.
+const PUBLIC_OTP_PURPOSES = new Set(['login', 'post-property', 'inquiry']);
+const INQUIRY_TOKEN_TTL = '30m';
 
 exports.otpSend = async (req, res) => {
   const { phone: rawPhone, name = '', purpose = 'login' } = req.body || {};
@@ -55,6 +57,12 @@ exports.otpVerify = async (req, res) => {
   const check = await checkOtp({ phone, otp, purpose });
   if (!check.ok) {
     return res.status(check.status).json({ success: false, error: check.error });
+  }
+
+  // Lead forms: hand back proof of the phone for POST /inquiries instead of a login session.
+  if (purpose === 'inquiry') {
+    const verifyToken = jwt.sign({ phone, purpose: 'inquiry' }, process.env.SECRET_KEY, { expiresIn: INQUIRY_TOKEN_TTL });
+    return res.json({ success: true, phone, verifyToken });
   }
 
   const nowIso = new Date().toISOString();

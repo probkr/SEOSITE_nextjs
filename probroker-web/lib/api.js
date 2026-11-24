@@ -38,6 +38,9 @@ export const getCities = (opts) => apiFetch('/cities', opts).then((r) => r?.data
 // including leading/trailing slashes, as stored by the admin Redirects screen).
 export const getRedirect = (pathname, opts) => apiFetch('/sitemap/redirect-lookup', { params: { path: pathname }, ...opts }).then((r) => (r?.found ? r : null));
 export const getCity = (slug, opts) => apiFetch(`/cities/${slug}`, opts).then((r) => r?.data || r || null);
+// Scored "Similar Properties" for a property page (probroker-api publicController.similarProperties).
+export const getSimilarProperties = (propertyId, limit = 4, opts) =>
+  apiFetch('/properties/similar', { params: { propertyId, limit }, ...opts }).then((r) => (Array.isArray(r) ? r : r?.data || []));
 export const getAreas = (params, opts) => apiFetch('/areas', { params, ...opts }).then((r) => r?.data || r || []);
 export const getArea = (slug, opts) => apiFetch(`/areas/${slug}`, opts).then((r) => r?.data || r || null);
 export const getSocieties = (params, opts) => apiFetch('/societies', { params, ...opts }).then((r) => r?.data || r || []);

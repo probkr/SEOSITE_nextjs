@@ -29,7 +29,9 @@ export default function ListingResults({ layout = 'row', basePath, empty, prompt
   }
 
   // Page 2 carries on from the ads page 1 showed instead of starting again from the first one.
-  const adsPerPage = Math.max(1, Math.floor(r.properties.length / AD_EVERY));
+  // In-feed ads plus the one closing the list.
+  const feedAds = r.properties.filter((_, i) => adSlotAfter(i, r.properties.length) >= 0).length;
+  const adsPerPage = feedAds + 1;
   const adOffset = (Math.max(1, r.page || 1) - 1) * adsPerPage;
 
   const listClass = layout === 'grid'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
@@ -53,6 +55,8 @@ export default function ListingResults({ layout = 'row', basePath, empty, prompt
               </Fragment>
             );
           })}
+          {/* The list always closes with an ad (the next one in turn). */}
+          <AdSlot placement="listing" city={adCity} slot={feedAds + adOffset} variant={layout === 'row' ? 'row' : 'grid'} />
         </div>
       )}
       {r.totalPages > 1 && <PaginationLinks basePath={basePath} page={r.page} totalPages={r.totalPages} />}
@@ -90,9 +94,12 @@ export function ListingHeading({ h1, total, page }) {
     document.title = retext(serverTitle.current, from, to);
   }, [to.total, to.page]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // "2635+ Flats for Rent in Shela" -> the count in bold, the rest in regular weight.
+  const text = retext(h1, from, to);
+  const m = text.match(/^([\d,]+\+?)\s+(.*)$/s);
   return (
-    <h1 className="text-xl md:text-2xl font-bold font-heading leading-snug text-gray-900">
-      {retext(h1, from, to)}
+    <h1 className="text-[17px] md:text-2xl font-medium font-heading leading-snug text-gray-900">
+      {m ? <><span className="font-extrabold">{m[1]}</span> {m[2]}</> : text}
     </h1>
   );
 }

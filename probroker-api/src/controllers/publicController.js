@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
+const jwt = require('jsonwebtoken');
 const City = require('../models/City');
 const Area = require('../models/Area');
 const Society = require('../models/Society');
@@ -389,21 +390,224 @@ async function addPlaceNames(properties) {
   }
 }
 
+// ---------- Similar properties (property page) ----------
+// 1. Must match (else never shown): active + approved, not the listing itself, same
+//    transactionType, category, city, and a propertyType from the same group (flat ~ penthouse).
+// 2. Candidates: same society / area first, then the rest of the city near the price and BHK.
+// 3. Each candidate is scored on how close it is (see similarScore). A field only scores when
+//    both listings have it, so blank data never counts against a listing.
+// 4. Best scores first, at least SIMILAR_MIN_SCORE, copies of one flat dropped, at most two from
+//    one society. Having photos is worth +15 in the score, so between close matches the one
+//    with photos wins, but never over a much closer match. Short of the limit, lower minimums
+//    fill in (the must-match rules never relax); a negative score (very different BHK or
+//    price) is never shown. The result lists the ones with photos first.
+const PROPERTY_TYPE_GROUPS = [
+  ['flat', 'apartment', 'penthouse'],
+  ['bungalow', 'villa', 'tenement', 'rowhouse', 'row house', 'independent house'],
+  ['office'],
+  ['shop', 'showroom'],
+  ['warehouse', 'godown', 'shed'],
+  ['plot', 'land'],
+  ['basement'],
+];
+const SIMILAR_MIN_SCORE = [40, 25, 0];
+const SIMILAR_MAX_PER_SOCIETY = 2;
+const DAY_MS = 86400000;
+
+// Only what scoring needs; the chosen few are re-read in full afterwards.
+const SIMILAR_SCORE_FIELDS = {
+  _id: 0, propertyId: 1, societyId: 1, areaId: 1, bhk: 1, price: 1, sqft: 1, propertyType: 1,
+  furnishing: 1, saleType: 1, familyOrBachelors: 1, workstations: 1, cabins: 1, washroomType: 1,
+  boundaryWall: 1, ageRange: 1, ageOfProperty: 1, floorNumber: 1, facing: 1, bathrooms: 1,
+  parking: 1, parkingType: 1, amenities: 1, reraApproved: 1, availableFrom: 1,
+  maintenanceIncluded: 1, photos: { $slice: 1 }, isVerified: 1, listedDate: 1, createdAt: 1,
+  views: 1, contactPhone: 1,
+};
+
+const filled = (v) => v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && v.length === 0);
+const lc = (v) => String(v).trim().toLowerCase();
+const num = (v) => {
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : null;
+};
+// Both present and equal (case and spacing ignored).
+const sameVal = (a, b) => filled(a) && filled(b) && lc(a) === lc(b);
+// Both numbers and a is within pct of b.
+const nearNum = (a, b, pct) => {
+  const x = num(a);
+  const y = num(b);
+  return x !== null && y !== null && y > 0 && Math.abs(x - y) <= y * pct;
+};
+const typeGroup = (t) => {
+  const v = lc(t || '');
+  return PROPERTY_TYPE_GROUPS.find((g) => g.includes(v)) || (v ? [v] : []);
+};
+const exactCi = (v) => new RegExp(`^${esc(v)}$`, 'i');
+const timeOf = (d) => {
+  const raw = d && typeof d === 'object' && d.$date ? d.$date : d;
+  const t = new Date(raw).getTime();
+  return Number.isNaN(t) ? 0 : t;
+};
+// Copies of one flat posted more than once by the same number.
+const dupKey = (p) => (p.contactPhone ? [p.contactPhone, p.societyId || '', p.bhk || '', p.price || ''].join('|') : '');
+
+function similarScore(base, p) {
+  const isRent = base.transactionType === 'rent';
+  const isPlot = typeGroup(base.propertyType).includes('plot');
+  const isCommercial = base.category === 'commercial';
+  let score = 0;
+
+  // Location
+  if (sameVal(base.societyId, p.societyId)) score += 30;
+  if (sameVal(base.areaId, p.areaId)) score += 20;
+
+  // Size and price
+  if (!isCommercial && !isPlot && num(base.bhk) && num(p.bhk)) {
+    const diff = Math.abs(num(base.bhk) - num(p.bhk));
+    if (diff === 0) score += 20;
+    else if (diff === 1) score += 8;
+    else score -= 20; // 1 BHK vs 3 BHK is not similar, whatever else matches
+  }
+  if (nearNum(p.price, base.price, 0.15)) score += 20;
+  else if (nearNum(p.price, base.price, 0.30)) score += 10;
+  else if (num(p.price) && num(base.price) && !nearNum(p.price, base.price, 0.5)) score -= 20; // under half or over 1.5x
+  if (nearNum(p.sqft, base.sqft, 0.20)) score += isCommercial || isPlot ? 20 : 10;
+  const baseRate = num(base.price) && num(base.sqft) ? base.price / base.sqft : null;
+  const rate = num(p.price) && num(p.sqft) ? p.price / p.sqft : null;
+  if (baseRate && rate && nearNum(rate, baseRate, 0.15)) score += isPlot ? 15 : 5;
+
+  // The property itself
+  if (sameVal(base.propertyType, p.propertyType)) score += 10;
+  if (sameVal(base.furnishing, p.furnishing)) score += 5;
+  if (!isRent && sameVal(base.saleType, p.saleType)) score += 5;
+  if (sameVal(base.ageRange, p.ageRange) || sameVal(base.ageOfProperty, p.ageOfProperty)) score += 4;
+  if (num(base.floorNumber) !== null && num(p.floorNumber) !== null && Math.abs(num(base.floorNumber) - num(p.floorNumber)) <= 3) score += 3;
+  if (sameVal(base.facing, p.facing)) score += 2;
+  if (sameVal(base.bathrooms, p.bathrooms)) score += 3;
+  const parks = (x) => x.parking === true || filled(x.parkingType);
+  if (parks(base) && parks(p)) score += 3;
+  if (Array.isArray(base.amenities) && Array.isArray(p.amenities)) {
+    const mine = new Set(base.amenities.map(lc));
+    score += Math.min(5, p.amenities.filter((a) => mine.has(lc(a))).length);
+  }
+  if (base.reraApproved === true && p.reraApproved === true) score += 2;
+
+  // Rent only
+  if (isRent) {
+    if (sameVal(base.familyOrBachelors, p.familyOrBachelors)) score += 10;
+    const a = timeOf(base.availableFrom);
+    const b = timeOf(p.availableFrom);
+    if (a && b && Math.abs(a - b) <= 30 * DAY_MS) score += 3;
+    if (filled(base.maintenanceIncluded) && filled(p.maintenanceIncluded) && base.maintenanceIncluded === p.maintenanceIncluded) score += 2;
+  }
+
+  // Commercial only (instead of BHK)
+  if (isCommercial) {
+    if (nearNum(p.workstations, base.workstations, 0.25)) score += 8;
+    if (num(base.cabins) !== null && num(p.cabins) !== null && Math.abs(num(base.cabins) - num(p.cabins)) <= 1) score += 5;
+    if (sameVal(base.washroomType, p.washroomType)) score += 3;
+  }
+
+  // Plot only
+  if (isPlot && sameVal(base.boundaryWall, p.boundaryWall)) score += 3;
+
+  // Listing quality
+  // Photos weigh a lot (a card without one is far less useful), but not enough to lift a
+  // listing that is clearly less alike.
+  if (Array.isArray(p.photos) && p.photos[0]) score += 15;
+  if (p.isVerified === true) score += 5;
+  if (Date.now() - timeOf(p.listedDate || p.createdAt) <= 30 * DAY_MS) score += 5;
+  const views = num(p.views);
+  if (views && views > 0) score += Math.min(3, Math.floor(Math.log10(views + 1)));
+
+  return score;
+}
+
 exports.similarProperties = async (req, res) => {
-  const { propertyId, limit } = req.query;
-  const lim = parseInt(limit, 10) || 4;
+  const { propertyId } = req.query;
+  const lim = Math.min(Math.max(parseInt(req.query.limit, 10) || 4, 1), 12);
   if (!propertyId) return res.json([]);
   const base = await Property.findOne({ propertyId }, { _id: 0 }).lean();
-  if (!base) return res.json([]);
-  const properties = await Property.find({
+  if (!base || !base.cityId || !base.transactionType) return res.json([]);
+
+  // Must-match rules.
+  const must = {
     propertyId: { $ne: propertyId },
     status: 'active',
     isApproved: true,
-    category: base.category,
     transactionType: base.transactionType,
-    $or: [{ areaId: base.areaId }, { cityId: base.cityId }],
-  }, { _id: 0 }).sort({ createdAt: -1 }).limit(lim).lean();
-  res.json(properties.map(publicProperty));
+    cityId: base.cityId,
+  };
+  if (base.category) must.category = base.category;
+  const group = typeGroup(base.propertyType);
+  if (group.length) must.propertyType = { $in: group.map(exactCi) };
+
+  // Candidates: same society / area, plus the rest of the city near the price and BHK.
+  const local = [base.societyId && { societyId: base.societyId }, base.areaId && { areaId: base.areaId }].filter(Boolean);
+  const wide = { ...must };
+  if (base.areaId) wide.areaId = { $ne: base.areaId };
+  if (num(base.price)) wide.price = { $gte: base.price * 0.5, $lte: base.price * 1.5 };
+  const baseBhk = num(base.bhk);
+  if (baseBhk && base.category !== 'commercial' && !group.includes('plot')) wide.bhk = { $in: [baseBhk - 1, baseBhk, baseBhk + 1] };
+
+  const [nearDocs, wideDocs] = await Promise.all([
+    local.length
+      ? Property.find({ ...must, $or: local }, SIMILAR_SCORE_FIELDS).sort({ listedDate: -1 }).limit(200).lean()
+      : [],
+    Property.find(wide, SIMILAR_SCORE_FIELDS).sort({ listedDate: -1 }).limit(150).lean(),
+  ]);
+
+  const seenIds = new Set();
+  const ranked = [...nearDocs, ...wideDocs]
+    .filter((p) => !seenIds.has(p.propertyId) && seenIds.add(p.propertyId))
+    .map((p) => ({ p, score: similarScore(base, p) }))
+    .sort((a, b) => b.score - a.score || timeOf(b.p.listedDate || b.p.createdAt) - timeOf(a.p.listedDate || a.p.createdAt));
+
+  // Pick: best first, no copies (of each other or of this flat), two per society at most.
+  const chosen = [];
+  const chosenIds = new Set();
+  const usedKeys = new Set([dupKey(base)].filter(Boolean));
+  const perSociety = new Map();
+  const take = (minScore, capSociety) => {
+    for (const { p, score } of ranked) {
+      if (chosen.length >= lim) return;
+      if (score < minScore || chosenIds.has(p.propertyId)) continue;
+      const key = dupKey(p);
+      if (key && usedKeys.has(key)) continue;
+      const soc = p.societyId || '';
+      if (capSociety && soc && (perSociety.get(soc) || 0) >= SIMILAR_MAX_PER_SOCIETY) continue;
+      chosen.push(p.propertyId);
+      chosenIds.add(p.propertyId);
+      if (key) usedKeys.add(key);
+      if (soc) perSociety.set(soc, (perSociety.get(soc) || 0) + 1);
+    }
+  };
+  for (const minScore of SIMILAR_MIN_SCORE) take(minScore, true);
+  take(0, false);
+
+  if (!chosen.length) return res.json([]);
+
+  // Full documents for the chosen ones, in ranked order, with the names the cards show.
+  const docs = await Property.find({ propertyId: { $in: chosen } }, { _id: 0 }).lean();
+  const byId = new Map(docs.map((d) => [d.propertyId, d]));
+  // Photo listings first, each group still in score order.
+  const ordered = chosen.map((id) => byId.get(id)).filter(Boolean);
+  const withPhoto = (d) => (parsePhotos(d.photos).some(Boolean) ? 0 : 1);
+  ordered.sort((a, b) => withPhoto(a) - withPhoto(b));
+  const [areas, cities, societies] = await Promise.all([
+    Area.find({ id: { $in: [...new Set(ordered.map((d) => d.areaId).filter(Boolean))] } }, { _id: 0, id: 1, name: 1 }).lean(),
+    City.find({ id: { $in: [...new Set(ordered.map((d) => d.cityId).filter(Boolean))] } }, { _id: 0, id: 1, name: 1 }).lean(),
+    Society.find({ id: { $in: [...new Set(ordered.map((d) => d.societyId).filter(Boolean))] } }, { _id: 0, id: 1, name: 1 }).lean(),
+  ]);
+  const areaName = new Map(areas.map((a) => [a.id, a.name]));
+  const cityName = new Map(cities.map((c) => [c.id, c.name]));
+  const societyName = new Map(societies.map((x) => [x.id, x.name]));
+  for (const d of ordered) {
+    d.areaName = areaName.get(d.areaId) || '';
+    d.cityName = cityName.get(d.cityId) || '';
+    d.societyName = societyName.get(d.societyId) || '';
+  }
+  res.json(ordered.map(publicProperty));
 };
 
 exports.getPropertyBySlug = async (req, res) => {
@@ -588,6 +792,21 @@ exports.deleteProperty = async (req, res) => {
 };
 
 // ---------- Inquiries / Requirements ----------
+// True when a lead's phone was proved (inquiries and requirements): an OTP token from /otp/verify (purpose 'inquiry') for
+// this number, or the logged-in user's own number. Unverified inquiries are still accepted.
+function inquiryPhoneVerified(req, token, phone) {
+  const phone10 = normalizePhone(phone);
+  if (!isValidPhone(phone10)) return false;
+  if (token) {
+    try {
+      const claims = jwt.verify(String(token), process.env.SECRET_KEY);
+      if (claims.purpose === 'inquiry' && claims.phone === phone10) return true;
+    } catch {}
+  }
+  const user = getCurrentUser(req);
+  return !!(user && normalizePhone(user.phone) === phone10);
+}
+
 exports.createInquiry = async (req, res) => {
   const body = req.body || {};
   const name = String(body.name || '').trim();
@@ -596,6 +815,7 @@ exports.createInquiry = async (req, res) => {
     return res.status(400).json({ success: false, error: 'Name and phone are required' });
   }
   const doc = {
+    phoneVerified: inquiryPhoneVerified(req, body.verifyToken, phone),
     id: uuidv4(),
     propertyId: body.propertyId || '',
     name,
@@ -629,6 +849,7 @@ exports.createRequirement = async (req, res) => {
     name: body.name || '',
     phone: isValidPhone(phone10) ? phone10 : rawPhone,
     notes: body.notes || '',
+    phoneVerified: inquiryPhoneVerified(req, body.verifyToken, rawPhone),
     status: 'new',
     createdAt: new Date().toISOString(),
   };
@@ -645,7 +866,7 @@ exports.search = async (req, res) => {
 // ---------- Stats ----------
 // GET /api/v1/search-suggestions?q=&city= -- places for the header search box. The full society
 // list is too big to send to the browser, so it is searched here instead.
-const SUGGESTION_LIMIT = 5;
+const SUGGESTION_LIMIT = 6;
 const JUNK_PLACE_RE = /^#?n\/?a$/i;
 
 exports.searchSuggestions = async (req, res) => {
@@ -656,14 +877,15 @@ exports.searchSuggestions = async (req, res) => {
   const match = { name: { $regex: esc(term), $options: 'i' }, ...(cityDoc && { cityId: cityDoc.id }) };
   const [areaDocs, societyDocs] = await Promise.all([
     Area.find({ ...match, isActive: { $ne: false } }, { _id: 0, name: 1, slug: 1, cityId: 1 }).sort({ name: 1 }).limit(30).lean(),
-    Society.find({ ...match, isActive: true }, { _id: 0, name: 1, slug: 1, areaId: 1, cityId: 1 }).sort({ name: 1 }).limit(30).lean(),
+    Society.find({ ...match, isActive: true }, { _id: 0, name: 1, slug: 1, areaId: 1, cityId: 1, project_type: 1 }).sort({ name: 1 }).limit(30).lean(),
   ]);
 
   const [cities, societyAreas] = await Promise.all([
-    City.find({ id: { $in: [...new Set([...areaDocs, ...societyDocs].map((d) => d.cityId))] } }, { _id: 0, id: 1, slug: 1 }).lean(),
+    City.find({ id: { $in: [...new Set([...areaDocs, ...societyDocs].map((d) => d.cityId))] } }, { _id: 0, id: 1, slug: 1, name: 1 }).lean(),
     Area.find({ id: { $in: [...new Set(societyDocs.map((s) => s.areaId))] } }, { _id: 0, id: 1, name: 1, slug: 1 }).lean(),
   ]);
   const citySlug = new Map(cities.map((c) => [c.id, c.slug]));
+  const cityName = new Map(cities.map((c) => [c.id, c.name]));
   const areaById = new Map(societyAreas.map((a) => [a.id, a]));
 
   // Names that begin with the typed text are the likeliest match, so they go first.
@@ -681,14 +903,22 @@ exports.searchSuggestions = async (req, res) => {
       return true;
     })
     .slice(0, SUGGESTION_LIMIT)
-    .map((a) => ({ name: a.name, slug: a.slug, citySlug: citySlug.get(a.cityId) }));
+    .map((a) => ({ name: a.name, slug: a.slug, citySlug: citySlug.get(a.cityId), cityName: cityName.get(a.cityId) || '' }));
 
   const societies = bestFirst(societyDocs)
     .filter((s) => areaById.has(s.areaId) && citySlug.has(s.cityId))
     .slice(0, SUGGESTION_LIMIT)
     .map((s) => {
       const area = areaById.get(s.areaId);
-      return { name: s.name, slug: s.slug, citySlug: citySlug.get(s.cityId), areaSlug: area.slug, areaName: area.name };
+      return {
+        name: s.name,
+        slug: s.slug,
+        citySlug: citySlug.get(s.cityId),
+        cityName: cityName.get(s.cityId) || '',
+        areaSlug: area.slug,
+        areaName: area.name,
+        projectType: s.project_type || '',
+      };
     });
 
   res.json({ areas, societies });
@@ -761,7 +991,13 @@ exports.popularSocieties = async (req, res) => {
 exports.topAreas = async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit, 10) || 10, 30);
   const match = { status: 'active', isApproved: true };
-  if (req.query.cityId) match.cityId = req.query.cityId;
+  if (req.query.cityId) {
+    match.cityId = req.query.cityId;
+  } else if (req.query.city) {
+    const cityDoc = await City.findOne({ slug: String(req.query.city) }, { _id: 0, id: 1 }).lean();
+    if (!cityDoc) return res.json([]);
+    match.cityId = cityDoc.id;
+  }
 
   const counts = await Property.aggregate([
     { $match: match },

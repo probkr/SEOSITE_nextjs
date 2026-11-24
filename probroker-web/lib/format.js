@@ -2,7 +2,7 @@
 export function fmtPrice(p) {
   if (!p) return '';
   if (p >= 10000000) return `₹${(p / 10000000).toFixed(1)}Cr`;
-  if (p >= 100000) return `₹${Math.round(p / 100000)}L`;
+  if (p >= 100000) return `₹${Math.round(p / 100000)} Lac`;
   return `₹${Number(p).toLocaleString('en-IN')}`;
 }
 

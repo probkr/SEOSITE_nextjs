@@ -5,7 +5,7 @@ import { firstImageUrl, isVideoUrl } from '@/lib/media';
 import PropertyImagePlaceholder from './PropertyImagePlaceholder';
 import PropertyMedia from './PropertyMedia';
 import CardActions from './CardActions';
-import ContactButton from './ContactButton';
+import ContactButton, { EnquiryButton } from './ContactButton';
 import ContactActions from './ContactActions';
 import FeatureIcon from './FeatureIcon';
 
@@ -120,26 +120,28 @@ export default function PropertyCard({ p, variant = 'grid' }) {
   );
 
   // Grid card: status + verified sit on the photo so the title gets the full width below.
+  // Compact badges, matching the listing-page card.
+  const badgeSize = '!text-[10px] sm:!text-[11px] !px-2 !py-0.5';
   const badges = (
     <>
       <div className="absolute top-2 left-2 flex flex-wrap items-center gap-1.5">
-        <span className={`badge shadow-card ${transCls}`}>{trans}</span>
+        <span className={`badge shadow-card ${badgeSize} ${transCls}`}>{trans}</span>
         {isVerified && (
-          <span className="badge bg-white/95 text-green-700 shadow-card">
+          <span className={`badge bg-white/95 text-green-700 shadow-card ${badgeSize}`}>
             {checkIcon}
             Verified
           </span>
         )}
       </div>
       {p.bhk ? (
-        <span className="badge absolute top-2 right-2 bg-white/95 text-gray-800 shadow-card">{parseInt(p.bhk)} BHK</span>
+        <span className={`badge absolute top-2 right-2 bg-white/95 text-gray-800 shadow-card ${badgeSize}`}>{parseInt(p.bhk)} BHK</span>
       ) : null}
     </>
   );
 
   // Row card: the Verified mark is the green corner tag, so the title gets the full width.
   const titleRow = (
-    <h3 className="text-[13px] sm:text-[19px] font-semibold text-gray-900 line-clamp-2 sm:line-clamp-1 group-hover:text-primary transition-colors">{title}</h3>
+    <h3 className="text-[13px] sm:text-[19px] font-bold text-gray-900 line-clamp-2 sm:line-clamp-1 group-hover:text-primary transition-colors">{title}</h3>
   );
 
   // Row card: a green shield on the photo's top-right for listings the PRObroker team has
@@ -177,12 +179,12 @@ export default function PropertyCard({ p, variant = 'grid' }) {
       <span className="sr-only">(opens Google Maps)</span>
     </a>
   ) : null;
-  const placeRow = placeLink();
+  const placeRow = placeLink('text-xs sm:text-[13px]', false, 'w-3.5 h-3.5 sm:w-4 sm:h-4');
 
   const priceRow = (
-    <div className="text-2xl font-bold text-primary font-heading">
+    <div className="text-xl font-bold text-primary font-heading leading-tight">
       {fmtPrice(p.price)}
-      {isRent && <span className="text-sm font-medium text-gray-500">/month</span>}
+      {isRent && <span className="text-xs sm:text-sm font-medium text-gray-500">/month</span>}
     </div>
   );
 
@@ -196,17 +198,18 @@ export default function PropertyCard({ p, variant = 'grid' }) {
     p.floorNumber ? { icon: 'floor', label: 'Floor', value: `${p.floorNumber}${p.totalFloors ? `/${p.totalFloors}` : ''}` } : null,
   ].filter(Boolean).slice(0, 4);
 
+  // Plain small icons and compact text, the same as the listing-page card.
   const factsRow = gridFacts.length > 0 ? (
-    <div className="py-3 border-y border-gray-100">
-      <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
+    <div className="py-2 sm:py-3 border-y border-gray-100">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 sm:gap-y-2.5">
         {gridFacts.map((f) => (
-          <div key={f.label} className="flex items-center gap-2 min-w-0">
-            <span className="w-8 h-8 rounded-lg bg-primary-50 text-primary flex items-center justify-center shrink-0">
-              <FactIcon name={f.icon} className="w-4 h-4" />
+          <div key={f.label} className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <span className="text-gray-400 flex items-center justify-center shrink-0">
+              <FactIcon name={f.icon} className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </span>
             <span className="flex flex-col leading-tight min-w-0">
-              <span className="text-[11px] uppercase tracking-wide text-gray-400">{f.label}</span>
-              <span title={f.value} className={`text-sm font-semibold text-gray-800 truncate ${f.capitalize ? 'capitalize' : ''}`}>{f.value}</span>
+              <span className="text-[9px] sm:text-[10px] uppercase tracking-wide text-gray-400">{f.label}</span>
+              <span title={f.value} className={`text-[11px] sm:text-[13px] font-semibold text-gray-800 truncate ${f.capitalize ? 'capitalize' : ''}`}>{f.value}</span>
             </span>
           </div>
         ))}
@@ -225,14 +228,21 @@ export default function PropertyCard({ p, variant = 'grid' }) {
       .filter(Boolean),
   )];
   const moreHighlights = highlights.length - HIGHLIGHT_LIMIT;
+  // What the chips are: furnishings, amenities, or both ("Highlights").
+  const hasFurnishingItems = Array.isArray(p.furnishingItems) && p.furnishingItems.length > 0;
+  const hasAmenities = Array.isArray(p.amenities) && p.amenities.length > 0;
+  const highlightsLabel = hasFurnishingItems && hasAmenities ? 'Highlights' : hasFurnishingItems ? 'Furnishings' : 'Amenities';
   // bleed: pulls the scrolling line out to the card edges; it must match the card's side padding.
-  const highlightsBlock = (bleed = '-mx-4 px-4 scroll-px-4') => highlights.length > 0 ? (
-    <div>
-      <div className="text-[11px] uppercase tracking-wide text-gray-400 mb-1.5">Highlights</div>
-      <div className={`${bleed} flex gap-1.5 overflow-x-auto no-scrollbar snap-x pointer-events-auto [mask-image:linear-gradient(to_right,black_85%,transparent)]`}>
+  // label: 'above' puts the name on its own line; 'inline' puts it at the start of the chip row.
+  const highlightsBlock = (bleed = '-mx-4 px-4 scroll-px-4', label = 'above') => highlights.length > 0 ? (
+    <div className={label === 'inline' ? 'flex items-center gap-2 min-w-0' : ''}>
+      <div className={`shrink-0 text-[9px] sm:text-[11px] font-semibold uppercase tracking-wide text-gray-400 ${label === 'inline' ? '' : 'mb-1 sm:mb-1.5'}`}>
+        {highlightsLabel}
+      </div>
+      <div className={`${label === 'inline' ? 'flex-1 min-w-0 ' : ''}${bleed} flex gap-1.5 overflow-x-auto no-scrollbar snap-x pointer-events-auto [mask-image:linear-gradient(to_right,black_85%,transparent)]`}>
         {highlights.slice(0, HIGHLIGHT_LIMIT).map((name) => (
-          <span key={name} className="snap-start shrink-0 whitespace-nowrap inline-flex items-center gap-1 rounded-md border border-gray-100 bg-gray-50 px-2 py-1 text-xs text-gray-700">
-            <span className="text-primary"><FeatureIcon name={name} className="w-3.5 h-3.5" /></span>
+          <span key={name} className="snap-start shrink-0 whitespace-nowrap inline-flex items-center gap-1 rounded-md border border-gray-100 bg-gray-50 px-1.5 py-0.5 sm:px-2 sm:py-1 text-[11px] sm:text-xs text-gray-700">
+            <span className="text-primary"><FeatureIcon name={name} className="w-3 h-3 sm:w-3.5 sm:h-3.5" /></span>
             {name}
           </span>
         ))}
@@ -249,7 +259,7 @@ export default function PropertyCard({ p, variant = 'grid' }) {
   ) : null;
 
   const footerRow = ownerName || posted ? (
-    <div className="flex items-center justify-between gap-2 text-[13px] text-gray-500">
+    <div className="flex items-center justify-between gap-2 text-[11px] sm:text-[13px] text-gray-500">
       <span className="truncate">{ownerName && <>Owner: <span className="text-gray-700 font-medium">{ownerName}</span></>}</span>
       {posted && <span className="shrink-0">{posted}</span>}
     </div>
@@ -273,7 +283,15 @@ export default function PropertyCard({ p, variant = 'grid' }) {
         href={href}
         className={className}
       />
-    ) : null;
+    ) : (
+      <EnquiryButton
+        propertyId={p.propertyId}
+        propertyTitle={title}
+        contactName={ownerName}
+        listingType={p.listingType}
+        className={className}
+      />
+    );
   };
 
   // The listing-page card: a short fixed-size photo with every detail packed beside it, so more
@@ -350,19 +368,14 @@ export default function PropertyCard({ p, variant = 'grid' }) {
             </span>
           )}
         </div>
-        <div className="p-4 sm:px-5 flex-1 flex flex-col gap-2.5 min-w-0 relative pointer-events-none">
+        <div className="p-4 sm:px-5 flex-1 flex flex-col gap-2 sm:gap-2.5 min-w-0 relative pointer-events-none">
           {/* Title + address on the left, save / share on the right. Phones: the title takes the
               full width and save / share sit at the right of the address line. */}
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               {titleRow}
-              <div className="mt-0.5 flex items-center justify-between gap-2 min-w-0">
-                <div className="flex-1 min-w-0 flex">
-                  {placeLink('text-[11.5px] sm:text-[16.5px]', true, 'w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]')}
-                </div>
-                <div className="sm:hidden shrink-0">
-                  <CardActions id={cardId} title={title} path={href} bordered small />
-                </div>
+              <div className="mt-0.5 flex min-w-0">
+                {placeLink('text-[11.5px] sm:text-[16.5px]', true, 'w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]')}
               </div>
             </div>
             <div className="hidden sm:block shrink-0">
@@ -371,17 +384,13 @@ export default function PropertyCard({ p, variant = 'grid' }) {
           </div>
           {/* Facts on the left, the price large on the right of the same band. Phones: price
               first, then the facts in two columns. */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-3 border-y border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-2 sm:py-3 border-y border-gray-100">
             {facts.length > 0 && (
-              <div className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-x-3 sm:gap-x-4 gap-y-1.5 sm:gap-y-3">
+              <div className="flex-1 min-w-0 grid grid-cols-2 lg:grid-cols-3 content-center lg:min-h-[4.75rem] gap-x-3 sm:gap-x-4 gap-y-1.5 sm:gap-y-3">
                 {facts.map((f) => (
                   <div key={f.label} className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                    <span
-                      className={`w-5 h-5 sm:w-8 sm:h-8 rounded-md sm:rounded-lg flex items-center justify-center shrink-0 ${
-                        f.highlight ? 'bg-primary text-white' : 'bg-primary-50 text-primary'
-                      }`}
-                    >
-                      <FactIcon name={f.icon} className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className={`flex items-center justify-center shrink-0 ${f.highlight ? 'text-primary' : 'text-gray-400'}`}>
+                      <FactIcon name={f.icon} className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </span>
                     <span className="flex flex-col leading-tight min-w-0">
                       <span className="text-[9px] sm:text-[11px] uppercase tracking-wide text-gray-400">{f.label}</span>
@@ -391,20 +400,27 @@ export default function PropertyCard({ p, variant = 'grid' }) {
                 ))}
               </div>
             )}
-            <div className="order-first sm:order-none shrink-0 sm:ml-auto sm:text-right sm:pl-4 sm:border-l sm:border-gray-100">
-              <div className="text-2xl sm:text-3xl font-bold text-primary font-heading leading-tight whitespace-nowrap">{fmtPrice(p.price)}</div>
-              {isRent && <div className="text-xs font-medium text-gray-500">per month</div>}
+            <div className="order-first sm:order-none shrink-0 sm:ml-auto flex items-center justify-between gap-3 sm:block sm:text-right sm:pl-4 sm:border-l sm:border-gray-100">
+              <div>
+                <div className="text-xl sm:text-3xl font-bold text-primary font-heading leading-tight whitespace-nowrap">{fmtPrice(p.price)}</div>
+                {isRent && <div className="text-[11px] sm:text-xs font-medium text-gray-500">per month</div>}
+              </div>
+              <div className="sm:hidden">
+                <CardActions id={cardId} title={title} path={href} bordered small />
+              </div>
             </div>
           </div>
-          {highlightsBlock('-mx-4 px-4 scroll-px-4 sm:-mx-5 sm:px-5 sm:scroll-px-5')}
-          {/* One line of the listing's description; the rest is cut off with "...". */}
-          {description && (
-            <p title={description} className="text-sm text-gray-600 truncate">{description}</p>
+          {/* One fixed-height line so every card is the same height: the highlights when there are
+              any, otherwise (sm up) one line of the description, otherwise left empty. */}
+          {highlights.length > 0 ? (
+            <div className="sm:h-7">{highlightsBlock('-mr-4 pr-4 sm:-mr-5 sm:pr-5', 'inline')}</div>
+          ) : (
+            <p title={description} className="hidden sm:block h-7 leading-7 text-sm text-gray-600 truncate">{description}</p>
           )}
           <div className="flex items-center justify-between gap-3 mt-auto">
             {/* Phones: owner name on top, "Posted by Broker 5 days ago" under it. sm and up: both
                 on one line split by a dot. Contact on the right. */}
-            <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center sm:gap-1.5 text-[13px] leading-snug text-gray-500">
+            <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center sm:gap-1.5 text-[11px] sm:text-[13px] leading-snug text-gray-500">
               {ownerName && (
                 <div className="truncate sm:shrink-0">Owner: <span className="text-gray-700 font-medium">{ownerName}</span></div>
               )}
@@ -417,7 +433,7 @@ export default function PropertyCard({ p, variant = 'grid' }) {
                 </div>
               )}
             </div>
-            {contactButton('shrink-0 !h-10')}
+            {contactButton('shrink-0 !h-9 !px-4 !text-[13px] sm:!h-10 sm:!px-5 sm:!text-sm')}
           </div>
         </div>
       </div>
@@ -427,23 +443,27 @@ export default function PropertyCard({ p, variant = 'grid' }) {
   return (
     <div className="group card overflow-hidden flex flex-col relative h-full hover:shadow-float transition-shadow duration-300">
       <Link href={href} className="absolute inset-0 z-0" aria-label={title} />
-      {/* 5:3 photo (20% shorter than 4:3) so more of the card's details fit on a phone screen. */}
-      <div className="relative w-full aspect-[5/3] overflow-hidden bg-gray-100 pointer-events-none">
+      {/* Phones: a 2:1 photo so one card and half of the next fit on the screen. sm up: 5:3. */}
+      <div className="relative w-full aspect-[2/1] sm:aspect-[5/3] overflow-hidden bg-gray-100 pointer-events-none">
         {imageInner}
         {badges}
       </div>
-      <div className="p-4 flex-1 flex flex-col gap-2 pointer-events-none">
+      <div className="p-3 sm:p-4 flex-1 flex flex-col gap-1.5 sm:gap-2 pointer-events-none">
         {/* Price on the left, save / share on the right of the same line. */}
         <div className="flex items-center justify-between gap-3">
           {priceRow}
           <CardActions id={cardId} title={title} path={href} bordered small />
         </div>
         <div className="min-w-0">
-          <h3 className="text-[17px] font-semibold text-gray-900 line-clamp-1 group-hover:text-primary transition-colors">{title}</h3>
+          <h3 className="text-sm sm:text-[15px] font-bold text-gray-900 line-clamp-1 group-hover:text-primary transition-colors">{title}</h3>
           {placeRow && <div className="mt-0.5 flex min-w-0">{placeRow}</div>}
         </div>
         {factsRow}
-        {highlightsBlock()}
+        {/* Fixed-height chip row; left out when there are none. The footer below sits at the
+            card's bottom (mt-auto), so cards side by side still line up. */}
+        {highlights.length > 0 && (
+          <div className="h-7">{highlightsBlock('-mr-3 pr-3 sm:-mr-4 sm:pr-4', 'inline')}</div>
+        )}
         {p.contactPhone ? (
           // My Contacts: the number is unlocked, so Call + WhatsApp need the full width.
           <div className="mt-auto flex flex-col gap-2.5">
@@ -453,13 +473,14 @@ export default function PropertyCard({ p, variant = 'grid' }) {
         ) : (
           // Owner name and posted date on the left, a half-width Contact button on the right.
           <div className="mt-auto flex items-center justify-between gap-3">
-            <div className="min-w-0 flex-1 text-[13px] leading-snug text-gray-500">
+            <div className="min-w-0 flex-1 text-[11px] sm:text-xs leading-snug text-gray-500">
               {ownerName && (
                 <div className="truncate">Owner: <span className="text-gray-700 font-medium">{ownerName}</span></div>
               )}
               {posted && <div className="truncate">{posted}</div>}
             </div>
-            {contactButton('w-1/2 shrink-0')}
+            {/* A compact button sized to its text, so the owner line keeps its room. */}
+            {contactButton('shrink-0 !h-9 !px-4 !text-[13px]')}
           </div>
         )}
       </div>

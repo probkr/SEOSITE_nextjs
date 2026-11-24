@@ -5,6 +5,8 @@ import { SITE_URL } from '@/lib/config';
 import PropertyCard from '@/components/PropertyCard';
 import JsonLd from '@/components/JsonLd';
 import HomeSearchWidget from '@/components/HomeSearchWidget';
+import HeroPointsTicker from '@/components/HeroPointsTicker';
+import { CITY_LANDMARKS } from '@/lib/cityLandmarks';
 import { organizationSchema, websiteSchema } from '@/lib/schema';
 
 export const revalidate = 300;
@@ -93,21 +95,6 @@ const POST_STEPS = [
   { title: 'Receive Inquiries', text: 'Connect directly with interested buyers & tenants' },
 ];
 
-// The landmark each city is known for. Photos live in /public/images/cities and come from
-// Wikimedia Commons; CC BY-SA ones must keep their credit visible on the card.
-const CITY_LANDMARKS = {
-  ahmedabad: { place: 'Atal Bridge, Sabarmati Riverfront', img: '/images/cities/ahmedabad.jpg' },
-  gandhinagar: {
-    place: 'Akshardham Temple',
-    img: '/images/cities/gandhinagar.jpg',
-    credit: { by: 'Harsh4101991', license: 'CC BY-SA 3.0', href: 'https://commons.wikimedia.org/wiki/File:Akshardham_Gandhinagar_Gujarat.jpg' },
-  },
-  pune: {
-    place: 'Shaniwar Wada',
-    img: '/images/cities/pune.jpg',
-    credit: { by: 'Aakash.gautam', license: 'CC BY-SA 3.0', href: 'https://commons.wikimedia.org/wiki/File:The_entrance_of_Shaniwar_Wada..JPG' },
-  },
-};
 
 // The two "Latest" rows on the homepage: newest listings with photos, split by transaction.
 const LATEST_SECTIONS = [
@@ -177,6 +164,14 @@ export default async function HomePage() {
     getTopAreas({ limit: 10 }, { revalidate: 3600 }).catch(() => []),
   ]);
   const topSocieties = Array.isArray(topSocietiesRaw) ? topSocietiesRaw : [];
+  // The localities with the most listings in each city: the search box lists them before
+  // anything is typed ("Popular searches in Ahmedabad").
+  const popularByCity = Object.fromEntries(await Promise.all(
+    (cities || []).map(async (c) => {
+      const list = await getTopAreas({ cityId: c.id || c._id, limit: 8 }, { revalidate: 3600 }).catch(() => []);
+      return [c.slug, (Array.isArray(list) ? list : []).map((a) => ({ name: a.name, slug: a.slug, count: a.propertyCount || 0 }))];
+    })
+  ));
   const topAreas = Array.isArray(topAreasRaw) ? topAreasRaw : [];
   const latestByTrans = { buy: latestSale?.data || [], rent: latestRent?.data || [] };
   const totalListings = totalStats?.total || 0;
@@ -203,12 +198,14 @@ export default async function HomePage() {
         style={{ backgroundImage: "url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=70')" }}
       >
         <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/65" />
-        <div className="container-px relative py-16 md:py-24 text-center">
+        {/* Phones get a compact heading and the points one at a time, so the search box fits on the first screen. */}
+        <div className="container-px relative pt-6 pb-8 md:py-24 text-center">
 
-          <h1 className="text-4xl md:text-6xl font-extrabold font-heading text-white tracking-tight leading-[1.05]">
+          <h1 className="text-[28px] sm:text-4xl md:text-6xl font-extrabold font-heading text-white tracking-tight leading-[1.1] md:leading-[1.05]">
             Find your next home,<br className="hidden md:block" /> <span className="text-accent">faster than you&apos;d think.</span>
           </h1>
-          <ul className="mt-5 flex flex-wrap justify-center items-center gap-x-3 gap-y-1 text-gray-100 text-base md:text-lg font-medium">
+          <HeroPointsTicker points={HERO_POINTS(totalListings)} className="mt-3 md:hidden" />
+          <ul className="hidden md:flex mt-5 flex-wrap justify-center items-center gap-x-3 gap-y-1 text-gray-100 text-lg font-medium">
             {HERO_POINTS(totalListings).map((pt, i) => (
               <li key={pt} className="flex items-center gap-3">
                 {i > 0 && <span aria-hidden="true" className="text-accent">&bull;</span>}
@@ -217,8 +214,8 @@ export default async function HomePage() {
             ))}
           </ul>
 
-          <div className="mt-10">
-            <HomeSearchWidget cities={cities} areas={allAreas || []} />
+          <div className="mt-5 md:mt-10">
+            <HomeSearchWidget cities={cities} areas={allAreas || []} popularAreas={popularByCity} />
           </div>
 
           </div>

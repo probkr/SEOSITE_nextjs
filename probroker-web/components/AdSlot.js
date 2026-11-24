@@ -55,7 +55,8 @@ function countClick(id) {
 /**
  * One ad card in a list of property cards. Renders nothing when no ad is live.
  * slot: the ad's position in the list (0, 1, 2 ...); each slot shows the next ad in turn.
- * variant: 'row' next to row property cards, otherwise the grid card.
+ * Negative slots count from the end (-1 = the last ad), so the sidebar differs from the feed.
+ * variant: 'row' next to row property cards, 'compact' for a sidebar strip, otherwise the grid card.
  */
 export default function AdSlot({ placement = 'listing', city, slot = 0, variant = 'grid' }) {
   const [ads, setAds] = useState(null);
@@ -67,7 +68,8 @@ export default function AdSlot({ placement = 'listing', city, slot = 0, variant 
   }, [placement, city]);
 
   if (!ads || ads.length === 0) return null;
-  const ad = ads[slot % ads.length];
+  const n = ads.length;
+  const ad = ads[((slot % n) + n) % n];
   return <AdCard ad={ad} variant={variant} />;
 }
 
@@ -99,6 +101,36 @@ export function AdCard({ ad, variant = 'grid' }) {
     : { rel: 'sponsored' };
   const cta = ad.cta_text || 'Know More';
   const row = variant === 'row';
+
+  // Sidebar strip: small picture, title and link on one short line, so it never crowds the
+  // contact / inquiry cards around it.
+  if (variant === 'compact') {
+    return (
+      <a
+        href={ad.link_url}
+        {...linkProps}
+        onClick={() => countClick(ad.id)}
+        aria-label={`Sponsored: ${ad.title}`}
+        className="group flex items-center gap-3 w-full min-w-0 rounded-xl border border-primary-100 bg-gradient-to-br from-primary-50 via-white to-white p-2.5 shadow-card hover:shadow-float hover:border-primary-200 transition-all duration-300"
+      >
+        <div className="relative w-24 aspect-[5/3] shrink-0 overflow-hidden rounded-lg bg-primary-50 ring-1 ring-black/5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={ad.image_url} alt={ad.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <span className="inline-flex items-center gap-1 text-[9.5px] font-bold uppercase tracking-[0.12em] text-primary-500">
+            <span className="w-1 h-1 rounded-full bg-accent" aria-hidden="true" />
+            Sponsored
+          </span>
+          <h3 className="text-sm font-bold font-heading text-gray-900 leading-snug truncate group-hover:text-primary transition-colors">{ad.title}</h3>
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
+            {cta}
+            <ArrowIcon className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </span>
+        </div>
+      </a>
+    );
+  }
 
   return (
     <a

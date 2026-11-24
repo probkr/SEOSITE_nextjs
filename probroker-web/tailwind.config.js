@@ -43,6 +43,16 @@ module.exports = {
         dropdown: '0 4px 20px rgba(0,0,0,0.12)',
         float: '0 8px 30px rgba(0,0,0,0.12)',
       },
+      keyframes: {
+        // Hero points ticker on phones: each point slides up into place.
+        'ticker-in': {
+          '0%': { opacity: '0', transform: 'translateY(70%)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        'ticker-in': 'ticker-in 0.45s ease-out',
+      },
     },
   },
   plugins: [],

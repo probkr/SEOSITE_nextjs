@@ -4,9 +4,28 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { startNavigationProgress } from '@/components/NavigationProgress';
 import { API_URL, CITIES, CITY_EVENT, CITY_STORAGE_KEY } from '@/lib/config';
+import { Highlight, LandmarkIcon, LocalityIcon, ProjectIcon, TrendIcon } from './PlaceIcons';
 
 const NO_RESULTS = { areas: [], societies: [] };
 const LISTING_LEAF_RE = /^((residential|commercial)-property|[a-z]+)-for-(sale|rent)$/;
+
+const KIND = {
+  locality: { label: 'Locality', Icon: LocalityIcon },
+  project: { label: 'Project', Icon: ProjectIcon },
+  landmark: { label: 'Landmark', Icon: LandmarkIcon },
+};
+
+// Popular localities per city (most listings), fetched once per visit for the empty box.
+const popularCache = new Map();
+function loadPopular(city) {
+  if (!popularCache.has(city)) {
+    popularCache.set(city, fetch(`${API_URL}/areas-featured/top?city=${encodeURIComponent(city)}&limit=6`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list) => (Array.isArray(list) ? list : []))
+      .catch(() => { popularCache.delete(city); return []; }));
+  }
+  return popularCache.get(city);
+}
 
 // Keeps what the visitor is browsing (e.g. flats for rent) when they switch locality.
 function listingLeaf(pathname) {
@@ -24,26 +43,58 @@ export default function HeaderSearch() {
   const [results, setResults] = useState(NO_RESULTS);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
+  const [popular, setPopular] = useState([]);
 
   const term = q.trim();
   const leaf = listingLeaf(pathname);
   const textHref = `/search/?q=${encodeURIComponent(term)}&city=${city}`;
-  const items = term.length < 2 ? [] : [
-    ...results.areas.map((a) => ({
-      key: `area-${a.citySlug}-${a.slug}`,
-      group: 'Localities',
-      label: a.name,
-      href: `/${a.citySlug}/${a.slug}/${leaf}/`,
-    })),
-    ...results.societies.map((s) => ({
-      key: `society-${s.slug}`,
-      group: 'Societies',
-      label: s.name,
-      sub: s.areaName,
-      href: `/${s.citySlug}/${s.areaSlug}/${s.slug}/`,
-    })),
-    { key: 'text', group: 'Landmark or keyword', label: `Search for "${term}"`, href: textHref },
-  ];
+  const cityName = (CITIES.find((c) => c.slug === city) || {}).name || '';
+  const showPopular = term.length < 2;
+
+  // Housing-style rows: "Jaldeep Park, Odhav, Ahmedabad" over "LOCALITY | AHMEDABAD". Localities
+  // and projects are mixed, names starting with the typed text first; the last row searches the
+  // text as a landmark or keyword.
+  const lower = term.toLowerCase();
+  const startsFirst = (a, b) => (b.name.toLowerCase().startsWith(lower) ? 1 : 0) - (a.name.toLowerCase().startsWith(lower) ? 1 : 0);
+  const items = showPopular
+    ? popular.map((a) => ({
+      key: `pop-${a.slug}`,
+      kind: 'locality',
+      name: a.name,
+      place: [a.name, a.cityName].filter(Boolean).join(', '),
+      meta: a.propertyCount ? `${a.propertyCount.toLocaleString('en-IN')} properties` : a.cityName,
+      href: `/${a.citySlug || city}/${a.slug}/${leaf}/`,
+    }))
+    : [
+      ...[
+        ...results.areas.map((a) => ({
+          key: `area-${a.citySlug}-${a.slug}`,
+          kind: 'locality',
+          name: a.name,
+          place: [a.name, a.cityName].filter(Boolean).join(', '),
+          meta: a.cityName,
+          href: `/${a.citySlug}/${a.slug}/${leaf}/`,
+        })),
+        ...results.societies.map((s) => ({
+          key: `society-${s.slug}`,
+          kind: 'project',
+          name: s.name,
+          place: [s.name, s.areaName, s.cityName].filter(Boolean).join(', '),
+          meta: s.cityName,
+          typeLabel: s.projectType === 'commercial' ? 'Commercial Project' : 'Project',
+          href: `/${s.citySlug}/${s.areaSlug}/${s.slug}/`,
+        })),
+      ].sort(startsFirst),
+      { key: 'text', kind: 'landmark', name: term, place: `Search "${term}"`, meta: 'Landmark or keyword', typeLabel: 'Landmark', href: textHref },
+    ];
+
+  // The empty box lists the city's popular localities.
+  useEffect(() => {
+    if (!open || !showPopular) return undefined;
+    let alive = true;
+    loadPopular(city).then((list) => { if (alive) setPopular(list); });
+    return () => { alive = false; };
+  }, [open, showPopular, city]);
 
   useEffect(() => {
     const urlCity = pathname.split('/')[1];
@@ -137,6 +188,7 @@ export default function HeaderSearch() {
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
+          onClick={() => setOpen(true)}
           onKeyDown={onKeyDown}
           placeholder="Search locality, society or landmark"
           autoComplete="off"
@@ -145,27 +197,46 @@ export default function HeaderSearch() {
       </form>
 
       {showList && (
-        <ul id={listId} role="listbox" className="absolute z-50 left-0 right-0 top-full mt-2 bg-white border border-gray-100 rounded-xl shadow-dropdown max-h-96 overflow-y-auto py-1">
-          {items.map((item, i) => (
-            <li key={item.key} role="presentation">
-              {item.group !== items[i - 1]?.group && (
-                <div className="px-4 pt-2 pb-1 text-[11px] font-bold uppercase tracking-wider text-gray-400">{item.group}</div>
-              )}
-              <button
-                id={`${listId}-${i}`}
-                type="button"
-                role="option"
-                aria-selected={active === i}
-                onClick={() => go(item.href)}
-                onMouseEnter={() => setActive(i)}
-                className={`w-full text-left px-4 py-2 text-sm ${active === i ? 'bg-primary-50 text-primary' : 'text-gray-700'}`}
-              >
-                <span className="block truncate">{item.label}</span>
-                {item.sub && <span className="block truncate text-xs text-gray-400">{item.sub}</span>}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className="absolute z-50 left-0 right-0 top-full mt-2 bg-white border border-gray-100 rounded-xl shadow-dropdown overflow-hidden">
+          {showPopular && (
+            <div className="flex items-center gap-1.5 px-4 pt-3 pb-2 text-xs text-gray-500">
+              <TrendIcon />
+              Popular searches in <span className="font-bold text-gray-800">{cityName}</span>
+            </div>
+          )}
+          <ul id={listId} role="listbox" className="max-h-[26rem] overflow-y-auto py-1">
+            {items.map((item, i) => {
+              const { label, Icon } = KIND[item.kind];
+              return (
+                <li key={item.key} role="presentation">
+                  <button
+                    id={`${listId}-${i}`}
+                    type="button"
+                    role="option"
+                    aria-selected={active === i}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => go(item.href)}
+                    onMouseEnter={() => setActive(i)}
+                    className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors ${active === i ? 'bg-primary-50' : ''}`}
+                  >
+                    <span className={`shrink-0 ${active === i ? 'text-primary' : 'text-gray-500'}`}>
+                      <Icon />
+                    </span>
+                    <span className="min-w-0 leading-tight">
+                      <span className="block truncate text-sm text-gray-700">
+                        {item.kind === 'landmark' ? item.place : <Highlight text={item.place} term={showPopular ? '' : term} />}
+                      </span>
+                      <span className="block mt-0.5 truncate text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                        {item.typeLabel || label}
+                        {item.meta && <><span className="mx-1 font-normal text-gray-300">|</span>{item.meta}</>}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
     </div>
   );

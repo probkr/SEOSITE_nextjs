@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useId } from 'react';
 import { useRouter } from 'next/navigation';
 import { CITY_STORAGE_KEY, CITY_EVENT } from '@/lib/config';
 import { startNavigationProgress } from '@/components/NavigationProgress';
+import { Highlight, LocalityIcon, TrendIcon } from './PlaceIcons';
 
 // Category tabs -> which SEO category they map to.
 // `pt` = property-type slug used by the /{city}/{type}s-for-{trans}/ router.
@@ -46,9 +47,113 @@ const TRANS_OPTIONS = [
 // so no value is cut off. Desktop: one borderless row split by dividers.
 const fieldCls = 'flex flex-col justify-center gap-0.5 px-3 lg:px-4 py-1.5 lg:py-2.5 rounded-xl border border-gray-200 lg:border-0 hover:bg-gray-50 focus-within:bg-gray-50 focus-within:border-primary/40 transition-colors min-w-0';
 const labelCls = 'text-[10px] lg:text-[11px] font-bold uppercase tracking-wider text-gray-400 truncate';
-const selectCls = 'w-full -ml-1 bg-transparent border-0 outline-none text-sm lg:text-[15px] font-semibold text-gray-900 cursor-pointer truncate';
 
-export default function HomeSearchWidget({ cities = [], areas = [] }) {
+// A styled replacement for <select>: the browser's own option list can't be themed.
+// `align="right"` opens the list from the field's right edge (for the right-hand column on phones).
+function FieldSelect({ label, value, options, onChange, align = 'left', className = '' }) {
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const ref = useRef(null);
+  const listId = useId();
+  const current = options.find((o) => o.value === value) || options[0];
+
+  useEffect(() => {
+    if (!open) return undefined;
+    setActive(Math.max(0, options.findIndex((o) => o.value === value)));
+    const onDoc = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('touchstart', onDoc);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('touchstart', onDoc);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  function choose(o) {
+    onChange(o.value);
+    setOpen(false);
+  }
+
+  function onKeyDown(e) {
+    if (e.key === 'Escape') {
+      setOpen(false);
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!open) setOpen(true);
+      else setActive((i) => (i + (e.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length);
+    } else if ((e.key === 'Enter' || e.key === ' ') && open) {
+      e.preventDefault();
+      choose(options[active]);
+    }
+  }
+
+  return (
+    <div ref={ref} className={`relative ${className}`}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        onKeyDown={onKeyDown}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={listId}
+        aria-activedescendant={open ? `${listId}-${active}` : undefined}
+        className={`${fieldCls} w-full h-full text-left outline-none ${open ? 'bg-gray-50 border-primary/40' : ''}`}
+      >
+        <span className={labelCls}>{label}</span>
+        <span className="flex items-center justify-between gap-2 min-w-0">
+          <span className="truncate text-sm lg:text-[15px] font-semibold text-gray-900">{current?.label}</span>
+          <svg
+            className={`w-4 h-4 shrink-0 transition-transform duration-200 ${open ? 'rotate-180 text-primary' : 'text-gray-400'}`}
+            fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24" aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+          </svg>
+        </span>
+      </button>
+
+      {open && (
+        <ul
+          id={listId}
+          role="listbox"
+          className={`absolute z-30 top-full mt-2 min-w-full w-max max-w-[calc(100vw-2rem)] max-h-64 overflow-y-auto p-1.5 bg-white border border-gray-100 rounded-xl shadow-float ${
+            align === 'right' ? 'right-0 lg:right-auto lg:left-0' : 'left-0'
+          }`}
+        >
+          {options.map((o, i) => {
+            const selected = o.value === value;
+            return (
+              <li
+                key={o.value || 'all'}
+                id={`${listId}-${i}`}
+                role="option"
+                aria-selected={selected}
+                onMouseEnter={() => setActive(i)}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => choose(o)}
+                className={`flex items-center justify-between gap-4 px-3 py-2.5 rounded-lg text-sm cursor-pointer transition-colors ${
+                  selected ? 'text-primary font-semibold' : 'text-gray-700'
+                } ${i === active ? 'bg-primary-50' : ''}`}
+              >
+                {o.label}
+                {selected && (
+                  <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// popularAreas: { [citySlug]: [{ name, slug, count }] }, shown before anything is typed.
+export default function HomeSearchWidget({ cities = [], areas = [], popularAreas = {} }) {
   const router = useRouter();
   const [tab, setTab] = useState('residential');
   const [trans, setTrans] = useState('sale');
@@ -58,6 +163,7 @@ export default function HomeSearchWidget({ cities = [], areas = [] }) {
   const [q, setQ] = useState('');
   const [picked, setPicked] = useState(null); // { slug, name } when a locality is chosen
   const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
   const boxRef = useRef(null);
 
   const cityList = cities.length ? cities : [{ slug: 'ahmedabad', name: 'Ahmedabad' }];
@@ -86,6 +192,35 @@ export default function HomeSearchWidget({ cities = [], areas = [] }) {
       })
       .slice(0, 8);
   }, [q, city, areas, cityList]);
+
+  // Empty box: the city's popular localities. Typing: the matching ones.
+  const cityName = (cityList.find((c) => c.slug === city) || {}).name || '';
+  const showPopular = !q.trim() && !picked;
+  const localityList = showPopular ? popularAreas[city] || [] : suggestions;
+
+  useEffect(() => { setActive(0); }, [q, city, showPopular]);
+
+  function chooseLocality(a) {
+    setPicked({ slug: a.slug, name: a.name });
+    setOpen(false);
+  }
+
+  function onLocalityKey(e) {
+    if (e.key === 'Escape') {
+      setOpen(false);
+      return;
+    }
+    if (!localityList.length) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      setOpen(true);
+      setActive((i) => (i + (e.key === 'ArrowDown' ? 1 : -1) + localityList.length) % localityList.length);
+    } else if (e.key === 'Enter' && open && localityList[active]) {
+      // Pick the highlighted locality instead of submitting the form.
+      e.preventDefault();
+      chooseLocality(localityList[active]);
+    }
+  }
 
   // Follow the city chosen in the header's city picker.
   useEffect(() => {
@@ -181,24 +316,17 @@ export default function HomeSearchWidget({ cities = [], areas = [] }) {
             Desktop: one row in DOM order (City, Locality, Type, BHK). */}
         <div className="grid grid-cols-2 gap-2 lg:gap-0 lg:flex lg:flex-row flex-1 min-w-0 lg:divide-x divide-gray-100">
           {/* City */}
-          <label className={`${fieldCls} lg:w-44`}>
-            <span className={labelCls}>City</span>
-            <select
-              value={city}
-              onChange={(e) => {
-                setCity(e.target.value);
-                setPicked(null);
-                setQ('');
-              }}
-              className={selectCls}
-            >
-              {cityList.map((c) => (
-                <option key={c.slug} value={c.slug}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <FieldSelect
+            label="City"
+            value={city}
+            options={cityList.map((c) => ({ value: c.slug, label: c.name }))}
+            onChange={(v) => {
+              setCity(v);
+              setPicked(null);
+              setQ('');
+            }}
+            className="lg:w-44"
+          />
 
           {/* Locality autocomplete */}
           <div ref={boxRef} className={`${fieldCls} relative flex-1 col-span-2 order-first lg:order-none`}>
@@ -215,6 +343,12 @@ export default function HomeSearchWidget({ cities = [], areas = [] }) {
                   setOpen(true);
                 }}
                 onFocus={() => setOpen(true)}
+                onClick={() => setOpen(true)}
+                onKeyDown={onLocalityKey}
+                role="combobox"
+                aria-expanded={open && localityList.length > 0}
+                aria-controls="home-locality-list"
+                aria-autocomplete="list"
                 placeholder="Search locality, society or landmark"
                 autoComplete="off"
                 className="w-full bg-transparent border-0 p-0 outline-none text-[15px] font-semibold text-gray-900 placeholder:text-gray-400 placeholder:font-normal"
@@ -233,40 +367,57 @@ export default function HomeSearchWidget({ cities = [], areas = [] }) {
                 </button>
               )}
             </div>
-            {open && suggestions.length > 0 && (
-              <ul className="absolute z-30 left-0 right-0 top-full mt-2 bg-white border border-gray-100 rounded-xl shadow-float max-h-64 overflow-y-auto py-1">
-                {suggestions.map((a) => (
-                  <li key={a.slug}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPicked({ slug: a.slug, name: a.name });
-                        setOpen(false);
-                      }}
-                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary"
-                    >
-                      {a.name}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+            {open && localityList.length > 0 && (
+              <div className="absolute z-30 left-0 right-0 lg:right-auto lg:min-w-[26rem] top-full mt-2 bg-white border border-gray-100 rounded-xl shadow-float overflow-hidden">
+                {showPopular && (
+                  <div className="flex items-center gap-1.5 px-4 pt-3 pb-2 text-xs text-gray-500">
+                    <TrendIcon />
+                    Popular searches in <span className="font-bold text-gray-800">{cityName}</span>
+                  </div>
+                )}
+                <ul id="home-locality-list" role="listbox" aria-label="Localities" className="max-h-80 overflow-y-auto pb-1.5">
+                  {localityList.map((a, i) => (
+                    <li key={a.slug} role="option" aria-selected={i === active}>
+                      <button
+                        type="button"
+                        onMouseEnter={() => setActive(i)}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => chooseLocality(a)}
+                        className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors ${i === active ? 'bg-primary-50' : ''}`}
+                      >
+                        <span className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center ${i === active ? 'bg-white text-primary' : 'bg-gray-100 text-gray-500'}`}>
+                          <LocalityIcon />
+                        </span>
+                        <span className="min-w-0 leading-tight">
+                          <span className="block text-[15px] text-gray-700 truncate">
+                            <Highlight text={a.name} term={showPopular ? '' : q} />
+                          </span>
+                          <span className="block mt-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                            Locality{a.count ? ` · ${a.count.toLocaleString('en-IN')} properties` : ''}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
 
           {/* Subtype */}
-          <label className={`${fieldCls} lg:w-48`}>
-            <span className={labelCls}>
-              <span className="lg:hidden">Type</span>
-              <span className="hidden lg:inline">Property Type</span>
-            </span>
-            <select value={subtype} onChange={(e) => setSubtype(e.target.value)} className={selectCls}>
-              {subtypeList.map((s) => (
-                <option key={s.slug || 'all'} value={s.slug}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <FieldSelect
+            label={
+              <>
+                <span className="lg:hidden">Type</span>
+                <span className="hidden lg:inline">Property Type</span>
+              </>
+            }
+            value={subtype}
+            options={subtypeList.map((s) => ({ value: s.slug, label: s.label }))}
+            onChange={setSubtype}
+            align="right"
+            className="lg:w-48"
+          />
 
           {/* BHK — only meaningful for residential dwellings. Phones: a row of chips, one tap each. */}
           {tab === 'residential' && (
@@ -290,17 +441,13 @@ export default function HomeSearchWidget({ cities = [], areas = [] }) {
             </div>
           )}
           {tab === 'residential' && (
-            <label className={`${fieldCls} hidden lg:flex lg:w-32`}>
-              <span className={labelCls}>BHK</span>
-              <select value={bhk} onChange={(e) => setBhk(e.target.value)} className={selectCls}>
-                <option value="">Any</option>
-                {BHK_OPTIONS.map((b) => (
-                  <option key={b} value={b}>
-                    {b} BHK
-                  </option>
-                ))}
-              </select>
-            </label>
+            <FieldSelect
+              label="BHK"
+              value={bhk}
+              options={[{ value: '', label: 'Any' }, ...BHK_OPTIONS.map((b) => ({ value: b, label: `${b} BHK` }))]}
+              onChange={setBhk}
+              className="hidden lg:block lg:w-32"
+            />
           )}
         </div>
 

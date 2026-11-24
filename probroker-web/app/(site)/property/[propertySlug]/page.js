@@ -1,4 +1,4 @@
-import { getProperty, getProperties, getRedirect } from '@/lib/api';
+import { getProperty, getSimilarProperties, getRedirect } from '@/lib/api';
 import { fmtPrice, buildPropertyTitle, buildPropertySlug, fmtPropDesc } from '@/lib/format';
 import { SITE_URL } from '@/lib/config';
 import { firstImageUrl } from '@/lib/media';
@@ -7,6 +7,7 @@ import PropertyGallery from '@/components/PropertyGallery';
 import JsonLd from '@/components/JsonLd';
 import { realEstateListingSchema, breadcrumbSchema } from '@/lib/schema';
 import InquiryForm from '@/components/InquiryForm';
+import AdSlot from '@/components/AdSlot';
 import FeatureIcon from '@/components/FeatureIcon';
 import PropertySectionTabs from '@/components/PropertySectionTabs';
 import Link from 'next/link';
@@ -126,13 +127,11 @@ export default async function PropertyPage({ params }) {
   breadcrumbItems.push({ name: title, url: canonical });
   const breadcrumbLd = breadcrumbSchema(breadcrumbItems);
 
+  // Same buy/rent, category, city and kind of property; ranked by society, area, BHK, price, size
+  // and more on the API side (publicController.similarProperties).
   let similar = [];
   try {
-    const similarResult = await getProperties(
-      { status: 'active', isApproved: true, areaId: prop.areaId, bhk: prop.bhk, limit: 4 },
-      { revalidate: 900 }
-    );
-    similar = (similarResult?.data || []).filter((p) => p.propertyId !== prop.propertyId);
+    similar = await getSimilarProperties(prop.propertyId, 4, { revalidate: 900 });
   } catch {}
 
   const photos = prop.photos || [];
@@ -339,6 +338,12 @@ export default async function PropertyPage({ params }) {
                 contactName={prop.contactName}
                 hasContact={prop.hasContact}
                 listingType={prop.listingType}
+                between={
+                  // Hidden while no ad is live, so the gap doesn't show either.
+                  <div className="empty:hidden">
+                    <AdSlot placement="listing" city={prop.citySlug} slot={0} variant="compact" />
+                  </div>
+                }
               />
             </div>
           </div>

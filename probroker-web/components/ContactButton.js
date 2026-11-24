@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import ContactActions, { PhoneIcon } from './ContactActions';
 import QuickAuthForm from './auth/QuickAuthForm';
+import InquiryOtpForm from './InquiryOtpForm';
 import { creditsLeft, useContact } from '@/lib/useContact';
 
 function PopupBody({ contact, propertyTitle, href }) {
@@ -141,6 +142,45 @@ export default function ContactButton({ propertyId, propertyTitle, contactName, 
       {open && createPortal(
         <ContactPopup title={contact.contactName || contactName || `Contact ${poster}`} subtitle={propertyTitle} onClose={close}>
           <PopupBody contact={contact} propertyTitle={propertyTitle} href={href} />
+        </ContactPopup>,
+        document.body,
+      )}
+    </>
+  );
+}
+
+// Same Contact button for listings without a phone on file: it opens an enquiry form instead.
+export function EnquiryButton({ propertyId, propertyTitle, contactName, listingType, className = '' }) {
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  const poster = listingType === 'owner' ? 'owner' : 'dealer';
+
+  function openPopup(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setOpen(true);
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={openPopup}
+        className={`btn-primary relative z-10 pointer-events-auto h-11 !py-0 !px-5 text-sm gap-1.5 ${className}`}
+      >
+        <PhoneIcon />
+        Contact
+      </button>
+      {open && createPortal(
+        <ContactPopup title={contactName ? `Enquire with ${contactName}` : 'Send an Enquiry'} subtitle={propertyTitle} onClose={close}>
+          <InquiryOtpForm
+            propertyId={propertyId}
+            defaultMessage={`I'm interested in ${propertyTitle}`}
+            requireOtp={false}
+            submitLabel="Send Enquiry"
+            messagePlaceholder="Message (optional)"
+            successText={`Enquiry sent! The ${poster} will contact you shortly.`}
+          />
         </ContactPopup>,
         document.body,
       )}

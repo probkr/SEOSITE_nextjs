@@ -745,17 +745,6 @@ export function ListingFilterBar({ activeFilters = {}, resultCount: serverCount,
   );
 }
 
-/** Result count shown under the page heading. Filters, chips and Sort live in the filter strip. */
-export function ListingResultsBar({ resultCount: serverCount }) {
-  const resultCount = useLiveCount(serverCount);
-  if (typeof resultCount !== 'number') return <div className="mb-4" />;
-  return (
-    <p className="mt-2 mb-4 text-sm font-medium text-gray-600">
-      {resultCount.toLocaleString('en-IN')} {resultCount === 1 ? 'property' : 'properties'} found
-    </p>
-  );
-}
-
 /** Self-contained filter card (used in the /search sidebar). */
 export default function ListingFilters({ activeFilters = {}, resultCount: serverCount, areas = [], showAreaFilter = false }) {
   const s = useListingFilters(activeFilters, areas);

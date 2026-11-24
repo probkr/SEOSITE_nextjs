@@ -63,27 +63,42 @@ const initialsOf = (name = '') =>
 function CreditsBadge({ credits, onDark }) {
   const label = `${credits} free ${credits === 1 ? 'coin' : 'coins'} left`;
   const empty = credits === 0;
-  // Coin + "5 Credits" (only the number on phones). Gold while there are credits, grey coin and
-  // red number once they run out.
-  const tone = onDark
-    ? 'border-white/30 bg-white/10 text-white'
-    : empty ? 'border-gray-200 bg-gray-50 text-gray-600' : 'border-amber-200 bg-amber-50 text-amber-900';
+  // White pill: gold coin stack | number. The number turns red at zero; the label is in aria-label/title.
   return (
     <span
       role="status"
       aria-label={label}
       title={label}
-      className={`inline-flex items-center gap-1.5 h-10 pl-1.5 pr-3 sm:pr-3.5 rounded-full border whitespace-nowrap shrink-0 text-sm ${tone}`}
+      className={`inline-flex items-center gap-2 h-10 pl-2 pr-3.5 rounded-full border bg-white whitespace-nowrap shrink-0 text-sm text-gray-900 ${
+        onDark ? 'border-white/60 shadow-[0_2px_12px_rgba(0,0,0,0.25)]' : 'border-gray-200 shadow-card'
+      }`}
     >
-      <svg className={`w-7 h-7 shrink-0 drop-shadow-sm ${empty ? 'grayscale opacity-60' : ''}`} viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="12" r="10.5" fill="#F59E0B" />
-        <circle cx="12" cy="12" r="8" fill="#FCD34D" />
-        <circle cx="12" cy="12" r="8" fill="none" stroke="#D97706" strokeWidth="0.75" />
-        <path fill="#B45309" d="M12 6.8l1.5 3.2 3.5.4-2.6 2.4.7 3.4-3.1-1.7-3.1 1.7.7-3.4-2.6-2.4 3.5-.4z" />
-      </svg>
-      <span className={`font-extrabold tabular-nums ${empty ? (onDark ? 'text-red-300' : 'text-red-600') : ''}`}>{credits}</span>
-      <span className={`hidden sm:inline font-semibold ${onDark ? 'text-white/80' : 'opacity-80'}`}>{credits === 1 ? 'Credit' : 'Credits'}</span>
+      <CoinStackIcon className="w-7 h-7 shrink-0" />
+      <span aria-hidden="true" className="w-px h-5 rounded-full bg-gray-300" />
+      <span className={`text-base font-extrabold tabular-nums ${empty ? 'text-red-600' : ''}`}>{credits}</span>
     </span>
+  );
+}
+
+// Three stacked gold coins with a front coin carrying a house mark.
+function CoinStackIcon({ className = '' }) {
+  // Coin layers in the back stack, bottom first: top-face y and the coin's thickness.
+  const layers = [22, 17.5, 13];
+  return (
+    <svg className={className} viewBox="0 4 32 32" aria-hidden="true">
+      {layers.map((y) => (
+        <g key={y}>
+          <path d={`M3 ${y}v3.2a8 3 0 0 0 16 0V${y}z`} fill="#D97706" />
+          <ellipse cx="11" cy={y} rx="8" ry="3" fill="#FBBF24" stroke="#F59E0B" strokeWidth="0.6" />
+          <ellipse cx="9.5" cy={y - 0.6} rx="3.5" ry="1" fill="#FDE68A" opacity="0.8" />
+        </g>
+      ))}
+      <circle cx="22" cy="21.5" r="8" fill="#F59E0B" />
+      <circle cx="22" cy="21.5" r="8" fill="none" stroke="#D97706" strokeWidth="0.8" />
+      <circle cx="22" cy="21.5" r="6.1" fill="#FCD34D" />
+      <path d="M17.6 18.6a5 5 0 0 1 4.4-2.7" fill="none" stroke="#FEF3C7" strokeWidth="1" strokeLinecap="round" />
+      <path fill="#B45309" d="M22 18.1l-4 3.4h1.3v3.8h2v-2.4h1.4v2.4h2v-3.8H26z" />
+    </svg>
   );
 }
 
@@ -227,7 +242,105 @@ function pathForCity(pathname, slug) {
   return listing ? `/${slug}/${listing}/` : `/${slug}/`;
 }
 
-function CityPicker({ onDark }) {
+// The city last picked in any CityPicker (they all broadcast CITY_EVENT), for the mobile menu links.
+function useSelectedCity() {
+  const [slug, setSlug] = useState(CITIES[0].slug);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(CITY_STORAGE_KEY);
+      if (saved && isCitySlug(saved)) setSlug(saved);
+    } catch {}
+    const onChange = (e) => isCitySlug(e.detail) && setSlug(e.detail);
+    window.addEventListener(CITY_EVENT, onChange);
+    return () => window.removeEventListener(CITY_EVENT, onChange);
+  }, []);
+  return CITIES.find((c) => c.slug === slug) || CITIES[0];
+}
+
+// Heroicons (outline) paths for the menu.
+const ICONS = {
+  home: 'M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3v-6h6v6h3a1 1 0 001-1V10',
+  shop: 'M3 9l1.5-5h15L21 9M3 9h18M3 9a3 3 0 006 0 3 3 0 006 0 3 3 0 006 0M5 12v9h14v-9M9 21v-5h6v5',
+  societies: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
+  blog: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z',
+  about: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+  contact: 'M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z',
+};
+
+const Icon = ({ d, className = 'w-5 h-5' }) => (
+  <svg className={className} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24" aria-hidden="true">
+    <path strokeLinecap="round" strokeLinejoin="round" d={d} />
+  </svg>
+);
+
+const MENU_LISTINGS = [
+  { cat: 'residential', trans: 'sale', title: 'Buy', sub: 'Residential', icon: ICONS.home, tone: 'bg-primary-50 text-primary' },
+  { cat: 'residential', trans: 'rent', title: 'Rent', sub: 'Residential', icon: ICONS.home, tone: 'bg-amber-50 text-amber-600' },
+  { cat: 'commercial', trans: 'sale', title: 'Buy', sub: 'Commercial', icon: ICONS.shop, tone: 'bg-primary-50 text-primary' },
+  { cat: 'commercial', trans: 'rent', title: 'Rent', sub: 'Commercial', icon: ICONS.shop, tone: 'bg-amber-50 text-amber-600' },
+];
+
+const MENU_LINKS = [
+  { href: '/societies/', label: 'Societies', icon: ICONS.societies },
+  { href: '/blog/', label: 'Blog', icon: ICONS.blog },
+  { href: '/about/', label: 'About', icon: ICONS.about },
+  { href: '/contact/', label: 'Contact', icon: ICONS.contact },
+];
+
+// Compact menu: the chosen city's four listing pages as tiles, then the other pages as icon shortcuts.
+function MobileMenu({ withSearch }) {
+  const city = useSelectedCity();
+  return (
+    <div
+      className={`${withSearch ? '' : 'xl:hidden'} border-t border-gray-100 bg-white px-4 pt-3 pb-4 max-h-[calc(100dvh-4rem)] overflow-y-auto lg:absolute lg:right-4 lg:top-full lg:mt-2 lg:w-[24rem] lg:max-h-[calc(100vh-5.5rem)] lg:rounded-2xl lg:border lg:shadow-dropdown`}
+    >
+      <div className="sm:hidden mb-3"><CityPicker onDark={false} full /></div>
+
+      <div className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+        Explore in <span className="text-primary">{city.name}</span>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {MENU_LISTINGS.map((l) => (
+          <Link
+            key={`${l.cat}-${l.trans}`}
+            href={`/${city.slug}/${l.cat}-property-for-${l.trans}/`}
+            className="flex items-center gap-2.5 p-2.5 rounded-xl border border-gray-100 bg-gray-50/60 hover:border-primary/30 hover:bg-primary-50/50 active:scale-[0.98] transition-all"
+          >
+            <span className={`w-9 h-9 shrink-0 rounded-lg flex items-center justify-center ${l.tone}`}>
+              <Icon d={l.icon} />
+            </span>
+            <span className="min-w-0 leading-tight">
+              <span className="block text-sm font-bold text-gray-900">{l.title}</span>
+              <span className="block text-xs font-medium text-gray-500 truncate">{l.sub}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-4 gap-1 mt-3 pt-3 border-t border-gray-100">
+        {MENU_LINKS.map((l) => (
+          <Link
+            key={l.href}
+            href={l.href}
+            className="flex flex-col items-center gap-1.5 py-2 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-primary transition-colors"
+          >
+            <span className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+              <Icon d={l.icon} />
+            </span>
+            <span className="text-xs font-semibold">{l.label}</span>
+          </Link>
+        ))}
+      </div>
+
+      {/* The header shows this button from md up, so the menu only needs it on phones. */}
+      <Link href="/post-property/" className={`${postBtnCls(false)} !flex md:!hidden w-full justify-center !h-11 mt-3`}>
+        {plusIcon}Post Property <span className={freeBadgeCls}>Free</span>
+      </Link>
+    </div>
+  );
+}
+
+function CityPicker({ onDark, full = false }) {
   const pathname = usePathname();
   const router = useRouter();
   const [city, setCity] = useState(CITIES[0].slug);
@@ -273,14 +386,14 @@ function CityPicker({ onDark }) {
   const current = CITIES.find((c) => c.slug === city) || CITIES[0];
 
   return (
-    <div ref={boxRef} className="relative">
+    <div ref={boxRef} className={`relative ${full ? 'w-full' : ''}`}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={`Selected city: ${current.name}. Change city`}
-        className={`flex items-center gap-1.5 h-10 px-3 rounded-lg text-sm font-semibold border transition-colors ${
+        className={`flex items-center gap-1.5 h-10 px-3 rounded-lg text-sm font-semibold border transition-colors ${full ? 'w-full [&>span:last-child]:ml-auto' : ''} ${
           onDark
             ? 'text-white border-white/30 bg-white/10 hover:bg-white/20'
             : 'text-gray-700 border-gray-200 bg-white/60 hover:border-primary hover:text-primary'
@@ -295,7 +408,7 @@ function CityPicker({ onDark }) {
         <ul
           role="listbox"
           aria-label="Choose city"
-          className="absolute left-0 top-full mt-2 min-w-[200px] bg-white rounded-xl shadow-dropdown border border-gray-100 py-2 z-50"
+          className="absolute left-0 right-auto top-full mt-2 min-w-[200px] w-full bg-white rounded-xl shadow-dropdown border border-gray-100 py-2 z-50"
         >
           <li className="px-4 pb-1 text-xs uppercase tracking-wide text-gray-400 font-bold">Select City</li>
           {CITIES.map((c) => (
@@ -444,32 +557,7 @@ export default function Header({ settings } = {}) {
         </div>
       )}
 
-      {open && (
-        <div className={`${withSearch ? '' : 'xl:hidden'} border-t border-gray-100 bg-white px-4 py-4 space-y-3 text-sm font-semibold text-gray-700 lg:absolute lg:right-4 lg:top-full lg:mt-2 lg:w-[26rem] lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:rounded-xl lg:border lg:shadow-dropdown`}>
-          <div className="sm:hidden"><CityPicker onDark={false} /></div>
-          <div className="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4">
-            {CITIES.map((c) => (
-              <div key={c.slug} className="pb-2 border-b border-gray-50">
-                <div className="text-xs uppercase tracking-wide text-gray-400 font-bold mb-1">{c.name}</div>
-                <Link className="block py-1 hover:text-primary" href={`/${c.slug}/residential-property-for-sale/`}>Residential Buy</Link>
-                <Link className="block py-1 hover:text-primary" href={`/${c.slug}/residential-property-for-rent/`}>Residential Rent</Link>
-                <Link className="block py-1 hover:text-primary" href={`/${c.slug}/commercial-property-for-sale/`}>Commercial Buy</Link>
-                <Link className="block py-1 hover:text-primary" href={`/${c.slug}/commercial-property-for-rent/`}>Commercial Rent</Link>
-              </div>
-            ))}
-          </div>
-          <div className="lg:grid lg:grid-cols-2 lg:gap-x-4">
-            <Link href="/societies/" className="block py-1 hover:text-primary">Societies</Link>
-            <Link href="/blog/" className="block py-1 hover:text-primary">Blog</Link>
-            <Link href="/about/" className="block py-1 hover:text-primary">About</Link>
-            <Link href="/contact/" className="block py-1 hover:text-primary">Contact</Link>
-          </div>
-          {/* The header shows this button from md up, so the menu only needs it on phones. */}
-          <Link href="/post-property/" className={`${postBtnCls(false)} !flex md:!hidden w-full justify-center mt-2`}>
-            {plusIcon}Post Property <span className={freeBadgeCls}>Free</span>
-          </Link>
-        </div>
-      )}
+      {open && <MobileMenu withSearch={withSearch} />}
     </header>
   );
 }

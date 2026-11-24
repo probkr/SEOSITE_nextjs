@@ -6,7 +6,8 @@ import { creditsLeft, useContact } from '@/lib/useContact';
 import { openLogin } from '@/lib/loginModal';
 import ContactActions, { PhoneIcon } from './ContactActions';
 
-export default function InquiryForm({ propertyId, propertyTitle, contactName, hasContact, listingType }) {
+// between: shown between the contact card and the inquiry form (the property page puts an ad there).
+export default function InquiryForm({ propertyId, propertyTitle, contactName, hasContact, listingType, between = null }) {
   const user = useWebUser();
   const [form, setForm] = useState({ name: '', phone: '', email: '', message: '' });
   const [status, setStatus] = useState(null);
@@ -74,6 +75,8 @@ export default function InquiryForm({ propertyId, propertyTitle, contactName, ha
           </p>
         )}
       </div>
+
+      {between}
 
       {/* Inquiry form */}
       {status === 'success' ? (

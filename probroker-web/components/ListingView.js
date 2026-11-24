@@ -1,14 +1,23 @@
 import Link from 'next/link';
 import JsonLd from './JsonLd';
-import { ListingFilterBar, ListingResultsBar } from './ListingFilters';
+import { ListingFilterBar } from './ListingFilters';
 import LeadCaptureCard from './LeadCaptureCard';
+import AdSlot from './AdSlot';
 import { ListingResultsProvider } from './ListingResultsProvider';
 import ListingResults, { ListingHeading } from './ListingResults';
 import { itemListSchema, breadcrumbSchema } from '@/lib/schema';
 import { SITE_URL } from '@/lib/config';
 
 export default function ListingView({ data, basePath }) {
-  const { h1, properties, total, page, totalPages, scope, popularAreas, societies, area, city, activeFilters, transactionType } = data;
+  const { h1, properties, total, page, totalPages, scope, societies, area, city, activeFilters, transactionType } = data;
+  // The areas list has placeholder rows ("#N/a") and duplicates sharing a name; show each once.
+  const seenAreas = new Set();
+  const popularAreas = (data.popularAreas || []).filter((a) => {
+    const key = String(a?.name || '').trim().toLowerCase();
+    if (!key || !a.slug || key.startsWith('#') || key === 'n/a' || key === 'na' || seenAreas.has(key)) return false;
+    seenAreas.add(key);
+    return true;
+  });
 
   const itemListLd = itemListSchema(properties, SITE_URL);
   const breadcrumbItems = [{ name: 'Home', url: `${SITE_URL}/` }];
@@ -16,6 +25,8 @@ export default function ListingView({ data, basePath }) {
   if (area?.slug && city?.slug) breadcrumbItems.push({ name: area.name, url: `${SITE_URL}/${city.slug}/${area.slug}/` });
   breadcrumbItems.push({ name: h1, url: `${SITE_URL}${basePath}` });
   const breadcrumbLd = breadcrumbSchema(breadcrumbItems);
+  // When this page was built (it's regenerated every few minutes), shown as "Updated: Nov 24, 2026".
+  const updated = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Kolkata' });
 
   // First load is server HTML (what search engines index); filter/sort/page changes after that
   // load /properties as JSON in the browser (ListingResultsProvider).
@@ -35,14 +46,30 @@ export default function ListingView({ data, basePath }) {
 
     <div className="container-px pt-3 pb-6">
 
-      <nav className="text-xs text-gray-500 mb-1.5 flex flex-wrap gap-1">
-        {breadcrumbItems.map((b, i) => (
-          <span key={b.url} className="flex items-center gap-1">
-            {i > 0 && <span>/</span>}
-            <span className={i === breadcrumbItems.length - 1 ? 'text-gray-700 font-medium' : ''}>{b.name}</span>
-          </span>
-        ))}
-      </nav>
+      {/* One line: home icon / city / area / this page (cut with "..."), the update date on the right. */}
+      <div className="flex items-center justify-between gap-3 mb-1.5 text-xs text-gray-500">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1 min-w-0">
+          {breadcrumbItems.map((b, i) => {
+            const last = i === breadcrumbItems.length - 1;
+            const path = b.url.replace(SITE_URL, '') || '/';
+            return (
+              <span key={b.url} className={`flex items-center gap-1 ${last ? 'min-w-0' : 'shrink-0'}`}>
+                {i > 0 && <span aria-hidden="true" className="text-gray-400">/</span>}
+                {last ? (
+                  <span aria-current="page" className="truncate text-gray-700 font-medium">{b.name}</span>
+                ) : i === 0 ? (
+                  <Link href="/" aria-label="Home" className="text-gray-500 hover:text-primary">
+                    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.7 2.3a1 1 0 00-1.4 0l-7 7A1 1 0 003 11h1v6a1 1 0 001 1h3v-5h4v5h3a1 1 0 001-1v-6h1a1 1 0 00.7-1.7l-7-7z" /></svg>
+                  </Link>
+                ) : (
+                  <Link href={path} className="hover:text-primary hover:underline underline-offset-2">{b.name}</Link>
+                )}
+              </span>
+            );
+          })}
+        </nav>
+        <span className="shrink-0 whitespace-nowrap">Updated: {updated}</span>
+      </div>
 
       <ListingHeading h1={h1} total={total} page={page} />
 
@@ -50,7 +77,7 @@ export default function ListingView({ data, basePath }) {
         <p className="text-sm text-gray-600 mt-1 max-w-3xl leading-relaxed">{area.description}</p>
       )}
 
-      <ListingResultsBar activeFilters={activeFilters} resultCount={total} areas={popularAreas || []} transactionType={transactionType} />
+      <div className="mb-4" />
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-8">
         {/* Main column: property cards */}
@@ -104,6 +131,11 @@ export default function ListingView({ data, basePath }) {
           {/* Clears the sticky header (64px) + filter strip (~57px) */}
           <div className="lg:sticky lg:top-[9rem] space-y-6">
             <LeadCaptureCard context={h1} />
+
+            {/* Hidden while no ad is live, so the gap doesn't show either. */}
+            <div className="hidden lg:block lg:empty:hidden">
+              <AdSlot placement="listing" city={city?.slug} slot={-1} variant="compact" />
+            </div>
 
             <div className="card p-4 bg-primary-50 border-primary-100">
               <div className="font-semibold text-gray-900 mb-1 text-sm">Have a property?</div>
