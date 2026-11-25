@@ -55,7 +55,7 @@ export default function Footer({ settings } = {}) {
   const logoUrl = settings && settings.logo_url;
   const logoWidth = (settings && settings.logo_width) || 140;
   return (
-    <footer className="bg-[#1a0c33] text-gray-300 mt-16">
+    <footer className="bg-primary-900 text-gray-300 mt-16">
       <div className="container-px py-14 grid grid-cols-2 md:grid-cols-5 gap-8 text-sm">
         <div className="col-span-2 md:col-span-1">
           <div className="flex items-center gap-1 text-2xl font-extrabold font-heading text-white mb-3">

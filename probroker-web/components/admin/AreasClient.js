@@ -60,7 +60,7 @@ export default function AreasClient({ areas, cities }) {
     <>
       <div className="flex items-center justify-between mb-4">
         <div className="text-sm text-gray-500">{areas.length} areas found</div>
-        <button onClick={() => setOpen(true)} className="bg-primary text-white rounded-md px-4 py-2 text-sm font-semibold">+ Add New Area</button>
+        <button onClick={() => setOpen(true)} className="bg-btn hover:bg-btn-hover text-white rounded-md px-4 py-2 text-sm font-semibold">+ Add New Area</button>
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-x-auto">
@@ -75,7 +75,7 @@ export default function AreasClient({ areas, cities }) {
                 <td className="px-3.5 py-2.5">{a.cityName}</td>
                 <td className="px-3.5 py-2.5"><Badge color="purple">{a.propertyCount || 0}</Badge></td>
                 <td className="px-3.5 py-2.5">
-                  <button disabled={busyId === a.id} onClick={() => toggleFeatured(a.id)} className={`text-[11px] rounded px-2.5 py-1 ${a.is_featured ? 'bg-primary text-white' : 'border border-gray-200'}`}>
+                  <button disabled={busyId === a.id} onClick={() => toggleFeatured(a.id)} className={`text-[11px] rounded px-2.5 py-1 ${a.is_featured ? 'bg-btn hover:bg-btn-hover text-white' : 'border border-gray-200'}`}>
                     {a.is_featured ? 'Pinned' : 'Pin'}
                   </button>
                 </td>
@@ -116,7 +116,7 @@ export default function AreasClient({ areas, cities }) {
             <label className="block text-xs font-semibold mb-1">Meta Description</label>
             <textarea className="w-full border border-gray-200 rounded-md px-2.5 py-2 text-sm" value={form.metaDescription} onChange={(e) => setForm({ ...form, metaDescription: e.target.value })} />
           </div>
-          <button type="submit" disabled={saving} className="w-full bg-primary text-white rounded-md py-2.5 font-semibold disabled:opacity-60">
+          <button type="submit" disabled={saving} className="w-full bg-btn hover:bg-btn-hover text-white rounded-md py-2.5 font-semibold disabled:opacity-60">
             {saving ? 'Saving…' : 'Save Area'}
           </button>
         </form>

@@ -139,7 +139,7 @@ export default function BulkImportClient({ dbInfo }) {
           {jsonFile && (
             <div className="mt-3 p-3 bg-gray-50 rounded-md flex items-center gap-3">
               <span className="font-semibold text-sm">{jsonFile.name} ({(jsonFile.size / 1024).toFixed(1)} KB)</span>
-              <button onClick={doJsonImport} disabled={jsonBusy} className="bg-primary text-white text-sm rounded-md px-4 py-1.5 font-semibold disabled:opacity-60">
+              <button onClick={doJsonImport} disabled={jsonBusy} className="bg-btn hover:bg-btn-hover text-white text-sm rounded-md px-4 py-1.5 font-semibold disabled:opacity-60">
                 {jsonBusy ? 'Importing…' : 'Import Properties'}
               </button>
             </div>
@@ -162,7 +162,7 @@ export default function BulkImportClient({ dbInfo }) {
           {csvFile && (
             <div className="mt-3 p-3 bg-gray-50 rounded-md flex items-center gap-3">
               <span className="font-semibold text-sm">{csvFile.name} ({(csvFile.size / 1024).toFixed(1)} KB)</span>
-              <button onClick={doCsvImport} disabled={csvBusy} className="bg-primary text-white text-sm rounded-md px-4 py-1.5 font-semibold disabled:opacity-60">
+              <button onClick={doCsvImport} disabled={csvBusy} className="bg-btn hover:bg-btn-hover text-white text-sm rounded-md px-4 py-1.5 font-semibold disabled:opacity-60">
                 {csvBusy ? 'Importing…' : 'Import CSV'}
               </button>
             </div>
@@ -175,7 +175,7 @@ export default function BulkImportClient({ dbInfo }) {
         <div className="px-5 py-4 border-b border-gray-200 font-bold text-gray-900">Seed Sample Data</div>
         <div className="p-5">
           <p className="text-sm text-gray-500 mb-3">Insert 20 sample PRObroker properties with auto-mapped fields, generated descriptions, and amenities.</p>
-          <button onClick={seedData} disabled={seedBusy} className="bg-primary text-white text-sm rounded-md px-4 py-2 font-semibold disabled:opacity-60">
+          <button onClick={seedData} disabled={seedBusy} className="bg-btn hover:bg-btn-hover text-white text-sm rounded-md px-4 py-2 font-semibold disabled:opacity-60">
             {seedBusy ? 'Seeding…' : 'Insert 20 Sample Properties'}
           </button>
           <ResultCard result={seedResult} />

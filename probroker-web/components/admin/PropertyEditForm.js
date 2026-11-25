@@ -280,7 +280,7 @@ export default function PropertyEditForm({ property, cities, areas, societies })
                 </select>
                 <p className="text-[11px] text-gray-400 mt-1">Only verified listings get the badge and show under the Verified filter.</p>
               </div>
-              <button type="submit" disabled={saving} className="w-full bg-primary text-white rounded-md py-2.5 font-semibold disabled:opacity-60">
+              <button type="submit" disabled={saving} className="w-full bg-btn hover:bg-btn-hover text-white rounded-md py-2.5 font-semibold disabled:opacity-60">
                 {saving ? 'Saving…' : 'Save All Changes'}
               </button>
               <div className="text-center text-[11px] text-gray-400 mt-2">ID: {property.propertyId}</div>

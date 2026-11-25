@@ -11,9 +11,9 @@ a { @apply no-underline; }
 
 .container-px { @apply max-w-7xl mx-auto px-4 md:px-6; }
 
-.btn-primary { @apply inline-flex items-center justify-center bg-primary text-white font-semibold px-6 py-3 rounded-lg hover:bg-primary-600 transition-all active:scale-95 shadow-card; }
-.btn-outline { @apply inline-flex items-center justify-center bg-white border-2 border-primary text-primary font-semibold px-6 py-3 rounded-lg hover:bg-primary-50 transition-all; }
-.btn-accent { @apply inline-flex items-center justify-center bg-accent text-white font-semibold px-6 py-3 rounded-lg hover:bg-accent-600 transition-all active:scale-95 shadow-card; }
+.btn-primary { @apply inline-flex items-center justify-center bg-btn text-white font-semibold px-6 py-3 rounded-lg hover:bg-btn-hover transition-all active:scale-95 shadow-card; }
+.btn-outline { @apply inline-flex items-center justify-center bg-white border-2 border-btn text-btn font-semibold px-6 py-3 rounded-lg hover:bg-gray-100 transition-all; }
+.btn-accent { @apply inline-flex items-center justify-center bg-btn text-white font-semibold px-6 py-3 rounded-lg hover:bg-btn-hover transition-all active:scale-95 shadow-card; }
 .btn-ghost { @apply inline-flex items-center justify-center text-gray-700 font-medium px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors; }
 
 .card { @apply border border-gray-100 rounded-xl shadow-card hover:shadow-float transition-shadow duration-300 bg-white; }
@@ -40,12 +40,12 @@ body:has(.filter-strip) .header-search-row { display: none; }
 
 /* Hide-on-scroll (Header.js toggles html.header-hidden on listing pages): the header slides up,
    the filter strip takes its place at the top. On phones/tablets the strip's search row
-   (pt-3 + h-10 = 3.25rem) slides up with it, leaving just the filter line. */
+   (pt-1.5 + h-9 = 2.625rem) slides up with it, leaving just the filter line. */
 .filter-strip { top: var(--header-h); transition: top 0.3s ease; }
 html.header-hidden .site-header { transform: translateY(-100%); }
 html.header-hidden body { --header-h: 0px; }
 @media (max-width: 1023.98px) {
-  html.header-hidden .filter-strip { top: -3.25rem; }
+  html.header-hidden .filter-strip { top: -2.625rem; }
 }
 
 body:has(.filter-strip) .site-header { background-color: #fff; border-bottom-color: #e5e7eb; box-shadow: none; backdrop-filter: none; }

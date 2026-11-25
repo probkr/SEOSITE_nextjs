@@ -28,7 +28,6 @@ const HERO_POINTS = (total) => [
   total ? `${total.toLocaleString('en-IN')}+ Verified Properties` : 'Verified Properties',
   'Free to List',
   'Owners & Trusted Brokers',
-  'Ahmedabad & Gandhinagar',
 ];
 
 // Heroicons (outline) paths: check badge, rupee, bolt, map pin.
@@ -191,21 +190,35 @@ export default async function HomePage() {
       <JsonLd data={websiteLd} />
 
       {/* Hero */}
-      {/* -mt-16 pulls the hero under the sticky h-16 header so its blur shows over the photo.
-          No overflow-hidden here: the search widget's locality dropdown must hang below the hero. */}
-      <section
-        className="relative -mt-16 pt-16 bg-gray-900 bg-cover bg-center"
-        style={{ backgroundImage: "url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=70')" }}
-      >
-        <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/65" />
+      {/* -mt-16 pulls the hero under the sticky h-16 header so its blur shows over the backdrop.
+          No overflow-hidden on the section: the search widget's locality dropdown must hang below
+          the hero, so only the decorative layer below is clipped. All tints come from brand-color.js. */}
+      <section className="relative -mt-16 pt-16">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-b-[2rem] md:rounded-b-[3rem] bg-gradient-to-b from-primary-100 via-primary-50 to-white">
+          {/* Blueprint grid that fades out toward the edges. */}
+          <div className="absolute inset-0 [background-image:linear-gradient(to_right,theme(colors.primary.300/35%)_1px,transparent_1px),linear-gradient(to_bottom,theme(colors.primary.300/35%)_1px,transparent_1px)] [background-size:44px_44px] [mask-image:radial-gradient(ellipse_75%_70%_at_50%_35%,black_30%,transparent_85%)] [-webkit-mask-image:radial-gradient(ellipse_75%_70%_at_50%_35%,black_30%,transparent_85%)]" />
+          {/* Two soft glows drifting slowly. */}
+          <div className="absolute -top-24 -left-20 h-80 w-80 md:h-[28rem] md:w-[28rem] rounded-full bg-primary-200/70 blur-3xl motion-safe:animate-blob" />
+          <div className="absolute top-8 -right-24 h-72 w-72 md:h-96 md:w-96 rounded-full bg-accent/20 blur-3xl motion-safe:animate-blob [animation-delay:-7s]" />
+          {/* Line-art skyline along the bottom. */}
+          <svg className="absolute bottom-0 left-0 hidden md:block w-full h-36" viewBox="0 0 1440 160" preserveAspectRatio="xMidYMax slice">
+            <path
+              className="fill-primary-100/60 stroke-primary-300/70"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+              d="M0 160V120H60V80H110V120H150V60H200V40H230V60H250V120H300V95L330 70L360 95V120H420V50H480V120H520V85H580V120H640V30H700V120H740V100L775 72L810 100V120H870V65H920V45H950V120H1000V90H1060V120H1100V55H1160V120H1200V100L1230 75L1260 100V120H1320V70H1380V120H1440V160Z"
+            />
+          </svg>
+        </div>
         {/* Phones get a compact heading and the points one at a time, so the search box fits on the first screen. */}
-        <div className="container-px relative pt-6 pb-8 md:py-24 text-center">
+        <div className="container-px relative pt-6 pb-10 md:pt-20 md:pb-28 text-center">
 
-          <h1 className="text-[28px] sm:text-4xl md:text-6xl font-extrabold font-heading text-white tracking-tight leading-[1.1] md:leading-[1.05]">
-            Find your next home,<br className="hidden md:block" /> <span className="text-accent">faster than you&apos;d think.</span>
+          <h1 className="text-[28px] sm:text-4xl md:text-6xl font-extrabold font-heading text-gray-900 tracking-tight leading-[1.1] md:leading-[1.05]">
+            Find your next home,<br className="hidden md:block" />{' '}
+            <span className="bg-gradient-to-r from-primary-600 via-primary-700 to-primary-800 bg-clip-text text-transparent">faster than you&apos;d think.</span>
           </h1>
           <HeroPointsTicker points={HERO_POINTS(totalListings)} className="mt-3 md:hidden" />
-          <ul className="hidden md:flex mt-5 flex-wrap justify-center items-center gap-x-3 gap-y-1 text-gray-100 text-lg font-medium">
+          <ul className="hidden md:flex mt-5 flex-wrap justify-center items-center gap-x-3 gap-y-1 text-gray-600 text-lg font-medium">
             {HERO_POINTS(totalListings).map((pt, i) => (
               <li key={pt} className="flex items-center gap-3">
                 {i > 0 && <span aria-hidden="true" className="text-accent">&bull;</span>}

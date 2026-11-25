@@ -25,8 +25,6 @@ export default function ListingView({ data, basePath }) {
   if (area?.slug && city?.slug) breadcrumbItems.push({ name: area.name, url: `${SITE_URL}/${city.slug}/${area.slug}/` });
   breadcrumbItems.push({ name: h1, url: `${SITE_URL}${basePath}` });
   const breadcrumbLd = breadcrumbSchema(breadcrumbItems);
-  // When this page was built (it's regenerated every few minutes), shown as "Updated: Nov 24, 2026".
-  const updated = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Kolkata' });
 
   // First load is server HTML (what search engines index); filter/sort/page changes after that
   // load /properties as JSON in the browser (ListingResultsProvider).
@@ -69,7 +67,6 @@ export default function ListingView({ data, basePath }) {
             );
           })}
         </nav>
-        <span className="shrink-0 whitespace-nowrap">Updated: {updated}</span>
       </div>
 
       <ListingHeading h1={h1} total={total} page={page} />
@@ -129,15 +126,16 @@ export default function ListingView({ data, basePath }) {
 
         {/* Right sidebar: lead capture, promotional CTA, quick links — Housing.com-style */}
         <aside className="space-y-6">
-          {/* Sponsored card first, full size. It scrolls away normally so the sticky block below
-              still fits on screen. Phones skip it (the feed has its own ads); hidden while no ad
-              is live, so the gap doesn't show either. */}
-          <div className="hidden lg:block lg:empty:hidden">
-            <AdSlot placement="listing" city={city?.slug} slot={-1} />
-          </div>
+          {/* Clears the sticky header (--header-h, 0 while it is scrolled away) + filter strip (~3.1rem) + 1rem */}
+          <div className="lg:sticky lg:top-[calc(var(--header-h)+4.25rem)] lg:transition-[top] lg:duration-300">
+            {/* Sponsored card right above "Need help finding a property?", staying with it while
+                scrolling. Phones skip it (the feed has its own ads); hidden while no ad is live,
+                so neither it nor its gap shows. */}
+            <div className="hidden lg:block lg:empty:hidden mb-6">
+              <AdSlot placement="listing" city={city?.slug} slot={-1} />
+            </div>
 
-          {/* Clears the sticky header (--header-h, 0 while it is scrolled away) + filter strip (~4rem) */}
-          <div className="lg:sticky lg:top-[calc(var(--header-h)+5rem)] lg:transition-[top] lg:duration-300 space-y-6">
+            <div className="space-y-6">
             <LeadCaptureCard context={h1} />
 
             <div className="card p-4 bg-primary-50 border-primary-100">
@@ -171,6 +169,7 @@ export default function ListingView({ data, basePath }) {
                 </div>
               </div>
             )}
+            </div>
           </div>
         </aside>
       </div>

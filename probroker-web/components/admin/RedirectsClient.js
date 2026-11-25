@@ -75,7 +75,7 @@ export default function RedirectsClient({ redirects }) {
               <option value="302">302 Temporary</option>
             </select>
           </div>
-          <button type="submit" disabled={saving} className="bg-primary text-white rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-60">{saving ? 'Adding…' : 'Add Redirect'}</button>
+          <button type="submit" disabled={saving} className="bg-btn hover:bg-btn-hover text-white rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-60">{saving ? 'Adding…' : 'Add Redirect'}</button>
         </form>
       </div>
 
@@ -95,7 +95,7 @@ export default function RedirectsClient({ redirects }) {
                 <td className="px-3.5 py-2.5">{r.is_active ? <Badge color="green">Active</Badge> : <Badge color="gray">Disabled</Badge>}</td>
                 <td className="px-3.5 py-2.5 text-xs text-gray-400">{formatDate(r.createdAt)}</td>
                 <td className="px-3.5 py-2.5 whitespace-nowrap">
-                  <button disabled={busyId === r.id} onClick={() => toggleRedirect(r.id)} className={`text-xs rounded px-2.5 py-1.5 mr-1 ${r.is_active ? 'border border-gray-200' : 'bg-primary text-white'}`}>
+                  <button disabled={busyId === r.id} onClick={() => toggleRedirect(r.id)} className={`text-xs rounded px-2.5 py-1.5 mr-1 ${r.is_active ? 'border border-gray-200' : 'bg-btn hover:bg-btn-hover text-white'}`}>
                     {r.is_active ? 'Disable' : 'Enable'}
                   </button>
                   <button disabled={busyId === r.id} onClick={() => deleteRedirect(r.id)} className="bg-red-500 text-white text-xs rounded px-2.5 py-1.5">✕</button>

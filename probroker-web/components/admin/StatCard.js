@@ -1,4 +1,6 @@
-export default function StatCard({ icon, value, label, borderColor = '#4D3C9A' }) {
+import { BRAND_COLOR } from '@/brand-color';
+
+export default function StatCard({ icon, value, label, borderColor = BRAND_COLOR }) {
   return (
     <div className="bg-white rounded-lg shadow p-5 relative" style={{ borderLeft: `4px solid ${borderColor}` }}>
       <span className="absolute top-4 right-4 text-2xl opacity-30">{icon}</span>

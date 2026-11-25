@@ -1,6 +1,6 @@
 // In-feed ads: one ad card after every AD_EVERY property cards (admin: /admin/ads).
 
-export const AD_EVERY = 8;
+export const AD_EVERY = 4;
 
 // PRObroker's shared upload service. Takes multipart field "images", answers
 // { success, files: [{ url }] }. The admin browser calls it directly (it allows CORS).

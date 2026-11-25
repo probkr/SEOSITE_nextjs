@@ -84,7 +84,7 @@ export default function AdminLoginForm() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
-      <div className="flex-1 bg-gradient-to-br from-[#1E0A3C] via-[#2D0B59] to-[#4D3C9A] text-white flex flex-col items-center justify-center p-10">
+      <div className="flex-1 bg-gradient-to-br from-primary-900 via-primary-700 to-primary text-white flex flex-col items-center justify-center p-10">
         <h1 className="text-3xl font-extrabold mb-1 text-white">PRObroker Admin</h1>
         <p className="text-white/70">Manage your property platform</p>
         <div className="mt-10 flex flex-col gap-4 text-sm text-white/80">
@@ -122,7 +122,7 @@ export default function AdminLoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-primary hover:bg-primary-600 text-white font-bold py-3 rounded-xl disabled:opacity-60"
+                className="w-full bg-btn hover:bg-btn-hover text-white font-bold py-3 rounded-xl disabled:opacity-60"
               >
                 {loading ? 'Sending OTP…' : 'Send OTP'}
               </button>
@@ -154,7 +154,7 @@ export default function AdminLoginForm() {
               <button
                 type="submit"
                 disabled={loading || otp.length !== OTP_LENGTH}
-                className="mt-5 w-full bg-primary hover:bg-primary-600 text-white font-bold py-3 rounded-xl disabled:opacity-60"
+                className="mt-5 w-full bg-btn hover:bg-btn-hover text-white font-bold py-3 rounded-xl disabled:opacity-60"
               >
                 {loading ? 'Verifying…' : 'Verify & Login'}
               </button>

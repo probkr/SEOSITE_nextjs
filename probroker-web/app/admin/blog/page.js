@@ -16,7 +16,7 @@ export default async function BlogListPage() {
       {error && <div className="bg-red-100 text-red-800 px-4 py-2.5 rounded-lg mb-4 text-sm">API error: {error}</div>}
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-lg font-bold text-gray-900">Blog Posts ({posts.length})</h2>
-        <a href="/admin/blog/new" className="bg-primary text-white rounded-md px-4 py-2 text-sm font-semibold">+ New Post</a>
+        <a href="/admin/blog/new" className="bg-btn hover:bg-btn-hover text-white rounded-md px-4 py-2 text-sm font-semibold">+ New Post</a>
       </div>
       <div className="bg-white rounded-lg shadow overflow-x-auto">
         <table className="w-full text-sm">

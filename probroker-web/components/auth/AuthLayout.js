@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { brandRgba } from '@/brand-color';
 
 const COPY = {
   login: {
@@ -41,7 +42,7 @@ function Photo({ src, alt, caption, className = '', sizes, priority, children })
 // Faint site-plan grid behind the page, fading out toward the edges.
 const gridStyle = {
   backgroundImage:
-    'linear-gradient(to right, rgba(77,60,154,0.07) 1px, transparent 1px), linear-gradient(to bottom, rgba(77,60,154,0.07) 1px, transparent 1px)',
+    `linear-gradient(to right, ${brandRgba(0.07)} 1px, transparent 1px), linear-gradient(to bottom, ${brandRgba(0.07)} 1px, transparent 1px)`,
   backgroundSize: '36px 36px',
   WebkitMaskImage: 'radial-gradient(ellipse 75% 70% at 70% 45%, #000 30%, transparent 85%)',
   maskImage: 'radial-gradient(ellipse 75% 70% at 70% 45%, #000 30%, transparent 85%)',

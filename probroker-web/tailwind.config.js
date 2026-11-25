@@ -1,3 +1,5 @@
+const { brandShades, buttonShades } = require('./brand-color');
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -10,20 +12,11 @@ module.exports = {
         // Admin panel sidebar background -- AdminShell.js uses bg-sidebar,
         // but no such color was ever defined, so the sidebar rendered with no
         // background at all (white/transparent, same purple text-on-white bug).
-        sidebar: '#1a0c33',
-        primary: {
-          DEFAULT: '#4d3c9a',
-          50: '#f5f3ff',
-          100: '#ede8ff',
-          200: '#dcd3ff',
-          300: '#c0b0ff',
-          400: '#9d84f5',
-          500: '#4d3c9a',
-          600: '#42327f',
-          700: '#2d0b59',
-          800: '#241146',
-          900: '#1a0c33',
-        },
+        sidebar: brandShades[900],
+        // Main color is set in brand-color.js -- change it there, not here.
+        primary: brandShades,
+        // Button color is also set in brand-color.js.
+        btn: buttonShades,
         accent: {
           DEFAULT: '#f5a623',
           50: '#fff8ec',
@@ -36,7 +29,7 @@ module.exports = {
         sans: ['DM Sans', 'Manrope', 'system-ui', 'sans-serif'],
       },
       backgroundImage: {
-        'brand-gradient': 'linear-gradient(135deg, #2d0b59 0%, #4d3c9a 100%)',
+        'brand-gradient': `linear-gradient(135deg, ${brandShades[700]} 0%, ${brandShades.DEFAULT} 100%)`,
       },
       boxShadow: {
         card: '0 2px 8px rgba(0,0,0,0.08)',

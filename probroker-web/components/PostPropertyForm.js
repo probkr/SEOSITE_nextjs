@@ -1,4 +1,5 @@
 'use client';
+import { brandShades } from '@/brand-color';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { postJson } from '@/lib/api';
@@ -155,17 +156,20 @@ function Icon({ name, className = 'w-5 h-5', strokeWidth = 1.8 }) {
 const inputCls =
   'w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-[15px] text-gray-900 placeholder:text-gray-400 shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:bg-gray-50 disabled:text-gray-500';
 const labelCls = 'block text-sm font-semibold text-gray-800 mb-2';
+// Smaller label for the compact start card at the top of the page.
+const labelClsCompact = 'block text-[13px] font-semibold text-gray-800 mb-1.5';
 
-function chipCls(active) {
-  return `inline-flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm font-semibold transition-all duration-200 active:scale-95 ${
+function chipCls(active, compact = false) {
+  const size = compact ? 'gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px]' : 'gap-2 rounded-xl px-3.5 py-2.5 text-sm';
+  return `inline-flex items-center ${size} border font-semibold transition-all duration-200 active:scale-95 ${
     active
-      ? 'border-primary bg-primary-50 text-primary shadow-[0_0_0_3px_rgba(77,60,154,0.10)]'
+      ? 'border-primary bg-primary-50 text-primary shadow-[0_0_0_3px_theme(colors.primary.500/10%)]'
       : 'border-gray-200 bg-white text-gray-700 hover:border-primary-300 hover:bg-primary-50/50'
   }`;
 }
 
-// Two-option toggle with a thumb that slides between them.
-function Segmented({ options, value, onChange, label }) {
+// Two-option toggle with a thumb that slides between them. compact: shorter, for the start card.
+function Segmented({ options, value, onChange, label, compact = false }) {
   const idx = Math.max(0, options.findIndex((o) => o.value === value));
   return (
     <div role="radiogroup" aria-label={label} className="relative grid grid-cols-2 rounded-xl bg-gray-100 p-1">
@@ -182,9 +186,9 @@ function Segmented({ options, value, onChange, label }) {
             role="radio"
             aria-checked={active}
             onClick={() => onChange(o.value)}
-            className={`relative z-10 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold transition-colors ${active ? 'text-primary' : 'text-gray-500 hover:text-gray-800'}`}
+            className={`relative z-10 flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors ${compact ? 'py-1.5 text-[13px]' : 'py-2.5 text-sm'} ${active ? 'text-primary' : 'text-gray-500 hover:text-gray-800'}`}
           >
-            <Icon name={o.icon} className="w-4 h-4" />
+            <Icon name={o.icon} className={compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
             {o.label}
           </button>
         );
@@ -193,9 +197,9 @@ function Segmented({ options, value, onChange, label }) {
   );
 }
 
-function ChipGroup({ options, value, onChange, label, withIcons = false }) {
+function ChipGroup({ options, value, onChange, label, withIcons = false, compact = false }) {
   return (
-    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-2">
+    <div role="radiogroup" aria-label={label} className={`flex flex-wrap ${compact ? 'gap-1.5' : 'gap-2'}`}>
       {options.map((o, i) => (
         <button
           key={o.value}
@@ -203,10 +207,10 @@ function ChipGroup({ options, value, onChange, label, withIcons = false }) {
           role="radio"
           aria-checked={value === o.value}
           onClick={() => onChange(o.value)}
-          className={`${chipCls(value === o.value)} motion-safe:animate-pop-in`}
+          className={`${chipCls(value === o.value, compact)} motion-safe:animate-pop-in`}
           style={{ animationDelay: `${i * 40}ms` }}
         >
-          {withIcons && o.icon && <Icon name={o.icon} className="w-4 h-4" />}
+          {withIcons && o.icon && <Icon name={o.icon} className={compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} />}
           {o.label}
         </button>
       ))}
@@ -214,10 +218,10 @@ function ChipGroup({ options, value, onChange, label, withIcons = false }) {
   );
 }
 
-function Field({ label, hint, error, children, htmlFor }) {
+function Field({ label, hint, error, children, htmlFor, compact = false }) {
   return (
     <div>
-      {label && <label htmlFor={htmlFor} className={labelCls}>{label}</label>}
+      {label && <label htmlFor={htmlFor} className={compact ? labelClsCompact : labelCls}>{label}</label>}
       {children}
       {error ? (
         <p className="mt-1.5 text-sm text-red-600">{error}</p>
@@ -588,11 +592,11 @@ function Stepper({ stage }) {
 function StrengthRing({ percent }) {
   const r = 26;
   const c = 2 * Math.PI * r;
-  const color = percent >= 80 ? '#16a34a' : percent >= 50 ? '#4d3c9a' : '#f5a623';
+  const color = percent >= 80 ? '#16a34a' : percent >= 50 ? brandShades.DEFAULT : '#f5a623';
   return (
     <div className="relative h-16 w-16 shrink-0">
       <svg viewBox="0 0 64 64" className="h-16 w-16 -rotate-90">
-        <circle cx="32" cy="32" r={r} fill="none" stroke="#ede8ff" strokeWidth="6" />
+        <circle cx="32" cy="32" r={r} fill="none" stroke={brandShades[100]} strokeWidth="6" />
         <circle cx="32" cy="32" r={r} fill="none" stroke={color} strokeWidth="6" strokeLinecap="round"
           strokeDasharray={c} strokeDashoffset={c * (1 - percent / 100)} className="transition-all duration-700 ease-out" />
       </svg>
@@ -908,7 +912,7 @@ export default function PostPropertyForm({ stats, areasByCity = {} }) {
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
             <div className="absolute -left-24 -top-24 h-80 w-80 rounded-full bg-primary-200/50 blur-3xl motion-safe:animate-blob" />
             <div className="absolute right-0 top-40 h-72 w-72 rounded-full bg-accent/20 blur-3xl motion-safe:animate-blob" style={{ animationDelay: '-5s' }} />
-            <div className="absolute inset-0 opacity-[0.35] [background-image:radial-gradient(#c0b0ff_1px,transparent_1px)] [background-size:22px_22px] [mask-image:linear-gradient(to_bottom,black,transparent_70%)]" />
+            <div className="absolute inset-0 opacity-[0.35] [background-image:radial-gradient(theme(colors.primary.300)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:linear-gradient(to_bottom,black,transparent_70%)]" />
           </div>
 
           <div className="container-px relative grid items-center gap-10 py-10 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:py-16">
@@ -946,41 +950,42 @@ export default function PostPropertyForm({ stats, areasByCity = {} }) {
 
             {/* Right: start card */}
             <div ref={startCardRef} className="motion-safe:animate-fade-up" style={{ animationDelay: '120ms' }}>
-              <form onSubmit={startPosting} className="relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_20px_60px_-15px_rgba(45,11,89,0.25)] sm:p-7">
+              {/* Compact card: smaller padding, toggles, chips and button, so it fits on one screen. */}
+              <form onSubmit={startPosting} className="relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-4 shadow-[0_20px_60px_-15px_theme(colors.primary.700/25%)] sm:p-5">
                 <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-700 via-primary-400 to-accent" />
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-xl font-extrabold sm:text-2xl">Start posting — it&apos;s free</h2>
-                    <p className="mt-1 text-sm text-gray-500">3 quick steps · about 2 minutes</p>
+                    <h2 className="text-lg font-extrabold sm:text-xl">Start posting — it&apos;s free</h2>
+                    <p className="mt-0.5 text-xs text-gray-500">3 quick steps · about 2 minutes</p>
                   </div>
-                  <span className="hidden shrink-0 rounded-lg bg-accent-50 px-2.5 py-1 text-xs font-extrabold text-accent-600 sm:inline-block">₹0 FEE</span>
+                  <span className="hidden shrink-0 rounded-md bg-accent-50 px-2 py-0.5 text-[11px] font-extrabold text-accent-600 sm:inline-block">₹0 FEE</span>
                 </div>
 
-                <div className="mt-6 space-y-5">
+                <div className="mt-4 space-y-3.5">
                   <div>
-                    <div className={labelCls}>I want to</div>
-                    <Segmented label="I want to" options={TRANSACTIONS} value={form.transactionType} onChange={(v) => set('transactionType', v)} />
+                    <div className={labelClsCompact}>I want to</div>
+                    <Segmented compact label="I want to" options={TRANSACTIONS} value={form.transactionType} onChange={(v) => set('transactionType', v)} />
                   </div>
 
                   <div>
-                    <div className={labelCls}>Property is</div>
-                    <Segmented label="Property category" options={CATEGORIES} value={form.category} onChange={chooseCategory} />
+                    <div className={labelClsCompact}>Property is</div>
+                    <Segmented compact label="Property category" options={CATEGORIES} value={form.category} onChange={chooseCategory} />
                   </div>
 
                   <div>
-                    <div className={labelCls}>Property type</div>
+                    <div className={labelClsCompact}>Property type</div>
                     {/* key re-mounts the chips so they animate in when the category changes */}
-                    <ChipGroup key={form.category} label="Property type" options={types} value={form.propertyType} onChange={(v) => set('propertyType', v)} withIcons />
+                    <ChipGroup compact key={form.category} label="Property type" options={types} value={form.propertyType} onChange={(v) => set('propertyType', v)} withIcons />
                   </div>
 
                   <div>
-                    <div className={labelCls}>City</div>
-                    <ChipGroup label="City" options={CITIES.map((c) => ({ value: c.slug, label: c.name, icon: 'pin' }))} value={form.city} onChange={(v) => set('city', v)} withIcons />
+                    <div className={labelClsCompact}>City</div>
+                    <ChipGroup compact label="City" options={CITIES.map((c) => ({ value: c.slug, label: c.name, icon: 'pin' }))} value={form.city} onChange={(v) => set('city', v)} withIcons />
                   </div>
 
                   {loggedIn ? (
-                    <div className="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
+                    <div className="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-3 py-2">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
                         {(user.name || 'U').trim().charAt(0).toUpperCase()}
                       </span>
                       <div className="min-w-0 text-sm">
@@ -991,7 +996,7 @@ export default function PostPropertyForm({ stats, areasByCity = {} }) {
                       </div>
                     </div>
                   ) : (
-                    <Field label="Your mobile number" htmlFor="pp-start-phone" error={errors.startPhone} hint="We'll send a one-time code to verify it.">
+                    <Field compact label="Your mobile number" htmlFor="pp-start-phone" error={errors.startPhone} hint="We'll send a one-time code to verify it.">
                       <AddonInput
                         id="pp-start-phone"
                         prefix="+91"
@@ -999,6 +1004,7 @@ export default function PostPropertyForm({ stats, areasByCity = {} }) {
                         inputMode="numeric"
                         autoComplete="tel-national"
                         placeholder="10-digit mobile number"
+                        className="!py-2.5 !text-sm"
                         value={form.contactPhone}
                         onChange={(e) => { set('contactPhone', digits(e.target.value, 10)); setErrors({}); }}
                       />
@@ -1006,14 +1012,14 @@ export default function PostPropertyForm({ stats, areasByCity = {} }) {
                   )}
                 </div>
 
-                <button type="submit" className="btn-primary group relative mt-6 w-full overflow-hidden !rounded-xl !py-3.5 text-base">
+                <button type="submit" className="btn-primary group relative mt-4 w-full overflow-hidden !rounded-xl !py-2.5 text-[15px]">
                   <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent motion-safe:animate-shine" />
                   <span className="relative flex items-center gap-2">
                     Start now
                     <Icon name="arrow" className="w-5 h-5 transition-transform group-hover:translate-x-1" strokeWidth={2.2} />
                   </span>
                 </button>
-                <p className="mt-3 text-center text-xs text-gray-500">
+                <p className="mt-2 text-center text-xs text-gray-500">
                   By continuing you agree to our <Link href="/terms/" className="font-semibold text-primary hover:underline">Terms</Link>.
                   {loggedIn && <> Already listed? <Link href="/my-properties/" className="font-semibold text-primary hover:underline">My Properties</Link></>}
                 </p>

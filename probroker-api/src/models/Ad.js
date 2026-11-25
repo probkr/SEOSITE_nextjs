@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
 
 // In-feed ad cards shown between property cards on the public site (admin: /admin/ads).
 // placements: which kind of page shows it ('listing', 'landing', 'society'); empty = every kind.
-// cities: city slugs it is limited to; empty = every city.
-// start_date / end_date: 'YYYY-MM-DD' (inclusive, India time); empty = no limit.
+// cities, start_date, end_date: no longer used to pick ads (publicAds ignores them); kept so old
+// documents still load. An active ad shows in every city, every day.
 const AdSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   title: { type: String, required: true },

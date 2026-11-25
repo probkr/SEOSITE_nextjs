@@ -178,7 +178,7 @@ export default function AuthForm({ mode = 'login', next: rawNext }) {
   );
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200/80 shadow-[0_24px_48px_-24px_rgba(45,11,89,0.25)] p-6 sm:p-8">
+    <div className="bg-white rounded-2xl border border-gray-200/80 shadow-[0_24px_48px_-24px_theme(colors.primary.700/25%)] p-6 sm:p-8">
       {step === 'details' ? (
         <>
           <ModeSwitch mode={mode} next={next} />
@@ -249,7 +249,7 @@ export default function AuthForm({ mode = 'login', next: rawNext }) {
             <button
               type="submit"
               disabled={busy}
-              className="w-full h-12 inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-white font-semibold hover:bg-primary-600 active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-wait"
+              className="w-full h-12 inline-flex items-center justify-center gap-2 rounded-xl bg-btn text-white font-semibold hover:bg-btn-hover active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-wait"
             >
               {busy && <Spinner />}
               {busy ? 'Sending code…' : copy.cta}
@@ -310,7 +310,7 @@ export default function AuthForm({ mode = 'login', next: rawNext }) {
             <button
               type="submit"
               disabled={busy || otp.length !== OTP_LENGTH}
-              className="w-full h-12 inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-white font-semibold hover:bg-primary-600 active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full h-12 inline-flex items-center justify-center gap-2 rounded-xl bg-btn text-white font-semibold hover:bg-btn-hover active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {busy && <Spinner />}
               {busy ? 'Verifying…' : mode === 'signup' ? 'Verify & create account' : 'Verify & log in'}

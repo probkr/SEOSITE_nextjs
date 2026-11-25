@@ -140,22 +140,15 @@ exports.uploadAdImage = async (req, res) => {
 };
 
 // ==================== PUBLIC ====================
-// GET /ads?placement=listing&city=ahmedabad -> ads live today for that kind of page and city.
-// Without a city, only ads that are not limited to a city are returned.
+// GET /ads?placement=listing -> every active ad for that kind of page.
+// The ad's start/end dates and cities are NOT checked: an active ad shows on every city's pages,
+// any day, until it is switched off in /admin/ads. (The ?city= the site still sends is ignored.)
 exports.publicAds = async (req, res) => {
   const placement = PLACEMENTS.includes(req.query.placement) ? req.query.placement : 'listing';
-  const city = SLUG_RE.test(String(req.query.city || '')) ? String(req.query.city) : '';
-  const today = todayIst();
-  const noValue = (field) => [{ [field]: '' }, { [field]: { $exists: false } }];
 
   const ads = await Ad.find({
     is_active: true,
-    $and: [
-      { $or: [...noValue('start_date'), { start_date: { $lte: today } }] },
-      { $or: [...noValue('end_date'), { end_date: { $gte: today } }] },
-      { $or: [{ placements: { $size: 0 } }, { placements: placement }] },
-      city ? { $or: [{ cities: { $size: 0 } }, { cities: city }] } : { cities: { $size: 0 } },
-    ],
+    $or: [{ placements: { $size: 0 } }, { placements: placement }],
   }, PUBLIC_FIELDS).sort({ priority: -1, createdAt: -1 }).limit(20).lean();
 
   // Every listing page view asks for this, so browsers and the CDN may keep it for 2 minutes.

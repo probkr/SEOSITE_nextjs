@@ -58,6 +58,7 @@ const ICONS = {
   bed: 'M3 18v-6a2 2 0 012-2h14a2 2 0 012 2v6M3 18h18M3 18v2m18-2v2M6 10V7.5A1.5 1.5 0 017.5 6h3A1.5 1.5 0 0112 7.5V10m0 0V7.5A1.5 1.5 0 0113.5 6h3A1.5 1.5 0 0118 7.5V10',
   area: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5M9 9l-5-5m11 5l5-5M9 15l-5 5m11-5l5 5',
   rate: 'M7 4h10M7 8.5h10M7 4c3.5 0 6 1.4 6 4.5S10.5 13 7 13l7 7',
+  price: 'M3 12.5V4a1 1 0 011-1h8.5L21 11.5 12.5 20 3 12.5zM7.5 7.5h.01',
   sofa: 'M5 11V8a3 3 0 013-3h8a3 3 0 013 3v3M3 12.5a2 2 0 014 0V15h10v-2.5a2 2 0 014 0V18a1 1 0 01-1 1H4a1 1 0 01-1-1v-5.5zM6 19v2m12-2v2',
   floor: 'M4 21V5a1 1 0 011-1h9a1 1 0 011 1v16m0-12h4a1 1 0 011 1v11M3 21h18M8 8h3m-3 4h3m-3 4h3',
   car: 'M5 13l1.6-4.6A2 2 0 018.5 7h7a2 2 0 011.9 1.4L19 13M5 13h14v4a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H8v1a1 1 0 01-1 1H6a1 1 0 01-1-1v-4zm2.5 2h.01m9 0h.01',
@@ -147,16 +148,8 @@ export default function PropertyCard({ p, variant = 'grid' }) {
   // Row card: a green shield on the photo's top-right for listings the PRObroker team has
   // verified. Icon only; the word stays for screen readers and as the hover tooltip.
   const verifiedTag = isVerified ? (
-    <span
-      title="Verified"
-      className="absolute top-2 right-2 w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-card"
-    >
-      <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z" />
-        <path d="M9 12l2 2 4-4" />
-      </svg>
-      <span className="sr-only">Verified</span>
-    </span>
+    // 30% smaller than the standard .badge (12px text, 10px / 4px padding).
+    <span className="badge absolute top-2 right-2 !text-[8.5px] !px-[7px] !py-[3px] bg-green-600 text-white shadow-card">Verified</span>
   ) : null;
 
   const place = [societyName, loc].filter(Boolean).join(' · ');
@@ -179,37 +172,33 @@ export default function PropertyCard({ p, variant = 'grid' }) {
       <span className="sr-only">(opens Google Maps)</span>
     </a>
   ) : null;
-  const placeRow = placeLink('text-xs sm:text-[13px]', false, 'w-3.5 h-3.5 sm:w-4 sm:h-4');
+  const placeRow = placeLink('text-xs sm:text-[12px]', false, 'w-3.5 h-3.5 sm:w-4 sm:h-4');
 
   const priceRow = (
-    <div className="text-xl font-bold text-primary font-heading leading-tight">
+    <div className="text-xl sm:text-base font-bold text-gray-900 font-heading leading-tight">
       {fmtPrice(p.price)}
       {isRent && <span className="text-xs sm:text-sm font-medium text-gray-500">/month</span>}
     </div>
   );
 
-  // Grid card: a 2x2 block of icon + label + value, always four slots so cards in a row line up.
-  // Price/sqft is always one of them when it can be worked out; the rest fill in by usefulness.
+  // Grid card: Area and Furnishing only, side by side on one line (icon + label + value).
   const gridFacts = [
     p.sqft ? { icon: 'area', label: 'Area', value: `${p.sqft} sqft` } : null,
-    rateText ? { icon: 'rate', label: isRent ? 'Rent/sqft' : 'Price/sqft', value: rateText } : null,
     p.furnishing ? { icon: 'sofa', label: 'Furnishing', value: p.furnishing, capitalize: true } : null,
-    p.propertyType ? { icon: 'type', label: 'Type', value: p.propertyType, capitalize: true } : null,
-    p.floorNumber ? { icon: 'floor', label: 'Floor', value: `${p.floorNumber}${p.totalFloors ? `/${p.totalFloors}` : ''}` } : null,
-  ].filter(Boolean).slice(0, 4);
+  ].filter(Boolean);
 
   // Plain small icons and compact text, the same as the listing-page card.
   const factsRow = gridFacts.length > 0 ? (
-    <div className="py-2 sm:py-3 border-y border-gray-100">
-      <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 sm:gap-y-2.5">
+    <div className="py-2 border-y border-gray-100">
+      <div className="grid grid-cols-2 gap-x-3">
         {gridFacts.map((f) => (
           <div key={f.label} className="flex items-center gap-1.5 sm:gap-2 min-w-0">
             <span className="text-gray-400 flex items-center justify-center shrink-0">
               <FactIcon name={f.icon} className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </span>
             <span className="flex flex-col leading-tight min-w-0">
-              <span className="text-[9px] sm:text-[10px] uppercase tracking-wide text-gray-400">{f.label}</span>
-              <span title={f.value} className={`text-[11px] sm:text-[13px] font-semibold text-gray-800 truncate ${f.capitalize ? 'capitalize' : ''}`}>{f.value}</span>
+              <span className="text-[9px] sm:text-[8px] uppercase tracking-wide text-gray-400">{f.label}</span>
+              <span title={f.value} className={`text-[11px] sm:text-[13px] font-normal text-gray-800 truncate ${f.capitalize ? 'capitalize' : ''}`}>{f.value}</span>
             </span>
           </div>
         ))}
@@ -299,19 +288,26 @@ export default function PropertyCard({ p, variant = 'grid' }) {
   if (variant === 'row') {
     const photoCount = hasPhoto ? p.photos.filter(Boolean).length : 0;
     const hasParking = p.parking === true || !!p.parkingType || (Array.isArray(p.amenities) && p.amenities.includes('Parking'));
-    // Owner-written text first, the generated copy as a fallback; newlines folded into one line.
-    const description = String(p.description || p.aiDescription || '').replace(/\s+/g, ' ').trim();
-    // Each fact: icon + its name + value. Price/sqft is highlighted so it reads with the price.
+    // Each fact: icon + its name + value, all in the same style; the price is simply the first one.
     // Floor and age are left to the property page; the card keeps the deciding facts.
-    const facts = [
-      p.bhk ? { icon: 'bed', label: 'Bedrooms', value: `${parseInt(p.bhk)} BHK` } : null,
+    // The main four: Price | Area | Price/sqft | Furnishing.
+    const mainFacts = [
+      p.price ? { icon: 'price', label: isRent ? 'Rent' : 'Price', value: `${fmtPrice(p.price)}${isRent ? '/month' : ''}` } : null,
       p.sqft ? { icon: 'area', label: 'Area', value: `${p.sqft} sqft` } : null,
-      rateText ? { icon: 'rate', label: isRent ? 'Rent/sqft' : 'Price/sqft', value: rateText, highlight: true } : null,
+      rateText ? { icon: 'rate', label: isRent ? 'Rent/sqft' : 'Price/sqft', value: rateText } : null,
       p.furnishing ? { icon: 'sofa', label: 'Furnishing', value: cap(p.furnishing) } : null,
+    ].filter(Boolean);
+    // Bedrooms is a stand-in: the title already says "3 BHK Flat ...", so it only fills in when one
+    // of the main four is missing (e.g. no Price/sqft), right after the price.
+    if (mainFacts.length < 4 && p.bhk) {
+      mainFacts.splice(mainFacts[0]?.icon === 'price' ? 1 : 0, 0, { icon: 'bed', label: 'Bedrooms', value: `${parseInt(p.bhk)} BHK` });
+    }
+    const facts = [
+      ...mainFacts,
       hasParking ? { icon: 'car', label: 'Parking', value: 'Available' } : null,
       isRent && p.familyOrBachelors ? { icon: 'tenant', label: 'Tenants', value: cap(p.familyOrBachelors) } : null,
-    ].filter(Boolean).slice(0, 6);
-    // Who posted it goes in the contact row: "Posted by Broker yesterday".
+    ].filter(Boolean).slice(0, 8);
+    // Who posted it and when, for the contact row: "Posted by Broker, 7 days ago".
     const postedBy = p.listingType ? cap(p.listingType) : '';
     const postedWhen = posted.replace(/^Posted /, '');
     // Phones: up to 8 pictures in a sideways strip (videos only when there is no picture, so a
@@ -369,8 +365,7 @@ export default function PropertyCard({ p, variant = 'grid' }) {
           )}
         </div>
         <div className="p-4 sm:px-5 flex-1 flex flex-col gap-2 sm:gap-2.5 min-w-0 relative pointer-events-none">
-          {/* Title + address on the left, save / share on the right. Phones: the title takes the
-              full width and save / share sit at the right of the address line. */}
+          {/* Title + address on the left, save / share on the right (smaller buttons on phones). */}
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               {titleRow}
@@ -378,63 +373,57 @@ export default function PropertyCard({ p, variant = 'grid' }) {
                 {placeLink('text-[11.5px] sm:text-[13px]', true, 'w-3.5 h-3.5')}
               </div>
             </div>
-            <div className="hidden sm:block shrink-0">
-              <CardActions id={cardId} title={title} path={href} bordered />
+            <div className="shrink-0">
+              <div className="sm:hidden"><CardActions id={cardId} title={title} path={href} bordered small /></div>
+              <div className="hidden sm:block"><CardActions id={cardId} title={title} path={href} bordered /></div>
             </div>
           </div>
-          {/* Facts on the left, the price large on the right of the same band. Phones: price
-              first, then the facts in two columns. */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-2 sm:py-3 border-y border-gray-100">
-            {facts.length > 0 && (
-              <div className="flex-1 min-w-0 grid grid-cols-2 lg:grid-cols-3 content-center lg:min-h-[4.75rem] gap-x-3 sm:gap-x-4 gap-y-1.5 sm:gap-y-3">
-                {facts.map((f) => (
-                  <div key={f.label} className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                    <span className={`flex items-center justify-center shrink-0 ${f.highlight ? 'text-primary' : 'text-gray-400'}`}>
-                      <FactIcon name={f.icon} className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    </span>
-                    <span className="flex flex-col leading-tight min-w-0">
-                      <span className="text-[9px] sm:text-[11px] uppercase tracking-wide text-gray-400">{f.label}</span>
-                      <span title={f.value} className={`text-[11px] sm:text-sm font-semibold truncate ${f.highlight ? 'text-primary' : 'text-gray-800'}`}>{f.value}</span>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="order-first sm:order-none shrink-0 sm:ml-auto flex items-center justify-between gap-3 sm:block sm:text-right sm:pl-4 sm:border-l sm:border-gray-100">
-              <div>
-                <div className="text-lg sm:text-2xl font-bold text-primary font-heading leading-tight whitespace-nowrap">{fmtPrice(p.price)}</div>
-                {isRent && <div className="text-[11px] sm:text-xs font-medium text-gray-500">per month</div>}
-              </div>
-              <div className="sm:hidden">
-                <CardActions id={cardId} title={title} path={href} bordered small />
-              </div>
+          {/* Every fact, the price first, in one style, split by thin lines: Price | Bedrooms | Area.
+              2 per row on phones and 4 per row from lg; the first item of each row has no line. */}
+          {facts.length > 0 && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 content-center lg:min-h-[4.75rem] gap-y-2 sm:gap-y-3 py-2.5 sm:py-3 border-y border-gray-100">
+              {facts.map((f) => (
+                <div
+                  key={f.label}
+                  className="flex items-center gap-1.5 sm:gap-2 min-w-0 px-3 sm:px-4 border-l border-gray-200 max-lg:[&:nth-child(2n+1)]:border-l-0 max-lg:[&:nth-child(2n+1)]:pl-0 lg:[&:nth-child(4n+1)]:border-l-0 lg:[&:nth-child(4n+1)]:pl-0"
+                >
+                  <span className="flex items-center justify-center shrink-0 text-gray-400">
+                    <FactIcon name={f.icon} className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  </span>
+                  <span className="flex flex-col leading-tight min-w-0">
+                    <span className="text-[9px] sm:text-[11px] uppercase tracking-wide text-gray-400">{f.label}</span>
+                    <span title={f.value} className="text-[11px] sm:text-sm font-semibold truncate text-gray-800">{f.value}</span>
+                  </span>
+                </div>
+              ))}
             </div>
-          </div>
-          {/* One fixed-height line so every card is the same height: the highlights when there are
-              any, otherwise one line of the description, otherwise left empty. Phones skip this
-              line; the taller photo strip above uses that space instead. */}
-          {highlights.length > 0 ? (
-            <div className="hidden sm:block sm:h-7">{highlightsBlock('-mr-4 pr-4 sm:-mr-5 sm:pr-5', 'inline')}</div>
-          ) : (
-            <p title={description} className="hidden sm:block h-7 leading-7 text-sm text-gray-600 truncate">{description}</p>
           )}
-          <div className="flex items-center justify-between gap-3 mt-auto">
-            {/* Phones: owner name on top, "Posted by Broker 5 days ago" under it. sm and up: both
-                on one line split by a dot. Contact on the right. */}
-            <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center sm:gap-1.5 text-[11px] sm:text-[13px] leading-snug text-gray-500">
+          {/* Amenities / furnishings line, with a divider under it. Shown only when the listing has
+              some (no description text here). Phones skip this line; the taller photo strip above
+              uses that space instead. */}
+          {highlights.length > 0 && (
+            <div className="hidden sm:block pb-2.5 border-b border-gray-100">
+              <div className="h-7">{highlightsBlock('-mr-4 pr-4 sm:-mr-5 sm:pr-5', 'inline')}</div>
+            </div>
+          )}
+          {/* Two equal halves around the line, so the line sits in the exact middle of the row. */}
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 mt-auto">
+            {/* "Posted by Owner, 7 days ago" on the left, a thin line in the middle of the row,
+                and in the right corner "Owner: Name" right up against Contact. */}
+            <div className="min-w-0 truncate text-[11px] sm:text-[13px] leading-snug text-gray-500">
+              {postedBy ? (
+                <>Posted by <span className="text-gray-700 font-medium">{postedBy}</span>{postedWhen && `, ${postedWhen}`}</>
+              ) : posted}
+            </div>
+            <span aria-hidden="true" className="h-8 w-px bg-gray-200" />
+            <div className="min-w-0 flex items-center justify-end gap-2 sm:gap-2.5">
               {ownerName && (
-                <div className="truncate sm:shrink-0">Owner: <span className="text-gray-700 font-medium">{ownerName}</span></div>
-              )}
-              {ownerName && (postedBy || posted) && <span aria-hidden="true" className="hidden sm:inline text-gray-300">·</span>}
-              {(postedBy || posted) && (
-                <div className="truncate min-w-0">
-                  {postedBy ? (
-                    <>Posted by <span className="text-gray-700 font-medium">{postedBy}</span>{postedWhen && ` ${postedWhen}`}</>
-                  ) : posted}
+                <div title={ownerName} className="min-w-0 truncate text-[11px] sm:text-[13px] text-gray-500">
+                  Owner: <span className="font-semibold text-gray-800">{ownerName}</span>
                 </div>
               )}
+              {contactButton('shrink-0 !h-9 !px-4 !text-[13px] sm:!h-10 sm:!px-5 sm:!text-sm')}
             </div>
-            {contactButton('shrink-0 !h-9 !px-4 !text-[13px] sm:!h-10 sm:!px-5 sm:!text-sm')}
           </div>
         </div>
       </div>
@@ -453,14 +442,14 @@ export default function PropertyCard({ p, variant = 'grid' }) {
         <div className="absolute inset-0">{imageInner}</div>
         {badges}
       </div>
-      <div className="p-3 sm:p-4 flex-1 flex flex-col gap-1.5 sm:gap-2 pointer-events-none">
+      <div className="p-3 sm:px-4 sm:pt-2 sm:pb-3 flex-1 flex flex-col gap-1.5 sm:gap-2 pointer-events-none">
         {/* Price on the left, save / share on the right of the same line. */}
         <div className="flex items-center justify-between gap-3">
           {priceRow}
           <CardActions id={cardId} title={title} path={href} bordered small />
         </div>
-        <div className="min-w-0">
-          <h3 className="text-sm sm:text-[15px] font-bold text-gray-900 line-clamp-1 group-hover:text-primary transition-colors">{title}</h3>
+        <div className="min-w-0 sm:-mt-1">
+          <h3 className="text-sm sm:text-[13px] font-bold text-gray-900 line-clamp-1 group-hover:text-primary transition-colors">{title}</h3>
           {placeRow && <div className="mt-0.5 flex min-w-0">{placeRow}</div>}
         </div>
         {factsRow}
@@ -475,14 +464,15 @@ export default function PropertyCard({ p, variant = 'grid' }) {
         ) : (
           // Owner name and posted date on the left, a half-width Contact button on the right.
           <div className="mt-auto flex items-center justify-between gap-3">
-            <div className="min-w-0 flex-1 text-[11px] sm:text-xs leading-snug text-gray-500">
+            <div className="min-w-0 flex-1 text-[11px] leading-snug text-gray-500">
               {ownerName && (
-                <div className="truncate">Owner: <span className="text-gray-700 font-medium">{ownerName}</span></div>
+                <div className="truncate sm:text-[10px]">Owner: <span className="text-gray-700 font-medium">{ownerName}</span></div>
               )}
-              {posted && <div className="truncate">{posted}</div>}
+              {posted && <div className="truncate sm:text-[9px]">{posted}</div>}
             </div>
             {/* A compact button sized to its text, so the owner line keeps its room. */}
-            {contactButton('shrink-0 !h-9 !px-4 !text-[13px]')}
+            {/* sm up: 11px text and a 12px phone icon in a 26px-high button. */}
+            {contactButton('shrink-0 !h-9 sm:!h-[26px] !px-4 sm:!px-3 !text-[13px] sm:!text-[11px] sm:!gap-1 sm:[&_svg]:w-3 sm:[&_svg]:h-3')}
           </div>
         )}
       </div>

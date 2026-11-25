@@ -12,7 +12,7 @@ import { CITIES, CITY_EVENT, CITY_STORAGE_KEY } from '@/lib/config';
 // Solid call-to-action: the main thing an owner comes to do. White on the dark hero header.
 const postBtnCls = (onDark) =>
   `hidden md:inline-flex items-center gap-1.5 h-10 pl-3 pr-1.5 rounded-full whitespace-nowrap shrink-0 text-sm font-bold shadow-sm transition-all hover:shadow-md hover:-translate-y-px active:translate-y-0 ${
-    onDark ? 'bg-white text-primary hover:bg-primary-50' : 'bg-primary text-white hover:bg-primary-600'
+    onDark ? 'bg-white text-primary hover:bg-primary-50' : 'bg-btn text-white hover:bg-btn-hover'
   }`;
 const freeBadgeCls = 'ml-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-accent text-gray-900 px-2 py-1 rounded-full leading-none';
 const plusIcon = (
@@ -174,7 +174,7 @@ function ProfileMenu({ onDark }) {
                 </div>
                 {/* Opens the login popup in place; the full /auth pages stay for direct links. */}
                 <div className="grid grid-cols-2 gap-2 mt-3">
-                  <button type="button" onClick={() => { close(); openLogin({ mode: 'login' }); }} role="menuitem" className="flex items-center justify-center h-10 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-600 transition-colors">
+                  <button type="button" onClick={() => { close(); openLogin({ mode: 'login' }); }} role="menuitem" className="flex items-center justify-center h-10 rounded-lg bg-btn text-white text-sm font-semibold hover:bg-btn-hover transition-colors">
                     Log in
                   </button>
                   <button type="button" onClick={() => { close(); openLogin({ mode: 'signup' }); }} role="menuitem" className="flex items-center justify-center h-10 rounded-lg border border-primary/30 text-primary text-sm font-semibold hover:bg-primary-50 transition-colors">
@@ -283,8 +283,6 @@ const MENU_LISTINGS = [
 const MENU_LINKS = [
   { href: '/societies/', label: 'Societies', icon: ICONS.societies },
   { href: '/blog/', label: 'Blog', icon: ICONS.blog },
-  { href: '/about/', label: 'About', icon: ICONS.about },
-  { href: '/contact/', label: 'Contact', icon: ICONS.contact },
 ];
 
 // Compact menu: the chosen city's four listing pages as tiles, then the other pages as icon shortcuts.
@@ -317,7 +315,7 @@ function MobileMenu({ withSearch }) {
         ))}
       </div>
 
-      <div className="grid grid-cols-4 gap-1 mt-3 pt-3 border-t border-gray-100">
+      <div className="grid grid-cols-2 gap-1 mt-3 pt-3 border-t border-gray-100">
         {MENU_LINKS.map((l) => (
           <Link
             key={l.href}
@@ -496,8 +494,9 @@ export default function Header({ settings } = {}) {
     };
   }, [open, pathname]);
 
-  // On the homepage the header floats over the hero photo, so use light text until the user scrolls.
-  const onDark = isHome && !scrolled && !open;
+  // The homepage hero is now a light backdrop, so the header keeps its normal dark text everywhere.
+  // Set this back to `isHome && !scrolled && !open` if the hero goes dark again.
+  const onDark = false;
   const navHover = onDark ? 'hover:text-accent' : 'hover:text-primary';
 
   return (
@@ -567,8 +566,6 @@ export default function Header({ settings } = {}) {
           </div>
           <Link href="/societies/" className={`transition-colors ${navHover}`}>Societies</Link>
           <Link href="/blog/" className={`transition-colors ${navHover}`}>Blog</Link>
-          <Link href="/about/" className={`transition-colors ${navHover}`}>About</Link>
-          <Link href="/contact/" className={`transition-colors ${navHover}`}>Contact</Link>
         </nav>
 
         <div className="flex items-center gap-2">

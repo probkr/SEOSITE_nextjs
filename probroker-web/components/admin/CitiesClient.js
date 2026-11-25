@@ -33,7 +33,7 @@ export default function CitiesClient({ cities }) {
     <>
       <div className="flex items-center justify-between mb-4">
         <div className="text-sm text-gray-500">{cities.length} cities found</div>
-        <button onClick={() => setOpen(true)} className="bg-primary text-white rounded-md px-4 py-2 text-sm font-semibold">+ Add City</button>
+        <button onClick={() => setOpen(true)} className="bg-btn hover:bg-btn-hover text-white rounded-md px-4 py-2 text-sm font-semibold">+ Add City</button>
       </div>
       <div className="bg-white rounded-lg shadow overflow-x-auto">
         <table className="w-full text-sm">
@@ -65,7 +65,7 @@ export default function CitiesClient({ cities }) {
             <label className="block text-xs font-semibold mb-1">State *</label>
             <input className="w-full border border-gray-200 rounded-md px-2.5 py-2 text-sm" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} required />
           </div>
-          <button type="submit" disabled={saving} className="w-full bg-primary text-white rounded-md py-2.5 font-semibold disabled:opacity-60">
+          <button type="submit" disabled={saving} className="w-full bg-btn hover:bg-btn-hover text-white rounded-md py-2.5 font-semibold disabled:opacity-60">
             {saving ? 'Saving…' : 'Save City'}
           </button>
         </form>

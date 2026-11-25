@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { clientFetchJson } from '@/lib/api';
-import { CITIES } from '@/lib/config';
 import { AD_EVERY, AD_PLACEMENTS, IMAGE_UPLOAD_URL } from '@/lib/ads';
 import { AdCard } from '@/components/AdSlot';
 import Badge from '@/components/admin/Badge';
@@ -24,19 +23,14 @@ const EMPTY = {
 };
 
 const input = 'w-full border border-gray-200 rounded-md px-2.5 py-2 text-sm';
-const todayIst = () => new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().slice(0, 10);
-
-// What visitors see right now: off, waiting for its start date, past its end date, or live.
+// What visitors see right now. Dates and cities no longer limit an ad (see the API's publicAds):
+// an active ad is live on every city's pages, every day.
 function adStatus(ad) {
-  const today = todayIst();
   if (!ad.is_active) return <Badge color="gray">Disabled</Badge>;
-  if (ad.start_date && ad.start_date > today) return <Badge color="blue">Starts {ad.start_date}</Badge>;
-  if (ad.end_date && ad.end_date < today) return <Badge color="red">Expired</Badge>;
   return <Badge color="green">Live</Badge>;
 }
 
 const placementLabel = (v) => AD_PLACEMENTS.find((p) => p.value === v)?.label || v;
-const cityLabel = (v) => CITIES.find((c) => c.slug === v)?.name || v;
 
 export default function AdsClient({ ads }) {
   const router = useRouter();
@@ -114,7 +108,10 @@ export default function AdsClient({ ads }) {
       ...EMPTY,
       ...ad,
       placements: ad.placements?.length ? ad.placements : AD_PLACEMENTS.map((p) => p.value),
-      cities: ad.cities || [],
+      // Cities and dates no longer limit ads; saving clears any old values.
+      cities: [],
+      start_date: '',
+      end_date: '',
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -177,36 +174,17 @@ export default function AdsClient({ ads }) {
               {form.image_url && <p className="text-[11px] text-emerald-600 mt-1">Image set. See the preview on the right.</p>}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <div className="text-xs font-semibold mb-1.5">Show on *</div>
-                {AD_PLACEMENTS.map((p) => (
-                  <label key={p.value} className="flex items-start gap-2 text-sm mb-1.5">
-                    <input type="checkbox" className="mt-1" checked={form.placements.includes(p.value)} onChange={() => toggleIn('placements', p.value)} />
-                    <span>{p.label}<span className="block text-[11px] text-gray-400">{p.hint}</span></span>
-                  </label>
-                ))}
-              </div>
-              <div>
-                <div className="text-xs font-semibold mb-1.5">Cities <span className="font-normal text-gray-400">(none ticked = all cities)</span></div>
-                {CITIES.map((c) => (
-                  <label key={c.slug} className="flex items-center gap-2 text-sm mb-1.5">
-                    <input type="checkbox" checked={form.cities.includes(c.slug)} onChange={() => toggleIn('cities', c.slug)} />
-                    {c.name}
-                  </label>
-                ))}
-              </div>
+            <div>
+              <div className="text-xs font-semibold mb-1.5">Show on *</div>
+              {AD_PLACEMENTS.map((p) => (
+                <label key={p.value} className="flex items-start gap-2 text-sm mb-1.5">
+                  <input type="checkbox" className="mt-1" checked={form.placements.includes(p.value)} onChange={() => toggleIn('placements', p.value)} />
+                  <span>{p.label}<span className="block text-[11px] text-gray-400">{p.hint}</span></span>
+                </label>
+              ))}
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div>
-                <label className="block text-xs font-semibold mb-1">Start date</label>
-                <input type="date" className={input} value={form.start_date} onChange={(e) => set({ start_date: e.target.value })} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1">End date</label>
-                <input type="date" className={input} value={form.end_date} min={form.start_date || undefined} onChange={(e) => set({ end_date: e.target.value })} />
-              </div>
               <div>
                 <label className="block text-xs font-semibold mb-1">Priority</label>
                 <input type="number" min={-100} max={100} className={input} value={form.priority} onChange={(e) => set({ priority: e.target.value })} />
@@ -216,9 +194,9 @@ export default function AdsClient({ ads }) {
                 Active
               </label>
             </div>
-            <p className="text-[11px] text-gray-400 -mt-2">Dates empty = no limit. Higher priority ads come first; ads with the same priority are mixed.</p>
+            <p className="text-[11px] text-gray-400 -mt-2">An active ad shows in every city, every day, until you disable it. Higher priority ads come first; ads with the same priority are mixed.</p>
 
-            <button type="submit" disabled={saving || uploading} className="bg-primary text-white rounded-md px-5 py-2 text-sm font-semibold disabled:opacity-60">
+            <button type="submit" disabled={saving || uploading} className="bg-btn hover:bg-btn-hover text-white rounded-md px-5 py-2 text-sm font-semibold disabled:opacity-60">
               {saving ? 'Saving…' : form.id ? 'Save Changes' : 'Add Ad'}
             </button>
           </div>
@@ -244,7 +222,6 @@ export default function AdsClient({ ads }) {
             <tr>
               <th className="text-left px-3.5 py-2.5">Ad</th>
               <th className="text-left px-3.5 py-2.5">Shows on</th>
-              <th className="text-left px-3.5 py-2.5">Dates</th>
               <th className="text-left px-3.5 py-2.5">Priority</th>
               <th className="text-left px-3.5 py-2.5">Status</th>
               <th className="text-left px-3.5 py-2.5">Clicks</th>
@@ -266,17 +243,13 @@ export default function AdsClient({ ads }) {
                 </td>
                 <td className="px-3.5 py-2.5 text-xs text-gray-600">
                   <div>{ad.placements?.length ? ad.placements.map(placementLabel).join(', ') : 'All pages'}</div>
-                  <div className="text-gray-400">{ad.cities?.length ? ad.cities.map(cityLabel).join(', ') : 'All cities'}</div>
-                </td>
-                <td className="px-3.5 py-2.5 text-xs text-gray-500 whitespace-nowrap">
-                  {ad.start_date || ad.end_date ? `${ad.start_date || '…'} → ${ad.end_date || '…'}` : 'Always'}
                 </td>
                 <td className="px-3.5 py-2.5 text-xs">{ad.priority || 0}</td>
                 <td className="px-3.5 py-2.5">{adStatus(ad)}</td>
                 <td className="px-3.5 py-2.5 text-xs font-semibold">{ad.clicks || 0}</td>
                 <td className="px-3.5 py-2.5 whitespace-nowrap">
                   <button disabled={busyId === ad.id} onClick={() => edit(ad)} className="text-xs rounded px-2.5 py-1.5 mr-1 border border-gray-200">Edit</button>
-                  <button disabled={busyId === ad.id} onClick={() => act(ad.id, 'toggle')} className={`text-xs rounded px-2.5 py-1.5 mr-1 ${ad.is_active ? 'border border-gray-200' : 'bg-primary text-white'}`}>
+                  <button disabled={busyId === ad.id} onClick={() => act(ad.id, 'toggle')} className={`text-xs rounded px-2.5 py-1.5 mr-1 ${ad.is_active ? 'border border-gray-200' : 'bg-btn hover:bg-btn-hover text-white'}`}>
                     {ad.is_active ? 'Disable' : 'Enable'}
                   </button>
                   <button disabled={busyId === ad.id} onClick={() => act(ad.id, 'delete', `Delete the ad "${ad.title}"?`)} className="bg-red-500 text-white text-xs rounded px-2.5 py-1.5">✕</button>

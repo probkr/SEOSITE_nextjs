@@ -66,7 +66,7 @@ export default function SocietiesClient({ societies, areas }) {
     <>
       <div className="flex items-center justify-between mb-4">
         <div className="text-sm text-gray-500">{societies.length} societies found</div>
-        <button onClick={() => setOpen(true)} className="bg-primary text-white rounded-md px-4 py-2 text-sm font-semibold">+ Add New Society</button>
+        <button onClick={() => setOpen(true)} className="bg-btn hover:bg-btn-hover text-white rounded-md px-4 py-2 text-sm font-semibold">+ Add New Society</button>
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-x-auto">
@@ -83,7 +83,7 @@ export default function SocietiesClient({ societies, areas }) {
                 <td className="px-3.5 py-2.5"><Badge color={TYPE_COLOR[s.project_type || 'residential']}>{(s.project_type || 'residential')[0].toUpperCase() + (s.project_type || 'residential').slice(1)}</Badge></td>
                 <td className="px-3.5 py-2.5"><Badge color="purple">{s.propertyCount || 0}</Badge></td>
                 <td className="px-3.5 py-2.5">
-                  <button disabled={busyId === s.id} onClick={() => toggleFeatured(s.id)} className={`text-[11px] rounded px-2.5 py-1 ${s.is_featured ? 'bg-primary text-white' : 'border border-gray-200'}`}>
+                  <button disabled={busyId === s.id} onClick={() => toggleFeatured(s.id)} className={`text-[11px] rounded px-2.5 py-1 ${s.is_featured ? 'bg-btn hover:bg-btn-hover text-white' : 'border border-gray-200'}`}>
                     {s.is_featured ? 'Pinned' : 'Pin'}
                   </button>
                 </td>
@@ -141,7 +141,7 @@ export default function SocietiesClient({ societies, areas }) {
             <label className="block text-xs font-semibold mb-1">Meta Description</label>
             <textarea className="w-full border border-gray-200 rounded-md px-2.5 py-2 text-sm" value={form.metaDescription} onChange={(e) => setForm({ ...form, metaDescription: e.target.value })} />
           </div>
-          <button type="submit" disabled={saving} className="w-full bg-primary text-white rounded-md py-2.5 font-semibold disabled:opacity-60">
+          <button type="submit" disabled={saving} className="w-full bg-btn hover:bg-btn-hover text-white rounded-md py-2.5 font-semibold disabled:opacity-60">
             {saving ? 'Saving…' : 'Save Society'}
           </button>
         </form>

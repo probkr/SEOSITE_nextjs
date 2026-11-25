@@ -180,7 +180,7 @@ export default function QuickAuthForm({ initialMode = 'login', onSuccess }) {
           <button
             type="submit"
             disabled={busy || otp.length !== OTP_LENGTH}
-            className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-white font-semibold hover:bg-primary-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-xl bg-btn text-white font-semibold hover:bg-btn-hover transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {busy && <Spinner />}
             {busy ? 'Verifying…' : 'Verify & continue'}
@@ -262,7 +262,7 @@ export default function QuickAuthForm({ initialMode = 'login', onSuccess }) {
         <button
           type="submit"
           disabled={busy}
-          className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-white font-semibold hover:bg-primary-600 transition-colors disabled:opacity-70 disabled:cursor-wait"
+          className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-xl bg-btn text-white font-semibold hover:bg-btn-hover transition-colors disabled:opacity-70 disabled:cursor-wait"
         >
           {busy && <Spinner />}
           {busy ? 'Sending code…' : 'Get OTP'}

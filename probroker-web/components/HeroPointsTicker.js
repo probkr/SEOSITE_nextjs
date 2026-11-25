@@ -25,7 +25,7 @@ export default function HeroPointsTicker({ points = [], interval = 2600, classNa
         <div className="h-7 overflow-hidden">
           <p
             key={index}
-            className="flex items-center justify-center gap-2 h-7 text-sm font-semibold text-gray-100 motion-safe:animate-ticker-in"
+            className="flex items-center justify-center gap-2 h-7 text-sm font-semibold text-gray-700 motion-safe:animate-ticker-in"
           >
             <svg className="w-4 h-4 shrink-0 text-accent" fill="none" stroke="currentColor" strokeWidth="2.6" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -39,7 +39,7 @@ export default function HeroPointsTicker({ points = [], interval = 2600, classNa
           {points.map((pt, i) => (
             <span
               key={pt}
-              className={`h-1.5 rounded-full transition-all duration-300 ${i === index ? 'w-4 bg-accent' : 'w-1.5 bg-white/40'}`}
+              className={`h-1.5 rounded-full transition-all duration-300 ${i === index ? 'w-4 bg-accent' : 'w-1.5 bg-primary-200'}`}
             />
           ))}
         </div>

@@ -148,7 +148,7 @@ export default function SettingsClient({ settings, homepageSchema }) {
                 </div>
               )}
             </div>
-            <button type="submit" disabled={siteSaving} className="bg-primary text-white rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-60">{siteSaving ? 'Saving…' : 'Save Settings'}</button>
+            <button type="submit" disabled={siteSaving} className="bg-btn hover:bg-btn-hover text-white rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-60">{siteSaving ? 'Saving…' : 'Save Settings'}</button>
           </form>
         </div>
       </div>
@@ -175,7 +175,7 @@ export default function SettingsClient({ settings, homepageSchema }) {
               </div>
             )}
           </div>
-          <button onClick={testR2} disabled={r2Testing} className="bg-primary text-white rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-60">{r2Testing ? 'Testing…' : 'Test Connection'}</button>
+          <button onClick={testR2} disabled={r2Testing} className="bg-btn hover:bg-btn-hover text-white rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-60">{r2Testing ? 'Testing…' : 'Test Connection'}</button>
         </div>
       </div>
 
@@ -192,7 +192,7 @@ export default function SettingsClient({ settings, homepageSchema }) {
           />
           {schemaError && <div className="text-xs text-red-600 mt-1">{schemaError}</div>}
           <div className="flex gap-2 mt-3">
-            <button type="submit" disabled={schemaSaving} className="bg-primary text-white rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-60">{schemaSaving ? 'Saving…' : 'Save Homepage Schema'}</button>
+            <button type="submit" disabled={schemaSaving} className="bg-btn hover:bg-btn-hover text-white rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-60">{schemaSaving ? 'Saving…' : 'Save Homepage Schema'}</button>
             {schema && <button type="button" onClick={clearSchema} className="border border-gray-200 rounded-md px-4 py-2 text-sm">Clear Schema</button>}
           </div>
         </form>

@@ -105,7 +105,7 @@ export default function AreaEditForm({ area }) {
       </div>
       <div className="flex justify-end gap-3 mt-4">
         <a href="/admin/areas" className="border border-gray-200 rounded-md px-4 py-2 text-sm">Cancel</a>
-        <button type="submit" disabled={saving} className="bg-primary text-white rounded-md px-6 py-2 text-sm font-semibold disabled:opacity-60">{saving ? 'Saving…' : 'Save Changes'}</button>
+        <button type="submit" disabled={saving} className="bg-btn hover:bg-btn-hover text-white rounded-md px-6 py-2 text-sm font-semibold disabled:opacity-60">{saving ? 'Saving…' : 'Save Changes'}</button>
       </div>
     </form>
   );

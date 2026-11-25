@@ -110,7 +110,7 @@ export default function BlogEditForm({ post, isNew }) {
               <label className="block text-xs font-semibold mb-1">Tags (comma-separated)</label>
               <input placeholder="real estate, ahmedabad, investment" className="w-full border border-gray-200 rounded-md px-2.5 py-2 text-sm" value={form.tags} onChange={(e) => setField('tags', e.target.value)} />
             </div>
-            <button type="submit" disabled={saving} className="w-full bg-primary text-white rounded-md py-2.5 font-semibold disabled:opacity-60 mt-1">
+            <button type="submit" disabled={saving} className="w-full bg-btn hover:bg-btn-hover text-white rounded-md py-2.5 font-semibold disabled:opacity-60 mt-1">
               {saving ? 'Saving…' : isNew ? 'Create Post' : 'Update Post'}
             </button>
             {!isNew && (

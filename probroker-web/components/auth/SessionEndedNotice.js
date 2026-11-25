@@ -46,7 +46,7 @@ export default function SessionEndedNotice() {
             <Link
               href={loginHref}
               onClick={() => setNotice(null)}
-              className="inline-flex items-center mt-3 h-9 px-4 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-600"
+              className="inline-flex items-center mt-3 h-9 px-4 rounded-lg bg-btn text-white text-sm font-semibold hover:bg-btn-hover"
             >
               Log in again
             </Link>

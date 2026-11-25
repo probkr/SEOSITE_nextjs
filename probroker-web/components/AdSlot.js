@@ -176,7 +176,7 @@ export function AdCard({ ad, variant = 'grid' }) {
             <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">{ad.subtitle}</p>
           )}
           <span
-            className={`mt-2.5 inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-card group-hover:bg-primary-600 transition-colors ${row ? 'w-full sm:w-auto sm:self-start' : 'w-full mt-auto'}`}
+            className={`mt-2.5 inline-flex items-center justify-center gap-2 rounded-lg bg-btn px-5 py-2.5 text-sm font-semibold text-white shadow-card group-hover:bg-btn-hover transition-colors ${row ? 'w-full sm:w-auto sm:self-start' : 'w-full mt-auto'}`}
           >
             {cta}
             <ArrowIcon className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />

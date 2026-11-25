@@ -16,17 +16,36 @@ import { parseListingFilters } from '@/lib/listingQuery';
 const BHK_OPTIONS = ['1', '2', '3', '4'];
 
 const PROPERTY_TYPES = [
-  { value: 'flat', label: 'Flat / Apartment' },
-  { value: 'bungalow', label: 'Bungalow' },
-  { value: 'villa', label: 'Villa' },
-  { value: 'tenement', label: 'Tenement' },
-  { value: 'penthouse', label: 'Penthouse' },
-  { value: 'plot', label: 'Plot / Land' },
-  { value: 'office', label: 'Office' },
-  { value: 'shop', label: 'Shop' },
-  { value: 'showroom', label: 'Showroom' },
-  { value: 'warehouse', label: 'Warehouse' },
+  { value: 'flat', label: 'Flat / Apartment', cat: 'residential' },
+  { value: 'bungalow', label: 'Bungalow', cat: 'residential' },
+  { value: 'villa', label: 'Villa', cat: 'residential' },
+  { value: 'tenement', label: 'Tenement', cat: 'residential' },
+  { value: 'penthouse', label: 'Penthouse', cat: 'residential' },
+  { value: 'plot', label: 'Plot / Land', cat: 'residential' },
+  { value: 'office', label: 'Office', cat: 'commercial' },
+  { value: 'shop', label: 'Shop', cat: 'commercial' },
+  { value: 'showroom', label: 'Showroom', cat: 'commercial' },
+  { value: 'warehouse', label: 'Warehouse', cat: 'commercial' },
 ];
+
+const CATEGORY_OPTIONS = [
+  { value: 'residential', label: 'Residential' },
+  { value: 'commercial', label: 'Commercial' },
+];
+
+// Property-type page slugs (lib/citySegments.js PT_MAP) that are commercial: /ahmedabad/shops-for-rent/.
+const COMMERCIAL_TYPE_SLUGS = ['offices', 'shops', 'showrooms', 'warehouses'];
+
+/** Residential / Commercial from a listing page's last path segment; '' when the path doesn't say. */
+function categoryFromPath(pathname) {
+  const last = (String(pathname || '').match(/([^/]+)\/?$/) || [])[1] || '';
+  const mCat = last.match(/^(residential|commercial)-property-for-(sale|rent)$/);
+  if (mCat) return mCat[1];
+  const mType = last.match(/^([a-z]+)-for-(sale|rent)$/);
+  if (mType) return COMMERCIAL_TYPE_SLUGS.includes(mType[1]) ? 'commercial' : 'residential';
+  if (/^\d+-bhk-flats-for-(sale|rent)$|^flats-under-|^rent-under-/.test(last)) return 'residential';
+  return '';
+}
 
 const PRICE_OPTIONS = [
   { label: 'Under ₹25L', min: '', max: '2500000' },
@@ -116,7 +135,7 @@ const MORE_WIDTH = 900;
 const listOf = (csv) => String(csv || '').split(',').map((v) => v.trim()).filter(Boolean);
 
 const trigger = (active) =>
-  `inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md border text-sm font-medium whitespace-nowrap transition-colors ${
+  `inline-flex items-center gap-1.5 h-[1.8rem] px-2.5 rounded-md border text-sm font-medium whitespace-nowrap transition-colors ${
     active
       ? 'border-primary bg-primary-50 text-primary'
       : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
@@ -262,6 +281,9 @@ function useListingFilters(activeFilters, areas, pathTrans) {
   // from the `transactionType` query param on /search.
   const trans = pathTrans || f.transactionType || '';
   const priceOptions = trans === 'rent' ? RENT_PRICE_OPTIONS : PRICE_OPTIONS;
+  // Residential / Commercial is also the page itself (path); the type list follows it.
+  const category = categoryFromPath(pathname);
+  const typeOptions = category ? PROPERTY_TYPES.filter((o) => o.cat === category) : PROPERTY_TYPES;
 
   function push(mutate) {
     const params = new URLSearchParams(searchParams.toString());
@@ -336,6 +358,23 @@ function useListingFilters(activeFilters, areas, pathTrans) {
     setOpenId(null);
   };
 
+  // Switch Residential <-> Commercial: goes to /{city}/[{area}/]{category}-property-for-{sale|rent}/.
+  // Type and BHK don't carry over between the two, so those filters are dropped.
+  const setCategory = (c) => {
+    if (!category || c === category) return;
+    const m = pathname.match(/^(.*\/)([^/]+)(\/?)$/);
+    if (!m) return;
+    const [, head, , tail] = m;
+    const word = trans === 'rent' ? 'rent' : 'sale';
+    const params = new URLSearchParams(searchParams.toString());
+    ['page', 'propertyType', 'bhk'].forEach((k) => params.delete(k));
+    const qs = params.toString();
+    const nextPath = `${head}${c}-property-for-${word}${tail}`;
+    startNavigationProgress();
+    router.push(qs ? `${nextPath}?${qs}` : nextPath, { scroll: false });
+    setOpenId(null);
+  };
+
   const clearAll = () => {
     goTo(pathname);
     setMoreOpen(false);
@@ -345,7 +384,7 @@ function useListingFilters(activeFilters, areas, pathTrans) {
     trans: TRANS_OPTIONS.find((o) => o.value === trans)?.label || 'Buy / Rent',
     price: priceOptions.find((o) => o.min === (f.minPrice || '') && o.max === (f.maxPrice || ''))?.label || 'Budget',
     sqft: SQFT_OPTIONS.find((o) => o.min === (f.minSqft || '') && o.max === (f.maxSqft || ''))?.label || 'Area (sq.ft)',
-    type: PROPERTY_TYPES.find((o) => o.value === f.propertyType)?.label || 'Property Type',
+    type: typeOptions.find((o) => o.value === f.propertyType)?.label || 'Property Type',
     furn: FURNISHING_OPTIONS.find((o) => o.value === f.furnishing)?.label || 'Furnishing',
     postedBy: POSTED_BY_OPTIONS.find((o) => o.value === f.postedBy)?.label || 'Posted By',
     area: areas.find((a) => a.slug === f.area)?.name || 'Locality',
@@ -389,6 +428,7 @@ function useListingFilters(activeFilters, areas, pathTrans) {
 
   return {
     f, amenities, openId, setOpenId, moreOpen, setMoreOpen, trans, pathTrans, setTrans, priceOptions,
+    category, setCategory, typeOptions,
     setParam, setRange, toggleAmenity, clearMore, clearAll, labels, chips, sectionCounts, moreCount,
   };
 }
@@ -412,7 +452,7 @@ function stripCount(id, f) {
 
 /** Pill options for a strip filter that was moved into the More Filters panel. */
 function OverflowOptions({ id, s, areas }) {
-  const { f, setParam, setRange, priceOptions } = s;
+  const { f, setParam, setRange, priceOptions, typeOptions } = s;
   const toggle = (key, value) => setParam(key, f[key] === value ? '' : value);
   const range = (minKey, maxKey, o) => {
     const on = o.min === (f[minKey] || '') && o.max === (f[maxKey] || '');
@@ -422,7 +462,7 @@ function OverflowOptions({ id, s, areas }) {
 
   switch (id) {
     case 'type':
-      return PROPERTY_TYPES.map((o) => (
+      return typeOptions.map((o) => (
         <button key={o.value} type="button" onClick={() => toggle('propertyType', o.value)} className={pill(f.propertyType === o.value)}>{o.label}</button>
       ));
     case 'area':
@@ -655,7 +695,7 @@ function MoreFilters({ s, resultCount, extraIds = [], areas = [] }) {
  * flow, so their width can still be measured, and appear inside More Filters instead.
  */
 function FilterButtons({ s, areas: rawAreas, showAreaFilter, resultCount, hideTrans = false, hiddenIds = [] }) {
-  const { f, openId, setOpenId, setParam, setRange, labels, trans, pathTrans, setTrans, priceOptions } = s;
+  const { f, openId, setOpenId, setParam, setRange, labels, trans, pathTrans, setTrans, priceOptions, typeOptions, category } = s;
   // Duplicate area rows (same slug) open the same page; show each once.
   const areas = rawAreas.filter((a, i) => a.slug && rawAreas.findIndex((b) => b.slug === a.slug) === i);
   const withArea = showAreaFilter && areas.length > 0;
@@ -691,7 +731,7 @@ function FilterButtons({ s, areas: rawAreas, showAreaFilter, resultCount, hideTr
           <button type="button" onClick={() => setParam('propertyType', '')} className={optBtn(!f.propertyType)}>
             All Types
           </button>
-          {PROPERTY_TYPES.map((o) => (
+          {typeOptions.map((o) => (
             <button key={o.value} type="button" onClick={() => setParam('propertyType', o.value)} className={optBtn(f.propertyType === o.value)}>
               {o.label}
             </button>
@@ -712,7 +752,8 @@ function FilterButtons({ s, areas: rawAreas, showAreaFilter, resultCount, hideTr
         </Dropdown>
       ))}
 
-      {slot('bhk', (
+      {/* No BHK on commercial pages: offices and shops aren't counted in bedrooms. */}
+      {category !== 'commercial' && slot('bhk', (
         <Dropdown id="bhk" label={f.bhk ? `${f.bhk} BHK` : 'BHK'} active={!!f.bhk} openId={openId} setOpenId={setOpenId}>
           <button type="button" onClick={() => setParam('bhk', '')} className={optBtn(!f.bhk)}>
             Any BHK
@@ -782,35 +823,28 @@ function FilterButtons({ s, areas: rawAreas, showAreaFilter, resultCount, hideTr
   );
 }
 
-/** Buy / Rent switch with a thumb that slides between the two. */
-function TransToggle({ s }) {
-  const value = s.trans;
-  const idx = TRANS_OPTIONS.findIndex((o) => o.value === value);
+/** A dropdown that picks one of a fixed set (Buy / Rent, Residential / Commercial). */
+function PickDropdown({ s, id, options, value, onChange }) {
+  const label = options.find((o) => o.value === value)?.label || options[0].label;
   return (
-    <div role="radiogroup" aria-label="Buy or rent" className="relative grid grid-cols-2 shrink-0 h-10 w-[7.5rem] rounded-lg bg-gray-100 p-0.5">
-      {idx >= 0 && (
-        <span
-          aria-hidden="true"
-          className={`absolute inset-y-0.5 left-0.5 w-[calc(50%-2px)] rounded-md bg-white shadow-card transition-transform duration-300 ease-out ${idx === 1 ? 'translate-x-full' : ''}`}
-        />
-      )}
-      {TRANS_OPTIONS.map((o) => {
-        const on = o.value === value;
-        return (
-          <button
-            key={o.value}
-            type="button"
-            role="radio"
-            aria-checked={on}
-            onClick={() => s.setTrans(o.value)}
-            className={`relative z-10 rounded-md text-sm font-semibold transition-colors ${on ? 'text-primary' : 'text-gray-500 hover:text-gray-800'}`}
-          >
-            {o.label}
-          </button>
-        );
-      })}
-    </div>
+    <Dropdown id={id} label={<span className="font-semibold text-gray-900">{label}</span>} openId={s.openId} setOpenId={s.setOpenId}>
+      {options.map((o) => (
+        <button key={o.value} type="button" onClick={() => { onChange(o.value); s.setOpenId(null); }} className={optBtn(o.value === value)}>
+          {o.label}
+        </button>
+      ))}
+    </Dropdown>
   );
+}
+
+function TransToggle({ s }) {
+  return <PickDropdown s={s} id="pick-trans" options={TRANS_OPTIONS} value={s.trans} onChange={s.setTrans} />;
+}
+
+/** Residential / Commercial: only on pages whose path says which one they are. */
+function CategoryToggle({ s }) {
+  if (!s.category) return null;
+  return <PickDropdown s={s} id="pick-cat" options={CATEGORY_OPTIONS} value={s.category} onChange={s.setCategory} />;
 }
 
 function SortDropdown({ s, withPrefix = false }) {
@@ -908,19 +942,23 @@ export function ListingFilterBar({ activeFilters = {}, resultCount: serverCount,
     <div className="filter-strip sticky z-30 bg-white border-b border-gray-200">
       {/* Phones and tablets: Buy/Rent + search on their own row. It slides up out of view with
           the header when scrolling down (see .filter-strip in globals.css). */}
-      <div className="strip-search-row lg:hidden container-px flex items-center gap-2 pt-3">
+      {/* [&_input]:h-9: the shared search box is 10% shorter in this strip. */}
+      <div className="strip-search-row lg:hidden container-px flex items-center gap-2 pt-1.5">
         <TransToggle s={s} />
-        <div className="flex-1 min-w-0"><HeaderSearch currentLabel={searchLabel} /></div>
+        <div className="flex-1 min-w-0 [&_input]:h-9"><HeaderSearch currentLabel={searchLabel} /></div>
       </div>
 
-      {/* Phones: the whole row (every filter, then Sort) scrolls sideways, fading out on the
-          right as a hint that there is more. sm and up: filters scroll, Sort stays pinned right.
-          lg and up: Buy/Rent + search lead the row and filters that don't fit go to More Filters. */}
-      <div className="container-px flex items-center gap-2 py-3 overflow-x-auto no-scrollbar sm:overflow-visible [mask-image:linear-gradient(to_right,black_88%,transparent)] sm:[mask-image:none]">
+      {/* Phones: the whole row (Residential/Commercial, every filter, then Sort) scrolls sideways,
+          fading out on the right as a hint that there is more. sm and up: filters scroll, Sort stays
+          pinned right. lg and up: Buy/Rent + Residential/Commercial + search lead the row and
+          filters that don't fit go to More Filters. */}
+      <div className="container-px flex items-center gap-2 py-1.5 overflow-x-auto no-scrollbar sm:overflow-visible [mask-image:linear-gradient(to_right,black_88%,transparent)] sm:[mask-image:none]">
         <div className="hidden lg:flex items-center gap-2 shrink-0 pr-3 mr-1 border-r border-gray-200">
           <TransToggle s={s} />
-          <div className="w-64 xl:w-80"><HeaderSearch currentLabel={searchLabel} /></div>
+          <CategoryToggle s={s} />
+          <div className="w-64 xl:w-80 [&_input]:h-9"><HeaderSearch currentLabel={searchLabel} /></div>
         </div>
+        <div className="lg:hidden shrink-0"><CategoryToggle s={s} /></div>
         <div ref={rowRef} className="relative flex items-center gap-2 shrink-0 sm:shrink sm:flex-1 sm:min-w-0 sm:overflow-x-auto lg:overflow-hidden no-scrollbar">
           <FilterButtons s={s} areas={areas} showAreaFilter={showAreaFilter} resultCount={resultCount} hideTrans hiddenIds={hiddenIds} />
           {/* Shown only while a filter is applied; the active dropdowns themselves show what's set. */}

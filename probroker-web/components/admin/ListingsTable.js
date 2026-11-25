@@ -111,7 +111,7 @@ export default function ListingsTable({ listings }) {
             <td className="px-3.5 py-2.5 text-xs text-gray-400 whitespace-nowrap">{formatDate(p.createdAt)}</td>
             <td className="px-3.5 py-2.5 whitespace-nowrap">
               <div className="flex gap-1">
-                <a href={`/admin/listings/${p.propertyId}/edit`} className="bg-primary text-white text-xs rounded px-2.5 py-1.5">Edit</a>
+                <a href={`/admin/listings/${p.propertyId}/edit`} className="bg-btn hover:bg-btn-hover text-white text-xs rounded px-2.5 py-1.5">Edit</a>
                 <a href={`/property/${p.slug || p.propertyId}`} target="_blank" rel="noreferrer" className="border border-gray-200 text-xs rounded px-2.5 py-1.5">View</a>
                 <button disabled={busyId === p.propertyId} onClick={() => toggleStatus(p)} className="border border-gray-200 text-xs rounded px-2.5 py-1.5">
                   {p.status === 'active' ? 'Sold' : 'Activate'}

@@ -106,7 +106,7 @@ export default async function AdminDashboardPage() {
           <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/admin/export/societies?fmt=csv`} className="border border-gray-200 rounded-md px-4 py-2 text-sm">Societies (.csv)</a>
           <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/admin/export/areas?fmt=csv`} className="border border-gray-200 rounded-md px-4 py-2 text-sm">Areas (.csv)</a>
           <span className="text-gray-300">|</span>
-          <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/admin/export-backup`} className="bg-primary text-white rounded-md px-4 py-2 text-sm font-semibold">Download Full Backup (.zip)</a>
+          <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/admin/export-backup`} className="bg-btn hover:bg-btn-hover text-white rounded-md px-4 py-2 text-sm font-semibold">Download Full Backup (.zip)</a>
         </div>
       </div>
     </div>

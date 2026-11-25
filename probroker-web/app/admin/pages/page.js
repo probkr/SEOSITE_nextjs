@@ -26,7 +26,7 @@ export default async function PagesListPage() {
                 <td className="px-3.5 py-2.5 font-semibold text-gray-900">{p.label}</td>
                 <td className="px-3.5 py-2.5"><a href={p.url} target="_blank" rel="noreferrer" className="text-primary">{p.url}</a></td>
                 <td className="px-3.5 py-2.5 text-gray-400">{p.updated_at || 'Never'}</td>
-                <td className="px-3.5 py-2.5"><a href={`/admin/pages/${p.slug}/edit`} className="bg-primary text-white text-xs rounded px-3 py-1.5">Edit Content</a></td>
+                <td className="px-3.5 py-2.5"><a href={`/admin/pages/${p.slug}/edit`} className="bg-btn hover:bg-btn-hover text-white text-xs rounded px-3 py-1.5">Edit Content</a></td>
               </tr>
             ))}
             {pages.length === 0 && <tr><td colSpan={4} className="text-center py-8 text-gray-400">No pages found</td></tr>}

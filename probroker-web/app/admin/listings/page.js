@@ -53,7 +53,7 @@ export default async function ListingsPage({ searchParams }) {
         </select>
         <input type="date" name="date_from" defaultValue={date_from} className="border border-gray-200 rounded-md px-3 py-2 text-sm" />
         <input type="date" name="date_to" defaultValue={date_to} className="border border-gray-200 rounded-md px-3 py-2 text-sm" />
-        <button type="submit" className="bg-primary text-white text-sm rounded-md px-4 py-2 font-semibold">Filter</button>
+        <button type="submit" className="bg-btn hover:bg-btn-hover text-white text-sm rounded-md px-4 py-2 font-semibold">Filter</button>
         <a href="/admin/listings" className="text-xs text-gray-500">Reset</a>
       </form>
 

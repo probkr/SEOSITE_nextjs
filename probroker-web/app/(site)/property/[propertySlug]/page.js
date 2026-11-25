@@ -243,7 +243,7 @@ export default async function PropertyPage({ params }) {
               </div>
             )}
             <div className="flex items-end gap-3 mb-6">
-              <div className="text-3xl md:text-4xl font-bold text-primary font-heading">{fmtPrice(prop.price)}</div>
+              <div className="text-3xl md:text-4xl font-bold text-gray-900 font-heading">{fmtPrice(prop.price)}</div>
               {pricePerSqft && <div className="text-sm text-gray-500 pb-1">(₹{pricePerSqft.toLocaleString('en-IN')}/sqft)</div>}
             </div>
 

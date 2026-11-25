@@ -89,7 +89,7 @@ export default function PageEditForm({ slug, label, url, initial }) {
         </div>
       </div>
       <div className="flex gap-3 mt-4">
-        <button type="submit" disabled={saving} className="bg-primary text-white rounded-md px-6 py-2 text-sm font-semibold disabled:opacity-60">{saving ? 'Saving…' : 'Save Page'}</button>
+        <button type="submit" disabled={saving} className="bg-btn hover:bg-btn-hover text-white rounded-md px-6 py-2 text-sm font-semibold disabled:opacity-60">{saving ? 'Saving…' : 'Save Page'}</button>
         <a href="/admin/pages" className="border border-gray-200 rounded-md px-4 py-2 text-sm">Cancel</a>
       </div>
     </form>
