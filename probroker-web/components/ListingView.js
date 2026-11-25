@@ -42,6 +42,7 @@ export default function ListingView({ data, basePath }) {
         areas={popularAreas || []}
         showAreaFilter={!area}
         transactionType={transactionType}
+        currentPlace={area?.name || ''}
       />
 
     <div className="container-px pt-3 pb-6">
@@ -128,14 +129,16 @@ export default function ListingView({ data, basePath }) {
 
         {/* Right sidebar: lead capture, promotional CTA, quick links — Housing.com-style */}
         <aside className="space-y-6">
-          {/* Clears the sticky header (64px) + filter strip (~57px) */}
-          <div className="lg:sticky lg:top-[9rem] space-y-6">
-            <LeadCaptureCard context={h1} />
+          {/* Sponsored card first, full size. It scrolls away normally so the sticky block below
+              still fits on screen. Phones skip it (the feed has its own ads); hidden while no ad
+              is live, so the gap doesn't show either. */}
+          <div className="hidden lg:block lg:empty:hidden">
+            <AdSlot placement="listing" city={city?.slug} slot={-1} />
+          </div>
 
-            {/* Hidden while no ad is live, so the gap doesn't show either. */}
-            <div className="hidden lg:block lg:empty:hidden">
-              <AdSlot placement="listing" city={city?.slug} slot={-1} variant="compact" />
-            </div>
+          {/* Clears the sticky header (--header-h, 0 while it is scrolled away) + filter strip (~4rem) */}
+          <div className="lg:sticky lg:top-[calc(var(--header-h)+5rem)] lg:transition-[top] lg:duration-300 space-y-6">
+            <LeadCaptureCard context={h1} />
 
             <div className="card p-4 bg-primary-50 border-primary-100">
               <div className="font-semibold text-gray-900 mb-1 text-sm">Have a property?</div>

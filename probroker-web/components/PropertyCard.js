@@ -330,7 +330,7 @@ export default function PropertyCard({ p, variant = 'grid' }) {
         {stripMedia.length > 0 && (
           <div className="sm:hidden relative z-10 flex gap-1.5 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-px-2 px-2 pt-2">
             {stripMedia.map((url, i) => (
-              <Link key={`${url}-${i}`} href={href} aria-label={i === 0 ? title : `${title} - photo ${i + 1}`} className={`relative snap-start shrink-0 ${stripMedia.length === 1 && hiddenMedia <= 0 ? 'w-full' : 'w-[78%]'} h-36 rounded-lg overflow-hidden bg-gray-100`}>
+              <Link key={`${url}-${i}`} href={href} aria-label={i === 0 ? title : `${title} - photo ${i + 1}`} className={`relative snap-start shrink-0 ${stripMedia.length === 1 && hiddenMedia <= 0 ? 'w-full' : 'w-[78%]'} h-44 rounded-lg overflow-hidden bg-gray-100`}>
                 <PropertyMedia src={url} alt={i === 0 ? title : `${title} - photo ${i + 1}`} className="w-full h-full object-cover" lazy={i > 0} />
                 {i === 0 && (
                   <>
@@ -346,7 +346,7 @@ export default function PropertyCard({ p, variant = 'grid' }) {
               </Link>
             ))}
             {hiddenMedia > 0 && (
-              <Link href={href} className="snap-start shrink-0 w-28 h-36 rounded-lg bg-primary-50 text-primary flex flex-col items-center justify-center text-center text-xs font-semibold">
+              <Link href={href} className="snap-start shrink-0 w-28 h-44 rounded-lg bg-primary-50 text-primary flex flex-col items-center justify-center text-center text-xs font-semibold">
                 <span className="text-lg font-bold">+{hiddenMedia}</span>
                 more photos
               </Link>
@@ -355,7 +355,7 @@ export default function PropertyCard({ p, variant = 'grid' }) {
         )}
         {/* The photo fills this box instead of sizing it, so a tall photo can't stretch the card.
             Phones with photos use the strip above instead. */}
-        <div className={`${stripMedia.length > 0 ? 'hidden sm:block' : ''} relative w-full sm:w-72 shrink-0 h-36 sm:h-auto sm:min-h-[220px] overflow-hidden bg-gray-100 pointer-events-none`}>
+        <div className={`${stripMedia.length > 0 ? 'hidden sm:block' : ''} relative w-full sm:w-72 shrink-0 h-44 sm:h-auto sm:min-h-[220px] overflow-hidden bg-gray-100 pointer-events-none`}>
           <div className="absolute inset-0">{imageInner}</div>
           <span className={`badge absolute top-2 left-2 shadow-card ${transCls}`}>{trans}</span>
           {verifiedTag}
@@ -375,7 +375,7 @@ export default function PropertyCard({ p, variant = 'grid' }) {
             <div className="flex-1 min-w-0">
               {titleRow}
               <div className="mt-0.5 flex min-w-0">
-                {placeLink('text-[11.5px] sm:text-[16.5px]', true, 'w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]')}
+                {placeLink('text-[11.5px] sm:text-[13px]', true, 'w-3.5 h-3.5')}
               </div>
             </div>
             <div className="hidden sm:block shrink-0">
@@ -402,7 +402,7 @@ export default function PropertyCard({ p, variant = 'grid' }) {
             )}
             <div className="order-first sm:order-none shrink-0 sm:ml-auto flex items-center justify-between gap-3 sm:block sm:text-right sm:pl-4 sm:border-l sm:border-gray-100">
               <div>
-                <div className="text-xl sm:text-3xl font-bold text-primary font-heading leading-tight whitespace-nowrap">{fmtPrice(p.price)}</div>
+                <div className="text-lg sm:text-2xl font-bold text-primary font-heading leading-tight whitespace-nowrap">{fmtPrice(p.price)}</div>
                 {isRent && <div className="text-[11px] sm:text-xs font-medium text-gray-500">per month</div>}
               </div>
               <div className="sm:hidden">
@@ -411,9 +411,10 @@ export default function PropertyCard({ p, variant = 'grid' }) {
             </div>
           </div>
           {/* One fixed-height line so every card is the same height: the highlights when there are
-              any, otherwise (sm up) one line of the description, otherwise left empty. */}
+              any, otherwise one line of the description, otherwise left empty. Phones skip this
+              line; the taller photo strip above uses that space instead. */}
           {highlights.length > 0 ? (
-            <div className="sm:h-7">{highlightsBlock('-mr-4 pr-4 sm:-mr-5 sm:pr-5', 'inline')}</div>
+            <div className="hidden sm:block sm:h-7">{highlightsBlock('-mr-4 pr-4 sm:-mr-5 sm:pr-5', 'inline')}</div>
           ) : (
             <p title={description} className="hidden sm:block h-7 leading-7 text-sm text-gray-600 truncate">{description}</p>
           )}
@@ -443,9 +444,13 @@ export default function PropertyCard({ p, variant = 'grid' }) {
   return (
     <div className="group card overflow-hidden flex flex-col relative h-full hover:shadow-float transition-shadow duration-300">
       <Link href={href} className="absolute inset-0 z-0" aria-label={title} />
-      {/* Phones: a 2:1 photo so one card and half of the next fit on the screen. sm up: 5:3. */}
-      <div className="relative w-full aspect-[2/1] sm:aspect-[5/3] overflow-hidden bg-gray-100 pointer-events-none">
-        {imageInner}
+      {/* Phones: a 2:1 photo so one card and half of the next fit on the screen. sm up: 5:3.
+          Plus a fixed strip of extra height: the space the furnishings chip row (h-7 + gap) used
+          to take, so dropping that row made the photo taller, not the card shorter. */}
+      <div className="relative w-full overflow-hidden bg-gray-100 pointer-events-none">
+        <div aria-hidden="true" className="aspect-[2/1] sm:aspect-[5/3]" />
+        <div aria-hidden="true" className="h-[34px] sm:h-9" />
+        <div className="absolute inset-0">{imageInner}</div>
         {badges}
       </div>
       <div className="p-3 sm:p-4 flex-1 flex flex-col gap-1.5 sm:gap-2 pointer-events-none">
@@ -459,11 +464,8 @@ export default function PropertyCard({ p, variant = 'grid' }) {
           {placeRow && <div className="mt-0.5 flex min-w-0">{placeRow}</div>}
         </div>
         {factsRow}
-        {/* Fixed-height chip row; left out when there are none. The footer below sits at the
-            card's bottom (mt-auto), so cards side by side still line up. */}
-        {highlights.length > 0 && (
-          <div className="h-7">{highlightsBlock('-mr-3 pr-3 sm:-mr-4 sm:pr-4', 'inline')}</div>
-        )}
+        {/* No furnishings chips on this card (the photo got their space). The footer below sits
+            at the card's bottom (mt-auto), so cards side by side still line up. */}
         {p.contactPhone ? (
           // My Contacts: the number is unlocked, so Call + WhatsApp need the full width.
           <div className="mt-auto flex flex-col gap-2.5">

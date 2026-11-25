@@ -31,6 +31,23 @@ a { @apply no-underline; }
   body:has(.header-search-row) { --header-h: 7.25rem; }
 }
 
+/* Listing pages: the search box (with Buy/Rent) lives in the filter strip, not the header. */
+body:has(.filter-strip) .header-search-slot,
+body:has(.filter-strip) .header-search-row { display: none; }
+@media (max-width: 1023.98px) {
+  body:has(.filter-strip) { --header-h: 4rem; }
+}
+
+/* Hide-on-scroll (Header.js toggles html.header-hidden on listing pages): the header slides up,
+   the filter strip takes its place at the top. On phones/tablets the strip's search row
+   (pt-3 + h-10 = 3.25rem) slides up with it, leaving just the filter line. */
+.filter-strip { top: var(--header-h); transition: top 0.3s ease; }
+html.header-hidden .site-header { transform: translateY(-100%); }
+html.header-hidden body { --header-h: 0px; }
+@media (max-width: 1023.98px) {
+  html.header-hidden .filter-strip { top: -3.25rem; }
+}
+
 body:has(.filter-strip) .site-header { background-color: #fff; border-bottom-color: #e5e7eb; box-shadow: none; backdrop-filter: none; }
 /* Horizontal scrollers (filter bar) that still scroll by touch/trackpad but show no bar. */
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }

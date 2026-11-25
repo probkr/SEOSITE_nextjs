@@ -49,9 +49,47 @@ module.exports = {
           '0%': { opacity: '0', transform: 'translateY(70%)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        // Post Property page.
+        'fade-up': {
+          '0%': { opacity: '0', transform: 'translateY(14px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'pop-in': {
+          '0%': { opacity: '0', transform: 'scale(0.92)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        blob: {
+          '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
+          '33%': { transform: 'translate(24px, -18px) scale(1.06)' },
+          '66%': { transform: 'translate(-18px, 14px) scale(0.96)' },
+        },
+        shine: {
+          '0%': { transform: 'translateX(-120%) skewX(-20deg)' },
+          '60%, 100%': { transform: 'translateX(320%) skewX(-20deg)' },
+        },
+        'draw-check': {
+          '0%': { strokeDashoffset: '48' },
+          '100%': { strokeDashoffset: '0' },
+        },
+        'ring-out': {
+          '0%': { opacity: '0.6', transform: 'scale(0.8)' },
+          '100%': { opacity: '0', transform: 'scale(1.8)' },
+        },
       },
       animation: {
         'ticker-in': 'ticker-in 0.45s ease-out',
+        'fade-up': 'fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both',
+        'pop-in': 'pop-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both',
+        float: 'float 6s ease-in-out infinite',
+        'float-slow': 'float 8s ease-in-out 1s infinite',
+        blob: 'blob 14s ease-in-out infinite',
+        shine: 'shine 3.2s ease-in-out 1.2s infinite',
+        'draw-check': 'draw-check 0.5s ease-out 0.25s both',
+        'ring-out': 'ring-out 1.4s ease-out 0.2s infinite',
       },
     },
   },

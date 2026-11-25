@@ -33,13 +33,16 @@ function listingLeaf(pathname) {
   return LISTING_LEAF_RE.test(last) ? last : 'residential-property-for-sale';
 }
 
-export default function HeaderSearch() {
+// currentLabel: what the visitor is looking at (a locality name, a searched word), shown in the box
+// so they can see what they searched. Pages without one start empty.
+export default function HeaderSearch({ currentLabel = '' }) {
   const router = useRouter();
   const pathname = usePathname();
   const listId = useId();
   const boxRef = useRef(null);
+  const justFocused = useRef(false);
   const [city, setCity] = useState(CITIES[0].slug);
-  const [q, setQ] = useState('');
+  const [q, setQ] = useState(currentLabel); // in the server HTML too, so it never flashes empty
   const [results, setResults] = useState(NO_RESULTS);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
@@ -106,9 +109,9 @@ export default function HeaderSearch() {
         if (CITIES.some((c) => c.slug === saved)) setCity(saved);
       } catch {}
     }
-    setQ(pathname.startsWith('/search') ? new URLSearchParams(window.location.search).get('q') || '' : '');
+    setQ(pathname.startsWith('/search') ? new URLSearchParams(window.location.search).get('q') || '' : currentLabel);
     setOpen(false);
-  }, [pathname]);
+  }, [pathname, currentLabel]);
 
   useEffect(() => {
     const onCityChange = (e) => setCity(e.detail);
@@ -116,9 +119,11 @@ export default function HeaderSearch() {
     return () => window.removeEventListener(CITY_EVENT, onCityChange);
   }, []);
 
+  // Only while the list is open: the box can start filled with the page's locality, and that
+  // shouldn't cost a request on every page view.
   useEffect(() => {
-    if (term.length < 2) {
-      setResults(NO_RESULTS);
+    if (term.length < 2 || !open) {
+      if (term.length < 2) setResults(NO_RESULTS);
       return undefined;
     }
     const controller = new AbortController();
@@ -132,7 +137,7 @@ export default function HeaderSearch() {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [term, city]);
+  }, [term, city, open]);
 
   useEffect(() => {
     function onDocClick(e) {
@@ -187,7 +192,19 @@ export default function HeaderSearch() {
             setActive(-1);
             setOpen(true);
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={(e) => {
+            setOpen(true);
+            // Select the shown name, so typing replaces it with a new search.
+            if (q) {
+              e.target.select();
+              justFocused.current = true;
+            }
+          }}
+          onMouseUp={(e) => {
+            // The mouseup of the focusing click would otherwise drop the selection.
+            if (justFocused.current) e.preventDefault();
+            justFocused.current = false;
+          }}
           onClick={() => setOpen(true)}
           onKeyDown={onKeyDown}
           placeholder="Search locality, society or landmark"

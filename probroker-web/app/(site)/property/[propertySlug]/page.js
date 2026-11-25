@@ -331,6 +331,12 @@ export default async function PropertyPage({ params }) {
           </div>
 
           <div>
+            {/* Sponsored card first, full size. It scrolls away normally; only the contact and
+                inquiry cards below stay pinned, so the tall sidebar never runs off-screen.
+                Hidden while no ad is live, so the gap doesn't show either. */}
+            <div className="empty:hidden mb-4">
+              <AdSlot placement="listing" city={prop.citySlug} slot={0} />
+            </div>
             <div className="lg:sticky lg:top-24">
               <InquiryForm
                 propertyId={prop.propertyId}
@@ -338,12 +344,6 @@ export default async function PropertyPage({ params }) {
                 contactName={prop.contactName}
                 hasContact={prop.hasContact}
                 listingType={prop.listingType}
-                between={
-                  // Hidden while no ad is live, so the gap doesn't show either.
-                  <div className="empty:hidden">
-                    <AdSlot placement="listing" city={prop.citySlug} slot={0} variant="compact" />
-                  </div>
-                }
               />
             </div>
           </div>

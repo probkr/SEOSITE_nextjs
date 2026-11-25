@@ -1,9 +1,12 @@
 // Port of backend/server.py fmt_price()
+// 12500000 -> "₹1.25 Cr", 6550000 -> "₹65.5 Lac", 25000 -> "₹25,000" (up to 2 decimals, no trailing zeros).
 export function fmtPrice(p) {
-  if (!p) return '';
-  if (p >= 10000000) return `₹${(p / 10000000).toFixed(1)}Cr`;
-  if (p >= 100000) return `₹${Math.round(p / 100000)} Lac`;
-  return `₹${Number(p).toLocaleString('en-IN')}`;
+  const n = Number(p);
+  if (!n) return '';
+  const short = (v) => Number(v.toFixed(2)).toString();
+  if (n >= 10000000) return `₹${short(n / 10000000)} Cr`;
+  if (n >= 100000) return `₹${short(n / 100000)} Lac`;
+  return `₹${n.toLocaleString('en-IN')}`;
 }
 
 function slugify(str) {

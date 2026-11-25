@@ -459,6 +459,43 @@ export default function Header({ settings } = {}) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // Listing pages (they have the filter strip): the header slides away while scrolling down and
+  // comes back on the first scroll up, so the filters get the screen. globals.css does the
+  // moving off the html.header-hidden class; it never hides near the top or with the menu open.
+  useEffect(() => {
+    const root = document.documentElement;
+    let lastY = window.scrollY;
+    let hidden = false;
+    let frame = 0;
+    const setHidden = (next) => {
+      if (next === hidden) return;
+      hidden = next;
+      root.classList.toggle('header-hidden', next);
+    };
+    function update() {
+      frame = 0;
+      const y = window.scrollY;
+      const delta = y - lastY;
+      if (open || y < 120 || !document.querySelector('.filter-strip')) {
+        setHidden(false);
+        lastY = y;
+        return;
+      }
+      // Small jitters (trackpads, the address bar on phones) shouldn't flip it.
+      if (Math.abs(delta) < 8) return;
+      setHidden(delta > 0);
+      lastY = y;
+    }
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
+    update();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(frame);
+      root.classList.remove('header-hidden');
+    };
+  }, [open, pathname]);
+
   // On the homepage the header floats over the hero photo, so use light text until the user scrolls.
   const onDark = isHome && !scrolled && !open;
   const navHover = onDark ? 'hover:text-accent' : 'hover:text-primary';
@@ -466,7 +503,7 @@ export default function Header({ settings } = {}) {
   return (
     <header
       ref={headerRef}
-      className={`site-header sticky top-0 z-40 backdrop-blur-md transition-colors duration-300 ${
+      className={`site-header sticky top-0 z-40 backdrop-blur-md transition-[background-color,border-color,transform] duration-300 ${
         onDark ? 'bg-white/5 border-b border-white/10' : 'bg-white/70 border-b border-gray-200/60 shadow-sm'
       }`}
     >
@@ -491,7 +528,7 @@ export default function Header({ settings } = {}) {
         </div>
 
         {withSearch && (
-          <div className="hidden lg:block flex-1 min-w-0 max-w-xl mx-4 xl:mx-6">
+          <div className="header-search-slot hidden lg:block flex-1 min-w-0 max-w-xl mx-4 xl:mx-6">
             <HeaderSearch />
           </div>
         )}
