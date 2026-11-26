@@ -150,6 +150,13 @@ function LatestSection({ s, properties }) {
   );
 }
 
+// Towers drawn in the hero's bottom-right corner (800x300 SVG box).
+const HERO_TOWERS = [
+  { x: 548, top: 176, w: 62, rows: 4 },
+  { x: 622, top: 112, w: 74, rows: 6 },
+  { x: 708, top: 150, w: 60, rows: 5 },
+];
+
 export default async function HomePage() {
   const latestQuery = (transactionType) =>
     getProperties({ status: 'active', isApproved: true, hasPhotos: true, transactionType, limit: 4, sort: '-createdAt' }, { revalidate: 300 });
@@ -194,28 +201,35 @@ export default async function HomePage() {
           No overflow-hidden on the section: the search widget's locality dropdown must hang below
           the hero, so only the decorative layer below is clipped. All tints come from brand-color.js. */}
       <section className="relative -mt-16 pt-16">
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-b-[2rem] md:rounded-b-[3rem] bg-gradient-to-b from-primary-100 via-primary-50 to-white">
-          {/* Blueprint grid that fades out toward the edges. */}
-          <div className="absolute inset-0 [background-image:linear-gradient(to_right,theme(colors.primary.300/35%)_1px,transparent_1px),linear-gradient(to_bottom,theme(colors.primary.300/35%)_1px,transparent_1px)] [background-size:44px_44px] [mask-image:radial-gradient(ellipse_75%_70%_at_50%_35%,black_30%,transparent_85%)] [-webkit-mask-image:radial-gradient(ellipse_75%_70%_at_50%_35%,black_30%,transparent_85%)]" />
-          {/* Two soft glows drifting slowly. */}
-          <div className="absolute -top-24 -left-20 h-80 w-80 md:h-[28rem] md:w-[28rem] rounded-full bg-primary-200/70 blur-3xl motion-safe:animate-blob" />
-          <div className="absolute top-8 -right-24 h-72 w-72 md:h-96 md:w-96 rounded-full bg-accent/20 blur-3xl motion-safe:animate-blob [animation-delay:-7s]" />
-          {/* Line-art skyline along the bottom. */}
-          <svg className="absolute bottom-0 left-0 hidden md:block w-full h-36" viewBox="0 0 1440 160" preserveAspectRatio="xMidYMax slice">
-            <path
-              className="fill-primary-100/60 stroke-primary-300/70"
-              strokeWidth="1.5"
-              strokeLinejoin="round"
-              d="M0 160V120H60V80H110V120H150V60H200V40H230V60H250V120H300V95L330 70L360 95V120H420V50H480V120H520V85H580V120H640V30H700V120H740V100L775 72L810 100V120H870V65H920V45H950V120H1000V90H1060V120H1100V55H1160V120H1200V100L1230 75L1260 100V120H1320V70H1380V120H1440V160Z"
-            />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-b-[2rem] md:rounded-b-[3rem] bg-gradient-to-b from-primary-50 via-primary-50 to-white">
+          {/* AllFlats banner look: soft peach waves in the top-left corner. */}
+          <svg className="absolute top-0 left-0 w-64 sm:w-96 md:w-[34rem] h-auto" viewBox="0 0 600 400" fill="none">
+            <path className="fill-primary-100" d="M0 0H430C340 40 240 120 160 210C105 270 55 305 0 325Z" />
+            <path className="fill-primary-200/50" d="M0 0H270C205 50 135 120 85 172C52 205 26 222 0 232Z" />
+            <path className="stroke-primary-200" strokeWidth="2" d="M0 372C125 305 225 172 325 92C385 42 445 12 530 0" />
           </svg>
+          {/* Bottom-right: light towers with windows, half hidden behind a rising wave. */}
+          <svg className="absolute bottom-0 right-0 hidden md:block w-[34rem] lg:w-[42rem] h-auto" viewBox="0 0 800 300" fill="none">
+            <path className="fill-primary-100/70" d="M0 300C150 232 320 202 480 210C620 218 720 180 800 118V300Z" />
+            {HERO_TOWERS.map((t) => (
+              <g key={t.x}>
+                <path className="fill-primary-100 stroke-primary-200/80" strokeWidth="1.5" strokeLinejoin="round" d={`M${t.x} 300V${t.top}L${t.x + t.w / 2} ${t.top - 18}L${t.x + t.w} ${t.top}V300Z`} />
+                {Array.from({ length: t.rows }, (_, r) => [0, 1].map((c) => (
+                  <rect key={`${r}-${c}`} className="fill-primary-200/60" x={t.x + 12 + c * (t.w / 2 - 6)} y={t.top + 16 + r * 26} width="12" height="14" rx="1.5" />
+                )))}
+              </g>
+            ))}
+            <path className="fill-primary-50" d="M0 300C200 262 380 250 540 262C660 272 742 250 800 222V300Z" />
+          </svg>
+          {/* One soft glow so the cream doesn't look flat. */}
+          <div className="absolute -top-24 right-0 h-72 w-72 md:h-96 md:w-96 rounded-full bg-accent/15 blur-3xl motion-safe:animate-blob" />
         </div>
         {/* Phones get a compact heading and the points one at a time, so the search box fits on the first screen. */}
         <div className="container-px relative pt-6 pb-10 md:pt-20 md:pb-28 text-center">
 
           <h1 className="text-[28px] sm:text-4xl md:text-6xl font-extrabold font-heading text-gray-900 tracking-tight leading-[1.1] md:leading-[1.05]">
             Find your next home,<br className="hidden md:block" />{' '}
-            <span className="bg-gradient-to-r from-primary-600 via-primary-700 to-primary-800 bg-clip-text text-transparent">faster than you&apos;d think.</span>
+            <span className="bg-gradient-to-r from-primary-400 via-primary to-primary-600 bg-clip-text text-transparent">faster than you&apos;d think.</span>
           </h1>
           <HeroPointsTicker points={HERO_POINTS(totalListings)} className="mt-3 md:hidden" />
           <ul className="hidden md:flex mt-5 flex-wrap justify-center items-center gap-x-3 gap-y-1 text-gray-600 text-lg font-medium">

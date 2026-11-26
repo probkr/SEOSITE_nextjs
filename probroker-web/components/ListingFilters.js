@@ -939,7 +939,7 @@ export function ListingFilterBar({ activeFilters = {}, resultCount: serverCount,
   }, [labelKey]);
 
   return (
-    <div className="filter-strip sticky z-30 bg-white border-b border-gray-200">
+    <div className="filter-strip sticky z-30 bg-primary-50 border-b border-primary-100">
       {/* Phones and tablets: Buy/Rent + search on their own row. It slides up out of view with
           the header when scrolling down (see .filter-strip in globals.css). */}
       {/* [&_input]:h-9: the shared search box is 10% shorter in this strip. */}

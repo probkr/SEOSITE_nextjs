@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import LogoMark from './LogoMark';
 
 const COLS = [
   {
@@ -52,19 +51,14 @@ const COLS = [
 ];
 
 export default function Footer({ settings } = {}) {
-  const logoUrl = settings && settings.logo_url;
-  const logoWidth = (settings && settings.logo_width) || 140;
   return (
     <footer className="bg-primary-900 text-gray-300 mt-16">
       <div className="container-px py-14 grid grid-cols-2 md:grid-cols-5 gap-8 text-sm">
         <div className="col-span-2 md:col-span-1">
           <div className="flex items-center gap-1 text-2xl font-extrabold font-heading text-white mb-3">
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt={(settings && settings.site_name) || 'PRObroker'} style={{ width: `${logoWidth}px` }} className="h-auto max-h-10 object-contain" />
-            ) : (
-              <>PR<LogoMark className="w-6 h-6 inline-block align-[-0.2em] mx-0.5" />broker</>
-            )}
+            {/* White-text version of the AllFlats logo for the navy footer. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/brand/allflats-logo-light.png" alt="AllFlats" width={495} height={128} loading="lazy" className="h-10 w-auto" />
           </div>
           <p className="text-gray-400 leading-relaxed">
             Verified residential &amp; commercial property listings across Ahmedabad and Gandhinagar. Connect with owners and trusted brokers in one place.

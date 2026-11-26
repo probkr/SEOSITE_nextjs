@@ -1,4 +1,4 @@
-const { brandShades, buttonShades } = require('./brand-color');
+const { brandShades, buttonShades, DARK_COLOR } = require('./brand-color');
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
@@ -17,11 +17,12 @@ module.exports = {
         primary: brandShades,
         // Button color is also set in brand-color.js.
         btn: buttonShades,
+        // Light peach-amber from the AllFlats logo.
         accent: {
-          DEFAULT: '#f5a623',
-          50: '#fff8ec',
-          500: '#f5a623',
-          600: '#d98a0e',
+          DEFAULT: '#F5A84A',
+          50: '#FFF6EA',
+          500: '#F5A84A',
+          600: '#DD8A26',
         },
       },
       fontFamily: {
@@ -29,7 +30,7 @@ module.exports = {
         sans: ['DM Sans', 'Manrope', 'system-ui', 'sans-serif'],
       },
       backgroundImage: {
-        'brand-gradient': `linear-gradient(135deg, ${brandShades[700]} 0%, ${brandShades.DEFAULT} 100%)`,
+        'brand-gradient': `linear-gradient(135deg, ${DARK_COLOR} 0%, ${brandShades[700]} 55%, ${brandShades.DEFAULT} 100%)`,
       },
       boxShadow: {
         card: '0 2px 8px rgba(0,0,0,0.08)',

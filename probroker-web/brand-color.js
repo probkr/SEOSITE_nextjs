@@ -3,10 +3,16 @@
 //  Buttons, links, logo, footer, admin sidebar, gradients --
 //  sab isi se banenge. Light/dark/hover shades apne aap bante hain.
 // ============================================================
-const BRAND_COLOR = '#4B6FFF';
+//  AllFlats logo ka orange. Logo wala exact orange (#F58426) white par halka padhta hai,
+//  isliye yeh thoda gehra shade hai taaki orange text aur prices saaf dikhen.
+const BRAND_COLOR = '#EA6A1F';
 
 //  BUTTONS KA COLOR -- saare buttons (Search, Post Property, Submit...) isse banenge.
-const BUTTON_COLOR = '#233376';
+const BUTTON_COLOR = '#03102C';
+
+//  DARK COLOR -- AllFlats logo ka navy background. Footer, admin sidebar aur
+//  dark sections (primary-800 / primary-900) isse banenge.
+const DARK_COLOR = '#0F1324';
 
 // ---- Neeche kuch badalne ki zaroorat nahi ----
 
@@ -39,8 +45,9 @@ const brandShades = {
   500: BRAND_COLOR,
   600: mix(BRAND_COLOR, -0.22),
   700: mix(BRAND_COLOR, -0.42),
-  800: mix(BRAND_COLOR, -0.55),
-  900: mix(BRAND_COLOR, -0.65),
+  // Darkest shades use the logo's navy instead of a muddy dark orange.
+  800: mix(DARK_COLOR, 0.08),
+  900: DARK_COLOR,
 };
 
 // For inline styles that need see-through brand color, e.g. brandRgba(0.07).
@@ -56,4 +63,4 @@ const buttonShades = {
   hover: mix(BUTTON_COLOR, buttonIsDark ? 0.2 : -0.15),
 };
 
-module.exports = { BRAND_COLOR, brandShades, brandRgba, BUTTON_COLOR, buttonShades };
+module.exports = { BRAND_COLOR, DARK_COLOR, brandShades, brandRgba, BUTTON_COLOR, buttonShades };

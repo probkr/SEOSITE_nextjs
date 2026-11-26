@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import LogoMark from './LogoMark';
 import HeaderSearch from './HeaderSearch';
 import { useWebUser, logoutWebUser } from '@/lib/webUser';
 import { openLogin } from '@/lib/loginModal';
@@ -440,8 +439,6 @@ export default function Header({ settings } = {}) {
   const isHome = pathname === '/';
   // The homepage has its own hero search, and auth pages should stay free of distractions.
   const withSearch = !isHome && !pathname.startsWith('/auth');
-  const logoUrl = settings && settings.logo_url;
-  const logoWidth = (settings && settings.logo_width) || 140;
   const headerRef = useRef(null);
   const closeMenu = useCallback(() => setOpen(false), []);
   useDismiss(headerRef, open, closeMenu);
@@ -498,29 +495,42 @@ export default function Header({ settings } = {}) {
   // Set this back to `isHome && !scrolled && !open` if the hero goes dark again.
   const onDark = false;
   const navHover = onDark ? 'hover:text-accent' : 'hover:text-primary';
+  // At the top of the homepage the header is see-through, so the hero runs up behind it with no seam.
+  const blendIntoHero = isHome && !scrolled && !open;
 
   return (
     <header
       ref={headerRef}
-      className={`site-header sticky top-0 z-40 backdrop-blur-md transition-[background-color,border-color,transform] duration-300 ${
-        onDark ? 'bg-white/5 border-b border-white/10' : 'bg-white/70 border-b border-gray-200/60 shadow-sm'
+      className={`site-header sticky top-0 z-40 transition-[background-color,border-color,transform] duration-300 ${
+        onDark
+          ? 'backdrop-blur-md bg-white/5 border-b border-white/10'
+          : blendIntoHero
+            ? 'bg-transparent border-b border-transparent'
+            : 'backdrop-blur-md bg-gradient-to-r from-primary-100/95 via-primary-50/90 to-primary-100/80 border-b border-primary-100 shadow-sm'
       }`}
     >
+      {/* Same peach waves as the homepage hero, on every page. Clipped in its own layer so the
+          header's dropdown menus can still hang below it. */}
+      <div aria-hidden="true" className={`pointer-events-none absolute inset-0 -z-10 overflow-hidden transition-opacity duration-300 ${blendIntoHero ? 'opacity-0' : 'opacity-100'}`}>
+        <svg className="absolute left-0 top-0 h-full w-72 md:w-[28rem]" viewBox="0 0 400 100" preserveAspectRatio="none" fill="none">
+          <path className="fill-primary-200/40" d="M0 0H290C215 32 130 68 0 100Z" />
+          <path className="fill-primary-200/40" d="M0 0H150C110 25 60 50 0 62Z" />
+          <path className="stroke-primary-200" strokeWidth="1.5" vectorEffect="non-scaling-stroke" d="M0 118C130 82 240 36 360 0" />
+        </svg>
+        <div className="absolute -top-16 right-24 h-40 w-72 rounded-full bg-accent/15 blur-3xl" />
+      </div>
       <div className="w-full px-4 md:px-6 lg:px-8 flex items-center justify-between h-16">
         <div className="flex items-center gap-3 md:gap-5">
           <Link
             href="/"
-            aria-label={`${(settings && settings.site_name) || 'PRObroker'} home`}
+            aria-label="AllFlats home"
             className={`flex items-center gap-1 sm:gap-1.5 text-xl sm:text-2xl font-extrabold font-heading tracking-tight transition-colors ${
               onDark ? 'text-white' : 'text-primary'
             }`}
           >
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt={(settings && settings.site_name) || 'PRObroker'} style={{ width: `${logoWidth}px` }} className="h-auto max-h-10 max-w-[120px] sm:max-w-none object-contain" />
-            ) : (
-              <>PR<LogoMark className="w-5 h-5 sm:w-6 sm:h-6 inline-block align-[-0.2em] mx-0.5" />broker</>
-            )}
+            {/* AllFlats logo is fixed in code; the admin logo upload is no longer used here. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/brand/allflats-logo.png" alt="AllFlats" width={495} height={128} className="h-7 sm:h-9 w-auto" />
           </Link>
           {/* No room beside the credits on a phone, so it moves into the mobile menu below sm. */}
           <div className="hidden sm:block"><CityPicker onDark={onDark} /></div>
