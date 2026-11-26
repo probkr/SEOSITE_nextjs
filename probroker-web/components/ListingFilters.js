@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { startNavigationProgress } from '@/components/NavigationProgress';
 import HeaderSearch from '@/components/HeaderSearch';
@@ -203,7 +204,8 @@ function useFixedPanel(open, wrapRef, btnRef, panelRef, { width = PANEL_WIDTH, a
       setPos({ top: r.bottom + 6, left: Math.max(8, Math.min(left, vw - w - 8)) });
     }
     function onDoc(e) {
-      if (wrapRef.current?.contains(e.target)) return;
+      // Panels render in document.body (see Dropdown), so a click inside one is not inside wrapRef.
+      if (wrapRef.current?.contains(e.target) || panelRef.current?.contains(e.target)) return;
       closeRef.current();
     }
     function onKey(e) {
@@ -246,14 +248,17 @@ function Dropdown({ id, label, active, openId, setOpenId, children, width, align
         {label}
         <Caret open={open} />
       </button>
-      {open && (
+      {/* Portaled to body: on phones the strip row has a fade mask and sideways scroll, which clip
+          anything inside it, so an in-place panel opened but its options couldn't be clicked. */}
+      {open && createPortal(
         <div
           ref={panelRef}
           className={panel}
           style={{ top: pos?.top ?? 0, left: pos?.left ?? 0, width: width || undefined, visibility: pos ? 'visible' : 'hidden' }}
         >
           {children}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -563,10 +568,10 @@ function MoreFilters({ s, resultCount, extraIds = [], areas = [] }) {
         <Caret open={moreOpen} />
       </button>
 
-      {moreOpen && (
+      {moreOpen && createPortal(
         <>
-        {/* Dims the page below the filter strip, like Magicbricks. It sits inside wrapRef, so the
-            outside-click handler ignores it; it closes the panel itself. */}
+        {/* Dims the page below the filter strip, like Magicbricks. Clicking it closes the panel.
+            Portaled to body with the panel, for the same reason as Dropdown's panel. */}
         <div
           aria-hidden="true"
           onClick={() => setMoreOpen(false)}
@@ -683,7 +688,8 @@ function MoreFilters({ s, resultCount, extraIds = [], areas = [] }) {
             </button>
           </div>
         </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
@@ -837,14 +843,17 @@ function PickDropdown({ s, id, options, value, onChange }) {
   );
 }
 
-function TransToggle({ s }) {
-  return <PickDropdown s={s} id="pick-trans" options={TRANS_OPTIONS} value={s.trans} onChange={s.setTrans} />;
+// The strip renders these twice (phone row and desktop row, one hidden by CSS). Each copy needs its
+// own id: with a shared id both open together, and the hidden copy's outside-click handler closes
+// the menu on mousedown, before the option's click can fire.
+function TransToggle({ s, id = 'pick-trans' }) {
+  return <PickDropdown s={s} id={id} options={TRANS_OPTIONS} value={s.trans} onChange={s.setTrans} />;
 }
 
 /** Residential / Commercial: only on pages whose path says which one they are. */
-function CategoryToggle({ s }) {
+function CategoryToggle({ s, id = 'pick-cat' }) {
   if (!s.category) return null;
-  return <PickDropdown s={s} id="pick-cat" options={CATEGORY_OPTIONS} value={s.category} onChange={s.setCategory} />;
+  return <PickDropdown s={s} id={id} options={CATEGORY_OPTIONS} value={s.category} onChange={s.setCategory} />;
 }
 
 function SortDropdown({ s, withPrefix = false }) {
@@ -944,7 +953,7 @@ export function ListingFilterBar({ activeFilters = {}, resultCount: serverCount,
           the header when scrolling down (see .filter-strip in globals.css). */}
       {/* [&_input]:h-9: the shared search box is 10% shorter in this strip. */}
       <div className="strip-search-row lg:hidden container-px flex items-center gap-2 pt-1.5">
-        <TransToggle s={s} />
+        <TransToggle s={s} id="pick-trans-m" />
         <div className="flex-1 min-w-0 [&_input]:h-9"><HeaderSearch currentLabel={searchLabel} /></div>
       </div>
 
@@ -958,7 +967,7 @@ export function ListingFilterBar({ activeFilters = {}, resultCount: serverCount,
           <CategoryToggle s={s} />
           <div className="w-64 xl:w-80 [&_input]:h-9"><HeaderSearch currentLabel={searchLabel} /></div>
         </div>
-        <div className="lg:hidden shrink-0"><CategoryToggle s={s} /></div>
+        <div className="lg:hidden shrink-0"><CategoryToggle s={s} id="pick-cat-m" /></div>
         <div ref={rowRef} className="relative flex items-center gap-2 shrink-0 sm:shrink sm:flex-1 sm:min-w-0 sm:overflow-x-auto lg:overflow-hidden no-scrollbar">
           <FilterButtons s={s} areas={areas} showAreaFilter={showAreaFilter} resultCount={resultCount} hideTrans hiddenIds={hiddenIds} />
           {/* Shown only while a filter is applied; the active dropdowns themselves show what's set. */}
