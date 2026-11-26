@@ -52,7 +52,7 @@ Copy `.env.local.example` to `.env.local` and set:
 
 - `NEXT_PUBLIC_API_URL` — base URL of the Express API, e.g.
   `http://localhost:4000/api/v1` in development.
-- `NEXT_PUBLIC_SITE_URL` — canonical production domain, `https://prbroker.in`.
+- `NEXT_PUBLIC_SITE_URL` — canonical production domain, `https://allflats.in` (moved from prbroker.in, which now 301-redirects).
   Used for canonical URLs, JSON-LD `url` fields, and sitemap `<loc>` values.
 
 ## Running

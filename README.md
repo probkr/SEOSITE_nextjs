@@ -30,8 +30,8 @@ point both at real credentials and click through the admin CRUD + a few public p
    real MongoDB Atlas URI (same DB as the old site — nothing to migrate), Cloudflare R2
    keys, SMS OTP provider key, and a random `SECRET_KEY`. `npm install && npm start`.
 2. **Frontend.** `cd probroker-web`, set `NEXT_PUBLIC_API_URL` to wherever the API is
-   deployed (e.g. `https://api.prbroker.in/api/v1`) and `NEXT_PUBLIC_SITE_URL` to
-   `https://prbroker.in`. `npm install && npm run build && npm start`.
+   deployed (e.g. `https://api.allflats.in/api/v1`) and `NEXT_PUBLIC_SITE_URL` to
+   `https://allflats.in`. `npm install && npm run build && npm start`.
 3. **DO NOT change any public URL.** Every public route was built to resolve at the exact
    same path as the old Jinja templates (see API_CONTRACT.md's URL section) specifically
    so the site doesn't lose its existing Google rankings during the switch. Verify a

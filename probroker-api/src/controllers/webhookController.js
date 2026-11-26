@@ -2,7 +2,7 @@ const { processBulkImport } = require('./adminController');
 const { revalidateSiteProperties } = require('../services/siteCache');
 const Property = require('../models/Property');
 
-const SITE_URL = (process.env.SITE_URL || 'https://prbroker.in').replace(/\/+$/, '');
+const SITE_URL = (process.env.SITE_URL || 'https://allflats.in').replace(/\/+$/, '');
 
 function validationErrors(item) {
   const errors = [];

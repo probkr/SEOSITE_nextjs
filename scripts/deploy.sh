@@ -9,7 +9,7 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 SHA=${SSH_ORIGINAL_COMMAND:-${1:-}}
-HEALTH_URLS=(https://prbroker.in/ https://prbroker.in/admin/login https://api.prbroker.in/health)
+HEALTH_URLS=(https://allflats.in/ https://allflats.in/admin/login https://api.allflats.in/health)
 
 log() { echo "[deploy] $*"; }
 fail() { echo "[deploy] ERROR: $*" >&2; exit 1; }

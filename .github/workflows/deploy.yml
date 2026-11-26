@@ -34,7 +34,7 @@ jobs:
         working-directory: probroker-web
         env:
           NEXT_PUBLIC_API_URL: http://127.0.0.1:4599/api/v1
-          NEXT_PUBLIC_SITE_URL: https://prbroker.in
+          NEXT_PUBLIC_SITE_URL: https://allflats.in
           NEXT_TELEMETRY_DISABLED: 1
         run: |
           node ../scripts/ci-stub-api.js &
