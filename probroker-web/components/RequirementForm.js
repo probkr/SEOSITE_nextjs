@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { clientFetch } from '@/lib/api';
+import { CITIES } from '@/lib/config';
 import { useWebUser } from '@/lib/webUser';
 import { OtpHint, OtpStep, phone10, usePhoneOtp, validPhone } from './PhoneOtp';
 
@@ -107,8 +108,7 @@ export default function RequirementForm() {
       <div className="grid grid-cols-2 gap-3">
         <select className={fieldCls} value={form.city} onChange={set('city')}>
           <option value="">Select City</option>
-          <option value="ahmedabad">Ahmedabad</option>
-          <option value="gandhinagar">Gandhinagar</option>
+          {CITIES.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
         </select>
         <input placeholder="Preferred Area" className={fieldCls} value={form.area} onChange={set('area')} />
       </div>

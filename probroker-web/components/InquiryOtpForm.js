@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { clientFetch } from '@/lib/api';
 import { useWebUser } from '@/lib/webUser';
 import { OtpHint, OtpStep, phone10, usePhoneOtp, validPhone } from './PhoneOtp';
+import TermsCheckbox from './TermsCheckbox';
 
 /**
  * Name / phone / message lead form. With requireOtp, a guest confirms the phone with a 4-digit
@@ -24,6 +25,7 @@ export default function InquiryOtpForm({
   const [step, setStep] = useState('form'); // form | otp | done
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [agreed, setAgreed] = useState(false);
 
   // Logged-in users get their name and number filled in.
   useEffect(() => {
@@ -62,6 +64,7 @@ export default function InquiryOtpForm({
     setError('');
     if (!form.name.trim()) return setError('Please enter your name.');
     if (!validPhone(form.phone)) return setError('Please enter a valid 10-digit mobile number.');
+    if (!agreed) return setError('Please accept the Terms & Conditions to continue.');
     if (needOtp) {
       if (await otp.send(form.phone, form.name)) setStep('otp');
       return;
@@ -115,6 +118,7 @@ export default function InquiryOtpForm({
         />
       </div>
       <textarea placeholder={messagePlaceholder} rows={2} className={inputCls} value={form.message} onChange={set('message')} />
+      <TermsCheckbox checked={agreed} onChange={(v) => { setAgreed(v); setError(''); }} />
       <button type="submit" disabled={busy} className="btn-primary w-full text-sm disabled:opacity-60">
         {busy ? (needOtp ? 'Sending OTP...' : 'Sending...') : needOtp ? 'Verify with OTP' : submitLabel}
       </button>

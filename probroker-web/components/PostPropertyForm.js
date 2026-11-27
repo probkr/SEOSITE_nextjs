@@ -3,7 +3,7 @@ import { brandShades } from '@/brand-color';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { postJson } from '@/lib/api';
-import { API_URL } from '@/lib/config';
+import { API_URL, CITIES } from '@/lib/config';
 import { useWebUser } from '@/lib/webUser';
 import { OTP_LENGTH, phone10, validPhone } from './PhoneOtp';
 
@@ -33,10 +33,6 @@ const PROPERTY_TYPES = {
     { value: 'warehouse', label: 'Warehouse / Godown', icon: 'warehouse' },
   ],
 };
-const CITIES = [
-  { slug: 'ahmedabad', name: 'Ahmedabad' },
-  { slug: 'gandhinagar', name: 'Gandhinagar' },
-];
 const BHK_OPTIONS = [
   { value: '1', label: '1 BHK' },
   { value: '2', label: '2 BHK' },

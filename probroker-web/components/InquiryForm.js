@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { postJson } from '@/lib/api';
+import TermsCheckbox from './TermsCheckbox';
 import { useWebUser } from '@/lib/webUser';
 import { creditsLeft, useContact } from '@/lib/useContact';
 import { openLogin } from '@/lib/loginModal';
@@ -96,6 +97,7 @@ export default function InquiryForm({ propertyId, propertyTitle, contactName, ha
             value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           <textarea placeholder="Message" rows={3} className={inputCls}
             value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
+          <TermsCheckbox required />
           <button type="submit" disabled={status === 'loading'} className="btn-primary w-full text-center">
             {status === 'loading' ? 'Sending...' : 'Send Inquiry'}
           </button>

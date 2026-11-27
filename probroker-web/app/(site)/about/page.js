@@ -34,7 +34,7 @@ const WHY_US = [
 
 // Contact block shown on the About page, exactly as the business supplied it.
 const ABOUT_CONTACT = {
-  email: 'contact@probroker.in',
+  email: 'contact@allflats.in',
   phone: '+91 8141817353',
   address: 'University Road, Opp Ld college, Navrangpura 380009',
 };
@@ -171,7 +171,7 @@ export default async function AboutPage() {
           <p className="text-primary-100 mt-2">Browse verified listings or post yours for free in minutes.</p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link href="/ahmedabad/residential-property-for-sale/" className="btn-accent">Browse Properties</Link>
-            <Link href="/post-property/" className="btn-outline !border-white !text-white hover:!bg-white/10">Post Property FREE</Link>
+            <Link href="/post-property/" className="btn-outline !bg-transparent !border-white !text-white hover:!bg-white/10">Post Property FREE</Link>
           </div>
         </div>
       </section>

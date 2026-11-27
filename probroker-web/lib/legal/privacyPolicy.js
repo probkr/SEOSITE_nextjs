@@ -129,10 +129,10 @@ export const PRIVACY_POLICY = {
     { type: 'h2', text: 'Grievance Officer and Contact Details' },
     { type: 'p', text: 'For any questions, requests, or complaints regarding this Privacy Policy or your personal data, you may contact:' },
     { type: 'ul', items: [
-      'Grievance Officer: Hemant Solanki',
+      'Grievance Officer: Vishal Parmar',
       'Designation: Acting Grievance Officer',
-      'Email: grievance@probroker.in',
-      'Address: GF-001, Mauryansh Elanza, Shyamal Cross Rd, nr. PAREKH HOSPITAL, SATELITE, Shyamal, Ahmedabad, Gujarat 380015',
+      'Email:  contact@allflats.in',
+      'Address: University Road, Opp Ld college, Navrangpura 380009',
     ] },
 
     { type: 'h2', text: 'Changes to this Privacy Policy' },

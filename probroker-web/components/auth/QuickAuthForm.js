@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { clientFetchJson } from '@/lib/api';
 import { notifyAuthChange } from '@/lib/webUser';
 import OtpInput from './OtpInput';
+import TermsCheckbox from '../TermsCheckbox';
 
 const OTP_LENGTH = 4;
 const RESEND_AFTER = 30;
@@ -37,6 +37,7 @@ export default function QuickAuthForm({ initialMode = 'login', onSuccess }) {
   const [mode, setMode] = useState(initialMode === 'signup' ? 'signup' : 'login');
   const [step, setStep] = useState('phone'); // phone -> otp
   const [form, setForm] = useState({ phone: '', name: '', email: '' });
+  const [agreed, setAgreed] = useState(false);
   const [fieldError, setFieldError] = useState({});
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
@@ -74,6 +75,7 @@ export default function QuickAuthForm({ initialMode = 'login', onSuccess }) {
     if (!MOBILE_RE.test(form.phone)) errs.phone = 'Enter a valid 10-digit mobile number.';
     if (mode === 'signup' && form.name.trim() && form.name.trim().length < 2) errs.name = 'Name looks too short.';
     if (mode === 'signup' && form.email.trim() && !EMAIL_RE.test(form.email.trim())) errs.email = 'Enter a valid email address.';
+    if (!agreed) errs.terms = 'Please accept the Terms & Conditions to continue.';
     setFieldError(errs);
     return Object.keys(errs).length === 0;
   }
@@ -257,6 +259,12 @@ export default function QuickAuthForm({ initialMode = 'login', onSuccess }) {
           </>
         )}
 
+        <TermsCheckbox
+          checked={agreed}
+          onChange={(v) => { setAgreed(v); setFieldError((fe) => ({ ...fe, terms: undefined })); }}
+          error={fieldError.terms}
+        />
+
         {errorBox}
 
         <button
@@ -270,9 +278,7 @@ export default function QuickAuthForm({ initialMode = 'login', onSuccess }) {
       </form>
 
       <p className="mt-3 text-center text-xs text-gray-400 leading-relaxed">
-        New accounts get 10 free coins. By continuing you agree to our{' '}
-        <Link href="/terms/" className="underline underline-offset-2 hover:text-gray-600">Terms</Link> and{' '}
-        <Link href="/privacy-policy/" className="underline underline-offset-2 hover:text-gray-600">Privacy Policy</Link>.
+        New accounts get 10 free coins.
       </p>
     </div>
   );

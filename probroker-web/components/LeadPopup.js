@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { postJson } from '@/lib/api';
+import { CITIES } from '@/lib/config';
+import TermsCheckbox from './TermsCheckbox';
 
 const SUBTYPES = {
   residential: ['Flat/Apartment', 'Bungalow', 'Tenement', 'Penthouse', 'Plot'],
@@ -126,16 +128,16 @@ export default function LeadPopup() {
                 </label>
               ))}
               <span className="text-gray-400 text-sm">In</span>
-              {['ahmedabad', 'gandhinagar'].map((v) => (
-                <label key={v} className={radioLabel}>
+              {CITIES.map((c) => (
+                <label key={c.slug} className={radioLabel}>
                   <input
                     type="radio"
                     name="city"
-                    checked={form.city === v}
-                    onChange={() => setForm({ ...form, city: v })}
+                    checked={form.city === c.slug}
+                    onChange={() => setForm({ ...form, city: c.slug })}
                     className="accent-primary"
                   />
-                  {v === 'ahmedabad' ? 'Ahmedabad' : 'Gandhinagar'}
+                  {c.name}
                 </label>
               ))}
             </div>
@@ -218,6 +220,8 @@ export default function LeadPopup() {
                 />
               </div>
             </div>
+
+            <TermsCheckbox required />
 
             <button type="submit" disabled={status === 'loading'} className="btn-primary w-full">
               {status === 'loading' ? 'Submitting...' : 'Submit'}

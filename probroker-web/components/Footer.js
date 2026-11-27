@@ -61,7 +61,7 @@ export default function Footer({ settings } = {}) {
             <img src="/images/brand/allflats-logo-light.png" alt="AllFlats" width={495} height={128} loading="lazy" className="h-10 w-auto" />
           </div>
           <p className="text-gray-400 leading-relaxed">
-            Verified residential &amp; commercial property listings across Ahmedabad and Gandhinagar. Connect with owners and trusted brokers in one place.
+            Verified residential &amp; commercial property listings across Ahmedabad, Gandhinagar and India&apos;s Tier 1 cities. Connect with owners and trusted brokers in one place.
           </p>
           <div className="flex items-center gap-3 mt-4">
             {['Facebook', 'Instagram', 'YouTube'].map((s) => (
@@ -82,6 +82,7 @@ export default function Footer({ settings } = {}) {
       </div>
       <div className="border-t border-white/10 py-5 text-center text-xs text-gray-500">
         &copy; {new Date().getFullYear()} AllFlats &middot; Ahmedabad &amp; Gandhinagar Real Estate
+        <div className="mt-1">A product of Vocal Connect PVT LTD</div>
       </div>
     </footer>
   );
