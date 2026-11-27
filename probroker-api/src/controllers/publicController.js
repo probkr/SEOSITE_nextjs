@@ -60,7 +60,7 @@ function publicProperty(prop) {
 exports.getSiteSettings = async (req, res) => {
   const s = (await Setting.findOne({ key: 'site' }, { _id: 0 }).lean()) || {};
   res.json({
-    site_name: s.site_name || 'PRObroker',
+    site_name: s.site_name || 'AllFlats',
     logo_url: s.logo_url || '',
     logo_width: s.logo_width || 0,
   });

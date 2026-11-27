@@ -24,13 +24,13 @@ async function loadProperty(slug) {
 export async function generateMetadata({ params }) {
   const prop = await loadProperty(params.propertySlug);
   if (!prop) {
-    return { title: 'Property Not Found | PRObroker', robots: { index: false, follow: false } };
+    return { title: 'Property Not Found | AllFlats', robots: { index: false, follow: false } };
   }
   const correctSlug = prop.slug || buildPropertySlug(prop);
   const canonical = `${SITE_URL}/property/${correctSlug}/`;
   const rawTitle = buildPropertyTitle(prop);
   const shortTitle = rawTitle.length > 47 ? `${rawTitle.slice(0, 47).replace(/[\s,\-]+$/, '')}…` : rawTitle;
-  const title = `${shortTitle} | PRObroker`;
+  const title = `${shortTitle} | AllFlats`;
   const desc = prop.aiDescription || fmtPropDesc(prop);
   const image = firstImageUrl(prop.photos); // a share preview needs a picture, not a video
   return {

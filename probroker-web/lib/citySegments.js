@@ -123,8 +123,8 @@ async function resolveCatchAll(citySlug, city, catchAll, page, extraFilters = {}
   const { properties, total, totalPages } = normalizePropertyResult(result, perPage);
 
   const pageSuffix = page > 1 ? ` – Page ${page}` : '';
-  const title = `${propTypeLabel} for ${tn} in ${placeName}${pageSuffix} | PRObroker`;
-  const desc = `Browse ${total} verified ${propTypeLabel.toLowerCase()} for ${tw} in ${placeName}. Updated daily with prices, photos, and details on PRObroker.`;
+  const title = `${propTypeLabel} for ${tn} in ${placeName}${pageSuffix} | AllFlats`;
+  const desc = `Browse ${total} verified ${propTypeLabel.toLowerCase()} for ${tw} in ${placeName}. Updated daily with prices, photos, and details on AllFlats.`;
   const cleanPath = `${SITE_URL}/${citySlug}/${areaSlug ? `${areaSlug}/` : ''}${catchAll}/`;
   const canonical = extraFilters.hasFilters ? cleanPath : page > 1 ? `${cleanPath}?page=${page}` : cleanPath;
   const h1 = `${propTypeLabel} for ${tn} in ${placeName} – ${total}+ Listings${pageSuffix}`;

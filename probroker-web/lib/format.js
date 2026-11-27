@@ -89,7 +89,7 @@ export function fmtPropDesc(p) {
   const city = p.cityName || '';
   const loc = [soc, area, city].filter(Boolean).join(', ');
   const bhkPrefix = bhk && bhk > 0 ? `${parseInt(bhk)} BHK ` : '';
-  return `${bhkPrefix}${pt} for ${trans === 'buy' ? 'sale' : 'rent'} in ${loc}. ${p.sqft || ''} sqft, ${p.furnishing || ''}. ${fmtPrice(p.price)}. Contact owner on PRObroker.`;
+  return `${bhkPrefix}${pt} for ${trans === 'buy' ? 'sale' : 'rent'} in ${loc}. ${p.sqft || ''} sqft, ${p.furnishing || ''}. ${fmtPrice(p.price)}. Contact owner on AllFlats.`;
 }
 
 // Alias used by adm

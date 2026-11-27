@@ -39,8 +39,8 @@ export async function generateMetadata({ params, searchParams }) {
   if (result.type === 'area-landing') {
     const { area, city } = result;
     const canonical = `${SITE_URL}/${params.citySlug}/${params.seg.join('/')}/`;
-    const title = area.metaTitle || `Properties in ${area.name}, ${city?.name} — Flats, Bungalows, Plots for Sale & Rent | PRObroker`;
-    const desc = area.metaDescription || `Browse verified properties in ${area.name}, ${city?.name}. Flats, bungalows, plots, offices for sale & rent. Contact owners directly on PRObroker.`;
+    const title = area.metaTitle || `Properties in ${area.name}, ${city?.name} — Flats, Bungalows, Plots for Sale & Rent | AllFlats`;
+    const desc = area.metaDescription || `Browse verified properties in ${area.name}, ${city?.name}. Flats, bungalows, plots, offices for sale & rent. Contact owners directly on AllFlats.`;
     return { title, description: desc, alternates: { canonical }, openGraph: { title, description: desc, url: canonical } };
   }
 
@@ -48,8 +48,8 @@ export async function generateMetadata({ params, searchParams }) {
   const { society, area, city } = result;
   const canonical = `${SITE_URL}/${params.citySlug}/${params.seg.join('/')}/`;
   const typeLabel = society.projectType === 'commercial' ? 'Commercial Properties' : 'Properties';
-  const title = society.metaTitle || `${typeLabel} in ${society.name}, ${area?.name || ''} — Price, Amenities, Reviews | PRObroker`;
-  const desc = society.metaDescription || `Find verified ${typeLabel.toLowerCase()} in ${society.name}, ${area?.name}, ${city?.name}. Amenities, reviews, floor plans. Contact owners directly on PRObroker.`;
+  const title = society.metaTitle || `${typeLabel} in ${society.name}, ${area?.name || ''} — Price, Amenities, Reviews | AllFlats`;
+  const desc = society.metaDescription || `Find verified ${typeLabel.toLowerCase()} in ${society.name}, ${area?.name}, ${city?.name}. Amenities, reviews, floor plans. Contact owners directly on AllFlats.`;
   return { title, description: desc, alternates: { canonical }, openGraph: { title, description: desc, url: canonical } };
 }
 

@@ -620,7 +620,7 @@ function MoreFilters({ s, resultCount, extraIds = [], areas = [] }) {
                   {f.verified && <Check />}
                   Verified properties only
                 </button>
-              ), 'Listings checked by the PRObroker team.')}
+              ), 'Listings checked by the AllFlats team.')}
 
               {section('added', 'Posted Since', [
                 <button key="all" type="button" onClick={() => setParam('postedSince', '')} className={pill(!f.postedSince)}>

@@ -6,7 +6,7 @@ export function PhoneIcon() {
 
 // Call + WhatsApp buttons for an unlocked number.
 export default function ContactActions({ phone, propertyTitle, callLabel = phone }) {
-  const message = `Hi, I'm interested in ${propertyTitle} listed on PRObroker.`;
+  const message = `Hi, I'm interested in ${propertyTitle} listed on AllFlats.`;
   return (
     <div className="grid grid-cols-2 gap-2">
       <a href={`tel:${phone}`} className="btn-primary !py-2.5 text-sm flex items-center justify-center gap-1.5">

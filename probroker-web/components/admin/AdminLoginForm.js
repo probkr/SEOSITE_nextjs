@@ -85,7 +85,7 @@ export default function AdminLoginForm() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       <div className="flex-1 bg-gradient-to-br from-primary-900 via-primary-700 to-primary text-white flex flex-col items-center justify-center p-10">
-        <h1 className="text-3xl font-extrabold mb-1 text-white">PRObroker Admin</h1>
+        <h1 className="text-3xl font-extrabold mb-1 text-white">AllFlats Admin</h1>
         <p className="text-white/70">Manage your property platform</p>
         <div className="mt-10 flex flex-col gap-4 text-sm text-white/80">
           <div className="flex items-center gap-3"><span className="w-2 h-2 rounded-full bg-green-500" /> Manage property listings</div>
@@ -170,7 +170,7 @@ export default function AdminLoginForm() {
               </p>
             </form>
           )}
-          <div className="text-center text-xs text-gray-400 mt-7">PRObroker Admin Panel v1.0</div>
+          <div className="text-center text-xs text-gray-400 mt-7">AllFlats Admin Panel v1.0</div>
         </div>
       </div>
     </div>

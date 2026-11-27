@@ -51,7 +51,7 @@ export default function LoginModalHost() {
       >
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
-            <h2 id="login-modal-title" className="font-bold font-heading text-lg text-gray-900">Welcome to PRObroker</h2>
+            <h2 id="login-modal-title" className="font-bold font-heading text-lg text-gray-900">Welcome to AllFlats</h2>
             <p className="text-sm text-gray-500">Log in or sign up with your mobile number</p>
           </div>
           <button

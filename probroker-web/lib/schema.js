@@ -19,7 +19,8 @@ export function organizationSchema() {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'PRObroker',
+    name: 'AllFlats',
+    legalName: 'Vocal Connect Pvt. Ltd.',
     url: `${SITE_URL}/`,
     logo: `${SITE_URL}/logo.png`,
   };
@@ -30,7 +31,7 @@ export function websiteSchema() {
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'PRObroker',
+    name: 'AllFlats',
     url: `${SITE_URL}/`,
     potentialAction: {
       '@type': 'SearchAction',
@@ -127,7 +128,7 @@ export function articleSchema(post, canonicalUrl) {
     description: post.metaDescription || (post.excerpt || '').slice(0, 160),
     url: canonicalUrl,
     author: { '@type': 'Person', name: post.author || 'Admin' },
-    publisher: { '@type': 'Organization', name: 'PRObroker' },
+    publisher: { '@type': 'Organization', name: 'AllFlats' },
     datePublished: post.publishedAt || '',
     dateModified: post.updatedAt || '',
   };

@@ -1,7 +1,7 @@
 import AdminShell from '@/components/admin/AdminShell';
 
 export const metadata = {
-  title: 'PRObroker Admin',
+  title: 'AllFlats Admin',
   robots: { index: false, follow: false }
 };
 

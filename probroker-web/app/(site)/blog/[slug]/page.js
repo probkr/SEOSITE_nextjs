@@ -11,9 +11,9 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
   const post = await getBlogPost(params.slug, { revalidate: 900 });
-  if (!post) return { title: 'Post Not Found | PRObroker', robots: { index: false, follow: false } };
+  if (!post) return { title: 'Post Not Found | AllFlats', robots: { index: false, follow: false } };
   const canonical = `${SITE_URL}/blog/${params.slug}/`;
-  const title = post.metaTitle || `${post.title} | PRObroker Blog`;
+  const title = post.metaTitle || `${post.title} | AllFlats Blog`;
   const desc = post.metaDescription || (post.excerpt || '').slice(0, 160);
   return {
     title, description: desc,
@@ -71,7 +71,7 @@ export default async function BlogPostPage({ params }) {
             {(post.author || 'P').charAt(0).toUpperCase()}
           </div>
           <div>
-            <div className="font-medium text-gray-800">{post.author || 'PRObroker Team'}</div>
+            <div className="font-medium text-gray-800">{post.author || 'AllFlats Team'}</div>
             <div className="flex items-center gap-1.5 text-xs">
               {post.publishedAt && <span>{formatDate(post.publishedAt)}</span>}
               {post.publishedAt && <span>&middot;</span>}

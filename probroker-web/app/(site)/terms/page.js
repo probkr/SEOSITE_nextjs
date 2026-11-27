@@ -2,6 +2,8 @@ import { getPage } from '@/lib/api';
 import { STATIC_PAGE_DEFAULTS } from '@/lib/staticPages';
 import { SITE_URL } from '@/lib/config';
 import JsonLd from '@/components/JsonLd';
+import LegalDocument from '@/components/LegalDocument';
+import { TERMS } from '@/lib/legal/terms';
 
 export const revalidate = 3600;
 
@@ -22,12 +24,11 @@ export default async function StaticPage() {
   const page = (await getPage(SLUG, { revalidate: 3600 })) || {};
   const d = STATIC_PAGE_DEFAULTS[SLUG];
   const title = page.pageTitle || d.pageTitle;
-  const content = page.content || d.content;
   return (
     <div className="container-px py-10 max-w-3xl">
       <JsonLd data={page.customSchema} />
-      <h1 className="text-3xl font-bold font-heading mb-6 text-gray-900">{title}</h1>
-      <div className="prose max-w-none text-gray-700 whitespace-pre-line leading-relaxed">{content}</div>
+      <h1 className="text-3xl font-bold font-heading mb-2 text-gray-900">{title}</h1>
+      <LegalDocument doc={TERMS} />
     </div>
   );
 }

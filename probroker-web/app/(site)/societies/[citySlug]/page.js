@@ -17,17 +17,17 @@ const pageOf = (searchParams) => Math.max(parseInt(searchParams?.page, 10) || 1,
 
 export async function generateMetadata({ params, searchParams }) {
   const city = await getCity(params.citySlug, { revalidate: 3600 });
-  if (!city) return { title: 'City Not Found | PRObroker', robots: { index: false, follow: false } };
+  if (!city) return { title: 'City Not Found | AllFlats', robots: { index: false, follow: false } };
   const name = city.name;
   const page = pageOf(searchParams);
   const base = `${SITE_URL}/societies/${params.citySlug}/`;
   // Paginated pages self-canonicalise, matching the listing pages.
   const canonical = page > 1 ? `${base}?page=${page}` : base;
   return {
-    title: `Societies & Projects in ${name}${page > 1 ? ` \u2013 Page ${page}` : ''} | PRObroker`,
-    description: `Browse residential and commercial societies and projects in ${name}. See flats for sale and rent in each society, with verified listings on PRObroker.`,
+    title: `Societies & Projects in ${name}${page > 1 ? ` \u2013 Page ${page}` : ''} | AllFlats`,
+    description: `Browse residential and commercial societies and projects in ${name}. See flats for sale and rent in each society, with verified listings on AllFlats.`,
     alternates: { canonical },
-    openGraph: { title: `Societies & Projects in ${name} | PRObroker`, url: canonical },
+    openGraph: { title: `Societies & Projects in ${name} | AllFlats`, url: canonical },
   };
 }
 

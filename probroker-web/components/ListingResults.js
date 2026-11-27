@@ -65,7 +65,7 @@ export default function ListingResults({ layout = 'row', basePath, empty, prompt
 }
 
 const PAGE_SUFFIX = (n) => (n > 1 ? ` – Page ${n}` : '');
-const TITLE_TAIL = ' | PRObroker';
+const TITLE_TAIL = ' | AllFlats';
 
 // Rewrites a server-built heading ("245+ ... – Page 2") for the live count and page.
 function retext(text, from, to) {

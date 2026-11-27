@@ -10,8 +10,8 @@ export async function generateMetadata({ params }) {
   if (!city) return { robots: { index: false, follow: false } };
 
   const canonical = `${SITE_URL}/${params.citySlug}/`;
-  const title = `Properties in ${city.name} — Flats, Bungalows, Plots for Sale & Rent | PRObroker`;
-  const desc = `Browse verified residential and commercial properties in ${city.name}. Flats, bungalows, plots, offices for sale & rent. Contact owners directly on PRObroker.`;
+  const title = `Properties in ${city.name} — Flats, Bungalows, Plots for Sale & Rent | AllFlats`;
+  const desc = `Browse verified residential and commercial properties in ${city.name}. Flats, bungalows, plots, offices for sale & rent. Contact owners directly on AllFlats.`;
 
   return {
     title,

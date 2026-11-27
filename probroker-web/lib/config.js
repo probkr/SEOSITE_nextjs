@@ -10,7 +10,7 @@ export const CITY_STORAGE_KEY = 'pb_city';
 export const CITY_EVENT = 'pb:city-change';
 
 
-// TODO: replace with PRObroker's real business contact details (update via env vars, no code change needed).
+// TODO: replace with AllFlats' real business contact details (update via env vars, no code change needed).
 export const CONTACT_INFO = {
   phone: process.env.NEXT_PUBLIC_CONTACT_PHONE || '+91 90000 00000',
   email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'support@prbroker.in',

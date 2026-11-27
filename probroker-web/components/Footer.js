@@ -81,7 +81,7 @@ export default function Footer({ settings } = {}) {
         ))}
       </div>
       <div className="border-t border-white/10 py-5 text-center text-xs text-gray-500">
-        &copy; {new Date().getFullYear()} PRObroker &middot; Ahmedabad &amp; Gandhinagar Real Estate
+        &copy; {new Date().getFullYear()} AllFlats &middot; Ahmedabad &amp; Gandhinagar Real Estate
       </div>
     </footer>
   );

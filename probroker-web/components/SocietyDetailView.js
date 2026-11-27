@@ -13,7 +13,7 @@ export default function SocietyDetailView({ citySlug, areaSlug, society, area, c
   const minP = society.minPrice || 0;
   const maxP = society.maxPrice || 0;
   const priceRange = society.priceRange || (minP && maxP ? `${fmtPrice(minP)} - ${fmtPrice(maxP)}` : '');
-  const overview = society.overview || society.description || `${society.name} is a well-known project in ${area?.name}, ${city?.name} offering ${propCount} verified listings on PRObroker.`;
+  const overview = society.overview || society.description || `${society.name} is a well-known project in ${area?.name}, ${city?.name} offering ${propCount} verified listings on AllFlats.`;
   const amenities = society.amenities?.length ? society.amenities : ['24/7 Security', 'Power Backup', 'Water Supply', 'Parking', 'Garden', "Children's Play Area"];
   const faqs = society.faqs || [];
   const canonical = `${SITE_URL}/${citySlug}/${areaSlug}/${society.slug}/`;

@@ -333,7 +333,7 @@ exports.addArea = async (req, res) => {
   const slug = generateSlug(trimmed);
   const area = {
     id: uuidv4(), name: trimmed, slug, cityId, isActive: true, description,
-    metaTitle: metaTitle || `Properties in ${trimmed} | PRObroker`,
+    metaTitle: metaTitle || `Properties in ${trimmed} | AllFlats`,
     metaDescription: metaDescription || `Find properties for sale and rent in ${trimmed}.`,
     createdAt: nowIso(),
   };
@@ -460,7 +460,7 @@ exports.addSociety = async (req, res) => {
   const soc = {
     id: uuidv4(), name: trimmed, slug, areaId, cityId: areaDoc.cityId, project_type, description,
     totalUnits: totalUnits ? parseInt(totalUnits, 10) : null, amenities: amenitiesList, isActive: true,
-    metaTitle: metaTitle || `${trimmed} - Properties | PRObroker`,
+    metaTitle: metaTitle || `${trimmed} - Properties | AllFlats`,
     metaDescription: metaDescription || `Find properties in ${trimmed}.`,
     createdAt: nowIso(),
   };
@@ -735,7 +735,7 @@ async function processBulkImport(body, startIdx = 0) {
           const titled = areaName.replace(/\w\S*/g, (t) => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase());
           const newArea = {
             id: uuidv4(), name: titled, slug: newAreaSlug, cityId: resolvedCityId, isActive: true, description: '',
-            metaTitle: `Properties in ${titled} | PRObroker`, metaDescription: `Find properties for sale and rent in ${titled}.`,
+            metaTitle: `Properties in ${titled} | AllFlats`, metaDescription: `Find properties for sale and rent in ${titled}.`,
             createdAt: nowIso(),
           };
           await Area.create(newArea);
@@ -754,7 +754,7 @@ async function processBulkImport(body, startIdx = 0) {
           const newSoc = {
             id: uuidv4(), name: premiseName, slug: `${generateSlug(premiseName)}-${resolvedAreaSlug}-${resolvedCitySlug}`,
             areaId: resolvedAreaId, cityId: resolvedCityId, description: '', totalUnits: null, amenities: [], isActive: true,
-            metaTitle: `${premiseName} - Properties | PRObroker`, metaDescription: `Find properties in ${premiseName}.`,
+            metaTitle: `${premiseName} - Properties | AllFlats`, metaDescription: `Find properties in ${premiseName}.`,
             createdAt: nowIso(),
           };
           await Society.create(newSoc);
@@ -783,7 +783,7 @@ async function processBulkImport(body, startIdx = 0) {
         familyOrBachelors: item.category === 'residential' && item.transactionType === 'rent' ? (item.familyOrBachelors || 'both') : null,
         ageOfProperty: item.ageOfProperty ?? null,
         floorNumber: item.floorNumber ?? null, totalFloors: item.totalFloors || null, parking: !!item.parking,
-        additionalDetails: item.additionalDetails || '', contactName: item.contactName || 'PRObroker',
+        additionalDetails: item.additionalDetails || '', contactName: item.contactName || 'AllFlats',
         contactPhone: item.contactPhone || '0000000000', listingType: item.listingType || 'broker',
         photos: item.photos || [], status: item.status || 'active', source: 'probroker', isApproved: true, isVerified: !!item.isVerified,
         views: item.views || 0, slug,
@@ -1055,7 +1055,7 @@ exports.getSettings = async (req, res) => {
 };
 
 exports.saveSiteSettings = async (req, res) => {
-  const { site_name = 'PRObroker', contact_phone = '', whatsapp = '', logo_url = '', logo_width = 0 } = req.body;
+  const { site_name = 'AllFlats', contact_phone = '', whatsapp = '', logo_url = '', logo_width = 0 } = req.body;
   await Setting.updateOne({ key: 'site' }, { $set: { key: 'site', site_name, contact_phone, whatsapp, logo_url, logo_width } }, { upsert: true });
   res.json({ success: true });
 };

@@ -174,7 +174,7 @@ export default function BulkImportClient({ dbInfo }) {
       <div className="bg-white rounded-lg shadow mb-6">
         <div className="px-5 py-4 border-b border-gray-200 font-bold text-gray-900">Seed Sample Data</div>
         <div className="p-5">
-          <p className="text-sm text-gray-500 mb-3">Insert 20 sample PRObroker properties with auto-mapped fields, generated descriptions, and amenities.</p>
+          <p className="text-sm text-gray-500 mb-3">Insert 20 sample AllFlats properties with auto-mapped fields, generated descriptions, and amenities.</p>
           <button onClick={seedData} disabled={seedBusy} className="bg-btn hover:bg-btn-hover text-white text-sm rounded-md px-4 py-2 font-semibold disabled:opacity-60">
             {seedBusy ? 'Seeding…' : 'Insert 20 Sample Properties'}
           </button>

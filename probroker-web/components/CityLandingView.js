@@ -23,7 +23,7 @@ export default async function CityLandingView({ city }) {
   const total = propResult?.total ?? properties.length;
   const areaCount = (areas || []).length;
 
-  const overview = `${city.name} offers a wide range of residential and commercial properties for sale and rent. Explore ${total}+ listings across ${areaCount} localities in ${city.name} on PRObroker.`;
+  const overview = `${city.name} offers a wide range of residential and commercial properties for sale and rent. Explore ${total}+ listings across ${areaCount} localities in ${city.name} on AllFlats.`;
 
   const breadcrumbLd = breadcrumbSchema([
     { name: 'Home', url: `${SITE_URL}/` },

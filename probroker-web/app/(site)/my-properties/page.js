@@ -5,8 +5,8 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata() {
   return {
-    title: 'My Properties | PRObroker',
-    description: 'Manage your property listings on PRObroker.',
+    title: 'My Properties | AllFlats',
+    description: 'Manage your property listings on AllFlats.',
     alternates: { canonical: `${SITE_URL}/my-properties/` },
     robots: { index: false, follow: false },
   };

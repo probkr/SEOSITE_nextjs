@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 export async function generateMetadata({ searchParams }) {
   const q = searchParams?.q || '';
   return {
-    title: q ? `Search results for "${q}" | PRObroker` : 'Search Properties | PRObroker',
+    title: q ? `Search results for "${q}" | AllFlats` : 'Search Properties | AllFlats',
     description: 'Search for verified properties across Ahmedabad and Gandhinagar.',
     robots: { index: false, follow: true },
     alternates: { canonical: `${SITE_URL}/search/` },

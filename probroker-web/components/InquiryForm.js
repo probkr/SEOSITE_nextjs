@@ -40,7 +40,7 @@ export default function InquiryForm({ propertyId, propertyTitle, contactName, ha
             {initials}
           </div>
           <div className="min-w-0">
-            <div className="font-semibold text-gray-900 truncate">{shownName || 'PRObroker Listing'}</div>
+            <div className="font-semibold text-gray-900 truncate">{shownName || 'AllFlats Listing'}</div>
             <div className="text-xs text-gray-500">{posterLabel}</div>
           </div>
         </div>

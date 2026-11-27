@@ -45,8 +45,8 @@ export async function fetchListingData({ citySlug, category, trans, areaSlug, pa
   const priceRangeText = minPrice && maxPrice ? ` Price range ${fmtPrice(minPrice)} to ${fmtPrice(maxPrice)}.` : '';
 
   const pageSuffix = page > 1 ? ` \u2013 Page ${page}` : '';
-  const title = `${total}+ ${catName} Properties for ${tn} in ${location}${pageSuffix} | PRObroker`;
-  const desc = `Browse ${total} verified ${catName.toLowerCase()} properties for ${tw} in ${location}.${priceRangeText} Updated daily on PRObroker.`;
+  const title = `${total}+ ${catName} Properties for ${tn} in ${location}${pageSuffix} | AllFlats`;
+  const desc = `Browse ${total} verified ${catName.toLowerCase()} properties for ${tw} in ${location}.${priceRangeText} Updated daily on AllFlats.`;
   const h1 = `${total}+ ${catName} Properties for ${tn} in ${location}${pageSuffix}`;
   const pathArea = areaSlug ? `${areaSlug}/` : '';
   const cleanPath = `${SITE_URL}/${citySlug}/${pathArea}${category}-property-for-${trans}/`;

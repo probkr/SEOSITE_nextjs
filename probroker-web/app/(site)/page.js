@@ -13,11 +13,11 @@ export const revalidate = 300;
 
 export async function generateMetadata() {
   return {
-    title: 'PRObroker | Buy, Sell & Rent Properties in Ahmedabad & Gandhinagar',
-    description: 'Search verified residential and commercial properties for sale and rent in Ahmedabad and Gandhinagar. Post your property free on PRObroker.',
+    title: 'AllFlats | Buy, Sell & Rent Properties in Ahmedabad & Gandhinagar',
+    description: 'Search verified residential and commercial properties for sale and rent in Ahmedabad and Gandhinagar. Post your property free on AllFlats.',
     alternates: { canonical: `${SITE_URL}/` },
     openGraph: {
-      title: 'PRObroker | Real Estate in Ahmedabad & Gandhinagar',
+      title: 'AllFlats | Real Estate in Ahmedabad & Gandhinagar',
       description: 'Search verified residential and commercial properties for sale and rent.',
       url: `${SITE_URL}/`,
     },
@@ -75,7 +75,7 @@ const WHY_FEATURES = [
   },
   {
     title: 'Trusted by Thousands',
-    text: 'Buyers, tenants, and owners across the city trust PRObroker.',
+    text: 'Buyers, tenants, and owners across the city trust AllFlats.',
     icon: <><circle cx="9" cy="8" r="3" /><path d="M3 20a6 6 0 0112 0" /><path d="M16 5.5a3 3 0 010 5M18 14a5 5 0 013 6" /></>,
   },
 ];
@@ -83,7 +83,7 @@ const WHY_FEATURES = [
 // Same testimonials as the live prbroker.in homepage.
 const TESTIMONIALS = [
   { quote: 'Found our dream 3BHK within two weeks. The listings were genuine and the owner was easy to reach, no broker hassle at all.', name: 'Priya Shah', initials: 'PS', role: 'Homebuyer, Bopal' },
-  { quote: 'Listed my flat for free and got serious inquiries within days. PROBroker made renting out my property effortless.', name: 'Ketan Patel', initials: 'KP', role: 'Property Owner, Gandhinagar' },
+  { quote: 'Listed my flat for free and got serious inquiries within days. AllFlats made renting out my property effortless.', name: 'Ketan Patel', initials: 'KP', role: 'Property Owner, Gandhinagar' },
   { quote: 'Searching for a rental used to be so tedious. The verified listings saved us so much time and stress.', name: 'Ravi & Neha Joshi', initials: 'RJ', role: 'Tenants, Chandkheda' },
   { quote: 'Transparent pricing and real photos, exactly what we needed while comparing properties online.', name: 'Anjali Mehta', initials: 'AM', role: 'Homebuyer, Gandhinagar' },
 ];
@@ -392,12 +392,12 @@ export default async function HomePage() {
         ))}
       </section>
 
-      {/* Why PRObroker */}
+      {/* Why AllFlats */}
       <section className="container-px section-py">
         <div className="grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-8 lg:gap-12 items-center">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold font-heading text-gray-900">
-              Why Choose <span className="text-primary">PRObroker</span>
+              Why Choose <span className="text-primary">AllFlats</span>
             </h2>
             <p className="mt-2 text-gray-500">Everything you need for a hassle-free property search</p>
 
@@ -523,7 +523,7 @@ export default async function HomePage() {
       <section className="bg-gradient-to-br from-primary-600 to-primary-800">
         <div className="container-px py-14 md:py-16 text-center">
           <h2 className="text-2xl md:text-3xl font-bold font-heading text-white">Have a Property to Sell or Rent?</h2>
-          <p className="text-primary-100 mt-2">List it on PRObroker for free and reach thousands of verified buyers and tenants.</p>
+          <p className="text-primary-100 mt-2">List it on AllFlats for free and reach thousands of verified buyers and tenants.</p>
 
           <ol className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-5 max-w-3xl mx-auto">
             {POST_STEPS.map((step, i) => (

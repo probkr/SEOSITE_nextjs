@@ -6,8 +6,8 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata() {
   return {
-    title: 'Post Property FREE | PRObroker',
-    description: 'List your property for free on PRObroker and reach genuine buyers and tenants in Ahmedabad and Gandhinagar.',
+    title: 'Post Property FREE | AllFlats',
+    description: 'List your property for free on AllFlats and reach genuine buyers and tenants in Ahmedabad and Gandhinagar.',
     alternates: { canonical: `${SITE_URL}/post-property/` },
   };
 }

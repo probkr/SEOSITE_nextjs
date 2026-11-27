@@ -11,12 +11,12 @@ const fmtCount = (n) => Number(n || 0).toLocaleString('en-IN');
 
 export async function generateMetadata() {
   return {
-    title: 'Societies & Projects in Ahmedabad & Gandhinagar | PRObroker',
+    title: 'Societies & Projects in Ahmedabad & Gandhinagar | AllFlats',
     description:
-      'Browse residential and commercial societies and projects in Ahmedabad and Gandhinagar. See flats for sale and rent in each society, with verified listings on PRObroker.',
+      'Browse residential and commercial societies and projects in Ahmedabad and Gandhinagar. See flats for sale and rent in each society, with verified listings on AllFlats.',
     alternates: { canonical: `${SITE_URL}/societies/` },
     openGraph: {
-      title: 'Societies & Projects in Ahmedabad & Gandhinagar | PRObroker',
+      title: 'Societies & Projects in Ahmedabad & Gandhinagar | AllFlats',
       description: 'Find your society and see every flat for sale or rent in it.',
       url: `${SITE_URL}/societies/`,
     },
@@ -43,8 +43,8 @@ export default async function SocietiesPage() {
 
   const faqs = [
     {
-      question: `How many societies and projects are listed on PRObroker?`,
-      answer: `PRObroker lists ${fmtCount(total)}+ residential and commercial societies and projects across ${cityNames}. Each society page shows the flats and offices currently for sale or rent in it.`,
+      question: `How many societies and projects are listed on AllFlats?`,
+      answer: `AllFlats lists ${fmtCount(total)}+ residential and commercial societies and projects across ${cityNames}. Each society page shows the flats and offices currently for sale or rent in it.`,
     },
     {
       question: 'How do I find flats in a particular society?',
@@ -52,7 +52,7 @@ export default async function SocietiesPage() {
     },
     {
       question: 'Can I list my flat in a society for free?',
-      answer: 'Yes. Posting a property on PRObroker is free. Choose your society while posting so buyers and tenants searching that society find it.',
+      answer: 'Yes. Posting a property on AllFlats is free. Choose your society while posting so buyers and tenants searching that society find it.',
     },
   ];
 

@@ -18,7 +18,7 @@ export default async function AreaLandingView({ area, city }) {
   const properties = propResult?.data || [];
   const total = propResult?.total ?? properties.length;
 
-  const overview = area.overview || `${area.name} is a well-connected locality in ${city?.name}, offering a range of residential and commercial properties for sale and rent. Explore ${total}+ listings and ${(societies || []).length} societies in the area on PRObroker.`;
+  const overview = area.overview || `${area.name} is a well-connected locality in ${city?.name}, offering a range of residential and commercial properties for sale and rent. Explore ${total}+ listings and ${(societies || []).length} societies in the area on AllFlats.`;
   const faqs = area.faqs || [];
 
   const faqLd = faqPageSchema(faqs);

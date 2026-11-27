@@ -257,7 +257,7 @@ export default function AuthForm({ mode = 'login', next: rawNext }) {
           </form>
 
           <p className="mt-6 text-center text-sm text-gray-500">
-            {mode === 'login' ? 'New to PRObroker? ' : 'Already have an account? '}
+            {mode === 'login' ? 'New to AllFlats? ' : 'Already have an account? '}
             <Link
               href={`/auth/${mode === 'login' ? 'signup' : 'login'}/${next !== '/' ? `?next=${encodeURIComponent(next)}` : ''}`}
               className="font-semibold text-primary hover:underline underline-offset-2"

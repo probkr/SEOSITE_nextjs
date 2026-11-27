@@ -145,7 +145,7 @@ export default function PropertyCard({ p, variant = 'grid' }) {
     <h3 className="text-[13px] sm:text-[19px] font-bold text-gray-900 line-clamp-2 sm:line-clamp-1 group-hover:text-primary transition-colors">{title}</h3>
   );
 
-  // Row card: a green shield on the photo's top-right for listings the PRObroker team has
+  // Row card: a green shield on the photo's top-right for listings the AllFlats team has
   // verified. Icon only; the word stays for screen readers and as the hover tooltip.
   const verifiedTag = isVerified ? (
     // 30% smaller than the standard .badge (12px text, 10px / 4px padding).

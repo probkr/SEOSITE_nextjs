@@ -61,13 +61,13 @@ const HOW_IT_WORKS = [
   { icon: 'camera', title: 'Upload photos & go live', desc: 'Our team reviews it and your listing goes live, usually within hours.' },
 ];
 const BENEFITS = [
-  { icon: 'rupee', title: 'Zero listing fee', desc: 'Posting on PRObroker costs nothing — today and always.' },
+  { icon: 'rupee', title: 'Zero listing fee', desc: 'Posting on AllFlats costs nothing — today and always.' },
   { icon: 'shield', title: 'Verified badge', desc: 'Approved listings carry a badge buyers trust and click first.' },
   { icon: 'bell', title: 'Direct enquiries', desc: 'Interested buyers and tenants reach you directly — no middleman.' },
   { icon: 'chart', title: 'Local reach', desc: 'Shown to people searching your society, area and city.' },
 ];
 const FAQS = [
-  { q: 'Is it really free to post my property?', a: 'Yes. Listing your property on PRObroker is completely free. There are no listing fees and no commission.' },
+  { q: 'Is it really free to post my property?', a: 'Yes. Listing your property on AllFlats is completely free. There are no listing fees and no commission.' },
   { q: 'How long until my listing goes live?', a: 'Our team reviews every listing before publishing it. This usually takes a few hours on working days.' },
   { q: 'Can I edit my listing after posting?', a: 'Yes. Log in with the same mobile number and open My Properties to update details or photos.' },
   { q: 'Why do you verify my mobile number?', a: 'A verified number keeps fake listings out and makes sure genuine enquiries reach the real owner.' },
@@ -1069,7 +1069,7 @@ export default function PostPropertyForm({ stats, areasByCity = {} }) {
         <section className="bg-white border-y border-gray-100">
           <div className="container-px section-py">
             <Reveal className="mx-auto max-w-2xl text-center">
-              <span className="text-xs font-bold uppercase tracking-widest text-primary">Why PRObroker</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-primary">Why AllFlats</span>
               <h2 className="mt-2 text-2xl font-extrabold md:text-3xl">Built for owners who want results</h2>
             </Reveal>
             <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">

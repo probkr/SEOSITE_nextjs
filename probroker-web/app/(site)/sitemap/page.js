@@ -5,8 +5,8 @@ import { SITE_URL } from '@/lib/config';
 export const revalidate = 3600;
 
 export const metadata = {
-  title: 'Sitemap | PRObroker',
-  description: 'All PRObroker pages in one place: property for sale and rent by city, type, BHK and budget, every locality, top societies and company pages.',
+  title: 'Sitemap | AllFlats',
+  description: 'All AllFlats pages in one place: property for sale and rent by city, type, BHK and budget, every locality, top societies and company pages.',
   alternates: { canonical: `${SITE_URL}/sitemap/` },
 };
 
@@ -94,7 +94,7 @@ export default async function SitemapPage() {
         <Link href="/" className="hover:text-primary">Home</Link> / <span className="text-gray-700">Sitemap</span>
       </nav>
       <h1 className="text-2xl md:text-3xl font-bold font-heading text-gray-900">Sitemap</h1>
-      <p className="mt-1 text-gray-500">All pages on PRObroker.</p>
+      <p className="mt-1 text-gray-500">All pages on AllFlats.</p>
 
       <nav aria-label="Sitemap sections" className="mt-5 mb-2 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
         {jumps.map(([id, label]) => (

@@ -5,8 +5,8 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
   return {
-    title: 'Edit Property | PRObroker',
-    description: 'Edit your property listing on PRObroker.',
+    title: 'Edit Property | AllFlats',
+    description: 'Edit your property listing on AllFlats.',
     alternates: { canonical: `${SITE_URL}/edit-property/${params.propertyId}/` },
     robots: { index: false, follow: false },
   };

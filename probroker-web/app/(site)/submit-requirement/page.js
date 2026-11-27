@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata() {
   return {
-    title: 'Submit Your Property Requirement | PRObroker',
+    title: 'Submit Your Property Requirement | AllFlats',
     description: "Tell us what you're looking for and we'll match you with the right property in Ahmedabad or Gandhinagar.",
     alternates: { canonical: `${SITE_URL}/submit-requirement/` },
   };

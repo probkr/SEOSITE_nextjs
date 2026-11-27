@@ -7,8 +7,8 @@ export const revalidate = 900;
 
 export async function generateMetadata() {
   return {
-    title: 'Real Estate Blog — Tips, Guides & Market Insights | PRObroker',
-    description: 'Read expert articles on real estate buying, selling, renting, investment tips, market trends, and property guides on PRObroker Blog.',
+    title: 'Real Estate Blog — Tips, Guides & Market Insights | AllFlats',
+    description: 'Read expert articles on real estate buying, selling, renting, investment tips, market trends, and property guides on AllFlats Blog.',
     alternates: { canonical: `${SITE_URL}/blog/` },
   };
 }
@@ -30,7 +30,7 @@ export default async function BlogListPage({ searchParams }) {
     <div>
       <section className="bg-brand-hero">
         <div className="container-px py-14 text-center">
-          <h1 className="text-3xl md:text-4xl font-extrabold font-heading text-white">PRObroker Blog</h1>
+          <h1 className="text-3xl md:text-4xl font-extrabold font-heading text-white">AllFlats Blog</h1>
           <p className="mt-3 text-primary-100 max-w-xl mx-auto">Real estate guides, market insights, and tips for buyers, sellers &amp; tenants in Ahmedabad &amp; Gandhinagar.</p>
         </div>
       </section>
@@ -75,7 +75,7 @@ export default async function BlogListPage({ searchParams }) {
                 <h2 className="text-xl md:text-2xl font-bold font-heading text-gray-900 mb-2 group-hover:text-primary transition-colors">{featured.title}</h2>
                 <p className="text-gray-600 line-clamp-3 mb-4">{featured.excerpt}</p>
                 <div className="text-sm text-gray-500 flex items-center gap-2">
-                  <span>{featured.author || 'PRObroker Team'}</span>
+                  <span>{featured.author || 'AllFlats Team'}</span>
                   {featured.publishedAt && <><span>&middot;</span><span>{formatDate(featured.publishedAt)}</span></>}
                   <span>&middot;</span><span>{featured.readTime || readTime(featured.content)} min read</span>
                 </div>
@@ -100,7 +100,7 @@ export default async function BlogListPage({ searchParams }) {
                       <div className="font-semibold mb-1 text-gray-900 line-clamp-2">{p.title}</div>
                       <div className="text-sm text-gray-500 line-clamp-2 mb-3 flex-1">{p.excerpt}</div>
                       <div className="text-xs text-gray-400 flex items-center gap-1.5 pt-2 border-t border-gray-100">
-                        <span>{p.author || 'PRObroker Team'}</span>
+                        <span>{p.author || 'AllFlats Team'}</span>
                         <span>&middot;</span>
                         <span>{p.readTime || readTime(p.content)} min read</span>
                       </div>

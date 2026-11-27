@@ -64,7 +64,7 @@ export default function AdminShell({ children }) {
     <div className="min-h-screen">
       <aside className="fixed top-0 left-0 w-60 h-screen bg-sidebar text-white flex flex-col z-40 overflow-y-auto">
         <div className="px-4 pt-5 pb-3 border-b border-white/10">
-          <div className="font-bold text-lg">PRObroker</div>
+          <div className="font-bold text-lg">AllFlats</div>
           <div className="text-[11px] text-white/50 tracking-wide">Admin Panel</div>
         </div>
         <nav className="flex-1 py-3">

@@ -5,7 +5,7 @@ import { clientFetch, clientFetchJson } from '@/lib/api';
 
 export default function SettingsClient({ settings, homepageSchema }) {
   const [siteForm, setSiteForm] = useState({
-    site_name: settings.site_name || 'PRObroker',
+    site_name: settings.site_name || 'AllFlats',
     contact_phone: settings.contact_phone || '',
     whatsapp: settings.whatsapp || '',
     logo_url: settings.logo_url || '',
@@ -186,7 +186,7 @@ export default function SettingsClient({ settings, homepageSchema }) {
           {schemaMsg && <div className={`px-3 py-2 rounded mb-3 text-sm ${schemaMsg.type === 'success' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>{schemaMsg.text}</div>}
           <textarea
             className="w-full border border-gray-200 rounded-md px-2.5 py-2 text-xs font-mono min-h-[200px]"
-            placeholder='{"@context":"https://schema.org","@type":"RealEstateAgent","name":"PRObroker",...}'
+            placeholder='{"@context":"https://schema.org","@type":"RealEstateAgent","name":"AllFlats",...}'
             value={schema}
             onChange={(e) => setSchema(e.target.value)}
           />
