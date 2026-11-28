@@ -81,8 +81,7 @@ export default function Footer({ settings } = {}) {
         ))}
       </div>
       <div className="border-t border-white/10 py-5 text-center text-xs text-gray-500">
-        &copy; {new Date().getFullYear()} AllFlats &middot; Ahmedabad &amp; Gandhinagar Real Estate
-        <div className="mt-1">A product of Vocal Connect PVT LTD</div>
+        &copy; {new Date().getFullYear()} - Vocal Connect PVT LTD
       </div>
     </footer>
   );
