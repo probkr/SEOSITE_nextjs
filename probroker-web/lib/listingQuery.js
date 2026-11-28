@@ -100,6 +100,16 @@ export function buildPropertyQuery(scope = {}, filters = {}, page = 1, perPage =
   return query;
 }
 
+// Only the clean SEO listing pages (no URL filters, first few pages) go into the Next.js data
+// cache. Every filter permutation or deep page would otherwise write its own fetch-cache file,
+// and Next 14 never prunes those files, so they grow without bound as cities and areas grow.
+export const MAX_CACHED_PAGE = 3;
+
+export function listingFetchOpts(filters = {}, page = 1) {
+  if (filters.hasFilters || page > MAX_CACHED_PAGE) return { cache: 'no-store' };
+  return { revalidate: 900 };
+}
+
 // The API returns { properties, total, totalPages, ... }; every caller uses this shape instead.
 export function normalizePropertyResult(r, perPage = PER_PAGE) {
   const properties = r?.data || r?.properties || [];

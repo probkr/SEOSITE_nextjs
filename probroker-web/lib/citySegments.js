@@ -1,7 +1,7 @@
 import { getCity, getArea, getAreas, getProperties, getSociety, getSocieties } from './api';
 import { fetchListingData, toTitle } from './listing';
 import { SITE_URL } from './config';
-import { buildPropertyQuery, normalizePropertyResult, PER_PAGE } from './listingQuery';
+import { buildPropertyQuery, normalizePropertyResult, listingFetchOpts, PER_PAGE } from './listingQuery';
 
 const CATEGORY_TRANS_RE = /^(residential|commercial)-property-for-(sale|rent)$/;
 
@@ -119,7 +119,7 @@ async function resolveCatchAll(citySlug, city, catchAll, page, extraFilters = {}
   const perPage = PER_PAGE;
   // The browser reuses this scope to fetch the same listing as JSON.
   const scope = { fixed: filters, omit: ['propertyType', 'area', 'transactionType'] };
-  const result = await getProperties(buildPropertyQuery(scope, extraFilters, page, perPage), { revalidate: 900 });
+  const result = await getProperties(buildPropertyQuery(scope, extraFilters, page, perPage), listingFetchOpts(extraFilters, page));
   const { properties, total, totalPages } = normalizePropertyResult(result, perPage);
 
   const pageSuffix = page > 1 ? ` – Page ${page}` : '';

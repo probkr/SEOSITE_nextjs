@@ -1,17 +1,9 @@
-import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 import { cookies, headers } from 'next/headers';
 import { revalidateTag } from 'next/cache';
 import { API_URL } from '@/lib/config';
 import { PROPERTY_CACHE_TAG } from '@/lib/api';
-
-function secretMatches(sent) {
-  const secret = process.env.REVALIDATE_SECRET || '';
-  if (!secret || !sent) return false;
-  const a = Buffer.from(sent);
-  const b = Buffer.from(secret);
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
-}
+import { secretMatches } from '@/lib/serverSecret';
 
 // Clears cached property data (listing + detail pages) after a listing change.
 // Allowed for a signed-in admin (cookie checked against the API), or for the API itself

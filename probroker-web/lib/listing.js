@@ -1,7 +1,7 @@
 import { getCity, getArea, getAreas, getProperties, getSocieties } from './api';
 import { fmtPrice } from './format';
 import { SITE_URL } from './config';
-import { parseListingFilters, buildPropertyQuery, normalizePropertyResult } from './listingQuery';
+import { parseListingFilters, buildPropertyQuery, normalizePropertyResult, listingFetchOpts } from './listingQuery';
 
 // Port of backend/server.py `_listing_data` — builds listing page context for
 // category_city.html (city-level) and area.html (area-level) equivalents.
@@ -36,7 +36,7 @@ export async function fetchListingData({ citySlug, category, trans, areaSlug, pa
     omit: areaSlug ? ['area'] : [],
   };
 
-  const result = await getProperties(buildPropertyQuery(scope, extraFilters, page, perPage), { revalidate: 900 });
+  const result = await getProperties(buildPropertyQuery(scope, extraFilters, page, perPage), listingFetchOpts(extraFilters, page));
   const { properties, total, totalPages } = normalizePropertyResult(result, perPage);
 
   const location = areaName ? `${areaName}, ${cityName}` : cityName;

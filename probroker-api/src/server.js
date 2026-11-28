@@ -96,6 +96,7 @@ async function start() {
   app.listen(PORT, () => {
     console.log(`[server] probroker-api listening on port ${PORT}`);
   });
+  require('./services/cacheCleanup').startCacheCleanupSchedule();
 }
 
 start();
